@@ -1,0 +1,138 @@
+-- =============================================================================
+-- WARGA DIGITAL — Add Jasa Services Tables
+-- Migration: 20260411000000_add_jasa_services.sql
+-- Created: 2026-04-11
+--
+-- Tables:
+--   1. jasa_services (complete schema matching TypeScript interface)
+--   2. jasa_sub_services
+--   3. jasa_service_media
+--
+-- NOTE: This migration drops existing tables if they exist to ensure clean schema
+-- =============================================================================
+
+-- Drop existing tables in reverse dependency order to avoid FK constraint errors
+DROP TABLE IF EXISTS jasa_service_media CASCADE;
+DROP TABLE IF EXISTS jasa_sub_services CASCADE;
+DROP TABLE IF EXISTS jasa_services CASCADE;
+
+-- 1. jasa_services table (complete schema)
+CREATE TABLE jasa_services (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id             UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  category_id           UUID NOT NULL REFERENCES marketplace_categories(id) ON DELETE RESTRICT,
+  owner_user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  owner_display_name    VARCHAR(150) NOT NULL,
+  name                  VARCHAR(200) NOT NULL,
+  slug                  VARCHAR(220) NOT NULL,
+  description           TEXT,
+  summary               VARCHAR(300),
+  estimated_price       NUMERIC(12,2) NOT NULL DEFAULT 0,
+  currency_code         VARCHAR(3) NOT NULL DEFAULT 'IDR',
+  hari_operasional      JSONB NOT NULL DEFAULT '{}',
+  jam_operasional_mulai VARCHAR(5) NOT NULL,
+  jam_operasional_selesai VARCHAR(5) NOT NULL,
+  availability_status VARCHAR(20) NOT NULL DEFAULT 'TERSEDIA' CHECK (availability_status IN ('TERSEDIA', 'TIDAK_TERSEDIA', 'FULL_BOOKED')),
+  status                VARCHAR(20) NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'ACTIVE', 'SOLD_OUT', 'ARCHIVED')),
+  wa_number             VARCHAR(20),
+  location_note         TEXT,
+  rating_avg            NUMERIC(2,1) NOT NULL DEFAULT 0 CHECK (rating_avg BETWEEN 0 AND 5),
+  rating_count          INT NOT NULL DEFAULT 0,
+  is_featured           BOOLEAN NOT NULL DEFAULT false,
+  published_at          TIMESTAMPTZ,
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_by            UUID REFERENCES users(id),
+  updated_at            TIMESTAMPTZ,
+  updated_by            UUID REFERENCES users(id)
+);
+
+-- 2. jasa_sub_services table
+CREATE TABLE jasa_sub_services (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  jasa_service_id   UUID NOT NULL REFERENCES jasa_services(id) ON DELETE CASCADE,
+  name              VARCHAR(200) NOT NULL,
+  description       TEXT,
+  price             NUMERIC(12,2) NOT NULL DEFAULT 0,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ
+);
+
+-- 3. jasa_service_media table
+CREATE TABLE jasa_service_media (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  service_id  UUID NOT NULL REFERENCES jasa_services(id) ON DELETE CASCADE,
+  url         TEXT NOT NULL,
+  alt_text    VARCHAR(200),
+  sort_order  SMALLINT NOT NULL DEFAULT 0,
+  is_primary  BOOLEAN NOT NULL DEFAULT false,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Unique constraint for primary images
+CREATE UNIQUE INDEX jasa_service_media_primary
+  ON jasa_service_media (service_id) WHERE is_primary = true;
+
+-- Indexes
+CREATE INDEX idx_jasa_services_category ON jasa_services (category_id, status);
+CREATE INDEX idx_jasa_services_owner ON jasa_services (owner_user_id, status);
+CREATE INDEX idx_jasa_services_tenant ON jasa_services (tenant_id, status);
+CREATE INDEX idx_jasa_services_slug ON jasa_services (slug);
+CREATE INDEX idx_jasa_services_featured ON jasa_services (status, is_featured) WHERE is_featured = true;
+CREATE INDEX idx_jasa_services_published ON jasa_services (status, published_at DESC);
+CREATE INDEX idx_jasa_sub_services_parent ON jasa_sub_services (jasa_service_id);
+CREATE INDEX idx_jasa_service_media_service ON jasa_service_media (service_id, sort_order);
+
+-- Enable RLS
+ALTER TABLE jasa_services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE jasa_sub_services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE jasa_service_media ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for jasa_services
+CREATE POLICY "Anyone can read active jasa services" ON jasa_services FOR SELECT USING (status = 'ACTIVE');
+CREATE POLICY "Owner can insert jasa services" ON jasa_services FOR INSERT WITH CHECK (owner_user_id = auth.uid());
+CREATE POLICY "Owner can update own jasa services" ON jasa_services FOR UPDATE USING (owner_user_id = auth.uid());
+CREATE POLICY "Owner can delete own jasa services" ON jasa_services FOR DELETE USING (owner_user_id = auth.uid());
+
+-- RLS Policies for jasa_sub_services
+CREATE POLICY "Anyone can read sub services of active jasa" ON jasa_sub_services FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM jasa_services js WHERE js.id = jasa_service_id AND js.status = 'ACTIVE'
+  )
+);
+CREATE POLICY "Owner can insert sub services" ON jasa_sub_services FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM jasa_services js WHERE js.id = jasa_service_id AND js.owner_user_id = auth.uid()
+  )
+);
+CREATE POLICY "Owner can update own sub services" ON jasa_sub_services FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM jasa_services js WHERE js.id = jasa_service_id AND js.owner_user_id = auth.uid()
+  )
+);
+CREATE POLICY "Owner can delete own sub services" ON jasa_sub_services FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM jasa_services js WHERE js.id = jasa_service_id AND js.owner_user_id = auth.uid()
+  )
+);
+
+-- RLS Policies for jasa_service_media
+CREATE POLICY "Anyone can read media of active jasa services" ON jasa_service_media FOR SELECT USING (
+  EXISTS (
+    SELECT 1 FROM jasa_services js WHERE js.id = service_id AND js.status = 'ACTIVE'
+  )
+);
+CREATE POLICY "Owner can insert media for own services" ON jasa_service_media FOR INSERT WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM jasa_services js WHERE js.id = service_id AND js.owner_user_id = auth.uid()
+  )
+);
+CREATE POLICY "Owner can update media for own services" ON jasa_service_media FOR UPDATE USING (
+  EXISTS (
+    SELECT 1 FROM jasa_services js WHERE js.id = service_id AND js.owner_user_id = auth.uid()
+  )
+);
+CREATE POLICY "Owner can delete media for own services" ON jasa_service_media FOR DELETE USING (
+  EXISTS (
+    SELECT 1 FROM jasa_services js WHERE js.id = service_id AND js.owner_user_id = auth.uid()
+  )
+);

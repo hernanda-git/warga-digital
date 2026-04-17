@@ -1,0 +1,163 @@
+filename structure:
+../kanban/
+├── task/                   # Raw input (.txt)
+│   ├── 20231027-001_PROC_idea.txt
+│   └── 20231027-002_PROC_requirement.txt
+├── outstanding/            # Structured plans (.md)
+│   ├── 20231027-001_ACTIVE_idea.md
+│   └── 20231027-002_PLAN_requirement.md
+├── inprogress/             # Execution tickets (.md)
+│   ├── 20231027-001_EXEC_01_setup.md
+│   └── 20231027-001_EXEC_02_develop.md
+└── archive/                # Completed work (optional cleanup)
+    ├── task/
+    ├── outstanding/
+    └── execution/
+
+================================================================================
+PHASE 1: PLANNING (Raw Input → Structured Plan)
+================================================================================
+
+1.
+read directory ../kanban/task
+
+1.1 make a comprehensive planning from it as a single md file in ../kanban/outstanding
+    - ID Logic: Extract ID from filename if exists (e.g., 20231027-001). If missing, generate new {YYYYMMDD}-{SEQ}.
+    - Transform the raw text content into a structured Markdown plan.
+    - Save as ../kanban/outstanding/{ID}_PLAN_{slug}.md.
+    - Include header: Source: [[../task/{filename}]] | Status: READY_FOR_EXECUTION.
+
+1.2 review the new file that you've made in ../kanban/outstanding to make sure it has something from ../kanban/task file, a deliverable point, expectations point, thing that must be aware of
+    - [ ] Source Fidelity: Verify the plan accurately reflects the intent of the raw txt without hallucinating features.
+    - [ ] Deliverable Point: List specific tangible outputs (e.g., files, code modules, documents) required to close the task.
+    - [ ] Expectations Point: Define acceptance criteria and quality standards (e.g., "must pass linting," "load under 2s").
+    - [ ] Awareness Point: Highlight risks, dependencies, legacy code concerns, or external API limitations.
+    - [ ] Scope Boundary: Explicitly state what is OUT of scope to prevent creep based on vague raw text.
+    - [ ] Resource Check: Identify needed credentials, permissions, or tools mentioned or implied in the raw text.
+    - [ ] Clarification Flag: If the raw text was ambiguous, add a "Questions" section at the top of the plan.
+
+1.3 rename the task in ../kanban/task to mark it as proceed
+    - Rename the original .txt file: {original_name}.txt -> {ID}_PROC_{slug}.txt.
+    - Append reference line at bottom: "-> Plan: ../outstanding/{ID}_PLAN_{slug}.md".
+    - Do not create new files in task; only modify the existing raw file.
+
+1.4 mark planning phase as done
+    - [x] Plan file successfully created in ../kanban/outstanding.
+    - [x] Plan file reviewed and validated against checklist (1.2).
+    - [x] Original task file renamed and linked to plan (1.3).
+    - Update plan file header: `Status: READY_FOR_EXECUTION`.
+    - Ensure traceability: task/ ↔ outstanding/ is complete.
+
+================================================================================
+PHASE 2: EXECUTION BREAKDOWN (Plan → Actionable Tickets)
+================================================================================
+
+2.
+Read ../kanban/outstanding
+
+2.1 analyze the oldest outstanding that is still not proceed
+    - Filter for files with status tag `_PLAN_` in filename OR header `Status: READY_FOR_EXECUTION`.
+    - Sort by date/ID ascending (oldest first).
+    - Select the top file for breakdown.
+
+2.2 breakdown its file to executional points and create file of each executional points in ../kanban/inprogress with refering to ../kanban/outstanding file this step only write a simple executional points
+    - Parse the "Implementation Steps" or "Deliverables" from the parent plan.
+    - Create individual .md files for each logical step in ../kanban/inprogress.
+    - Naming: {ID}_EXEC_{step_number}_{slug}.md (e.g., 20231027-001_EXEC_01_setup.md).
+    - Header: Include "Parent Plan: ../outstanding/{ID}_PLAN_{slug}.md".
+    - Content: Write a brief title and objective for this specific execution step.
+
+2.3 loop each files, every loop must breakdown deliverable points, expectation points, awareness points, scope, resource check and clarification. you must do this one by one to make it relevant on each executional points files
+    - For each newly created file in ../kanban/inprogress:
+    - [ ] Deliverable Point: Define the specific output for THIS step only (not the whole project).
+    - [ ] Expectation Point: Define success criteria for THIS step (e.g., "Script runs without error").
+    - [ ] Awareness Point: Note specific risks for THIS step (e.g., "Modifies production config").
+    - [ ] Scope: Confirm boundaries for THIS step (e.g., "Do not optimize yet, just make it work").
+    - [ ] Resource Check: List tools needed specifically for this step.
+    - [ ] Clarification: Flag any missing info specific to this sub-task.
+
+2.4 rename ../kanban/outstanding to new status that mark executional points has been created
+    - Rename the parent file in ../kanban/outstanding: {ID}_PLAN_{slug}.md -> {ID}_ACTIVE_{slug}.md.
+    - Update header status: `Status: IN_PROGRESS`.
+    - This ensures step 2.1 skips this file in future runs.
+
+2.5 done
+    - Workflow phase complete. Files are now ready in ../kanban/inprogress for actual work execution.
+
+================================================================================
+PHASE 3: COMPLETION & ARCHIVE (Close the Loop)
+================================================================================
+
+3.
+Read ../kanban/inprogress
+
+3.1 analyze files marked as _EXEC_ that are completed by user/agent
+    - Filter for files where work is verified as complete.
+    - Validate output against the "Expectation Point" defined in step 2.3.
+
+3.2 mark execution file as done
+    - Rename file: {ID}_EXEC_{step}_{slug}.md -> {ID}_DONE_{step}_{slug}.md.
+    - Optional: Move to ../kanban/archive/execution/ to keep inprogress/ clean.
+    - Append to file content:
+      ```
+      ---
+      Completed: {YYYY-MM-DD HH:MM}
+      Result: {Brief summary of outcome}
+      ---
+      ```
+
+3.3 check parent plan status
+    - Read the parent file in ../kanban/outstanding (linked in EXEC file header).
+    - Scan ../kanban/inprogress/ and ../kanban/archive/execution/ for all {ID}_*_*.md files.
+    - If ALL execution files for this ID are _DONE_:
+        - Rename parent: {ID}_ACTIVE_{slug}.md -> {ID}_DONE_{slug}.md.
+        - Update header: `Status: COMPLETED`.
+        - Append completion summary to parent file.
+    - If SOME children remain _EXEC_ or _ACTIVE_:
+        - Keep parent as {ID}_ACTIVE_{slug}.md.
+        - Optionally update parent with progress: "3/5 steps completed".
+
+3.4 update original task file
+    - Navigate to ../kanban/task/{ID}_PROC_{slug}.txt.
+    - Append completion marker:
+      "-> Completed: {YYYY-MM-DD} | Plan: ../outstanding/{ID}_DONE_{slug}.md".
+    - Optional: Move to ../kanban/archive/task/ for long-term storage.
+
+3.5 done
+    - Full lifecycle complete: Raw Idea → Plan → Execution → Archive.
+    - All files are traceable, statused, and ready for audit or reference.
+
+================================================================================
+STATUS STATE REFERENCE
+================================================================================
+
+Task (.txt):
+  _RAW_  → New unprocessed input
+  _PROC_ → Processed, plan linked
+
+Outstanding (.md):
+  _PLAN_             → Ready for execution breakdown
+  _ACTIVE_ / _INPROG_ → Execution tickets created, work in progress
+  _DONE_             → All child execution files completed
+
+Inprogress (.md):
+  _EXEC_ → Ticket is being worked on
+  _DONE_ → Ticket completed, ready for parent check
+
+Archive (optional):
+  Moved files retain their _DONE_ status for historical reference.
+
+================================================================================
+NAMING CONVENTION
+================================================================================
+
+Pattern: {YYYYMMDD}-{SEQ}_{STATUS}_{slug}.{ext}
+
+Examples:
+  task/          → 20231027-001_PROC_login_fix.txt
+  outstanding/   → 20231027-001_ACTIVE_login_fix.md
+  inprogress/    → 20231027-001_EXEC_02_update_css.md
+  archive/       → 20231027-001_DONE_login_fix.md
+
+Slug: kebab-case, short, descriptive (max 3-4 words).
+SEQ: Zero-padded sequence (001, 002...) unique per day or global.

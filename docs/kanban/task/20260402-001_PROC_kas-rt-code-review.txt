@@ -1,0 +1,24 @@
+TASK: Code Review - Kas-RT Page (src/app/kas-rt/page.tsx)
+
+CONTEXT:
+The Kas-RT page handles RT cash flow transactions. It includes filtering, submission forms, transaction listing, and recent UI improvements (month/year grouping separators, raw reference display). The file is large (~2400+ lines) and contains complex state management, rendering logic, and API interactions.
+
+FOCUS AREAS:
+1. Performance: Check for unnecessary re-renders, heavy computations in render, missing memoization, inefficient list rendering.
+2. Code Quality & Readability: Identify overly long functions, unclear variable names, duplicated logic, or missing comments.
+3. Bug Prevention: Look for potential null/undefined access, race conditions, incorrect date handling, or filter/sort edge cases.
+4. UI/UX Consistency: Verify styling matches design system, responsive behavior, and accessibility (aria labels, keyboard nav).
+5. Security & Data Handling: Ensure no sensitive data leaks, proper input sanitization, and safe API calls.
+
+EXPECTED OUTPUT:
+- List of identified issues with severity (Critical/High/Medium/Low)
+- Specific file/line references
+- Suggested fixes or refactoring approaches
+- Validation that recent changes (month grouping, reference prefix) work correctly
+
+NOTES:
+- File is monolithic; consider suggesting component extraction if beneficial.
+- Keep changes non-breaking unless critical.
+- Focus on actionable improvements that can be implemented incrementally.
+-> Plan: ../outstanding/20260402-001_PLAN_kas-rt-code-review.md
+-> Completed: 2026-04-02 | Plan: ../outstanding/20260402-001_DONE_kas-rt-code-review.md
