@@ -20,7 +20,7 @@ export function ScreenCommunity({
     <div className="flex h-full w-full flex-col">
       {/* ── Gradient hero ── */}
       <div
-        className="relative shrink-0 overflow-hidden"
+        className="relative isolate shrink-0 overflow-hidden"
         style={{
           height: "56%",
           background:
@@ -40,18 +40,6 @@ export function ScreenCommunity({
           className="pointer-events-none absolute bottom-16 left-10 h-16 w-16 rounded-full bg-white/[0.06]"
           aria-hidden
         />
-
-        {/* Skip */}
-        {onSkip && (
-          <button
-            type="button"
-            onClick={onSkip}
-            className="absolute right-4 z-10 rounded-xl bg-white/20 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/30 active:scale-95"
-            style={{ top: "max(1rem, env(safe-area-inset-top))" }}
-          >
-            Lewati
-          </button>
-        )}
 
         {/* Illustration */}
         <div className="relative z-10 flex h-full items-center justify-center pt-10">

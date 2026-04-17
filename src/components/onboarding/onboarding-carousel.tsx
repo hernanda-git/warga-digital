@@ -31,7 +31,7 @@ export function OnboardingCarousel() {
 
   const handleSkip = useCallback(() => {
     setCompleted(true);
-    router.replace("/auth/register");
+    router.replace("/auth/login");
   }, [setCompleted, router]);
 
   const slideWidthPercent = 100 / SCREENS.length;

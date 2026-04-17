@@ -14,6 +14,7 @@ import { DotIndicators } from "@/components/ui";
 import { OnboardingScreenProps } from "./onboarding-shared";
 
 export function ScreenTrust({
+  onSkip,
   currentIndex,
   totalScreens,
 }: OnboardingScreenProps) {
@@ -32,9 +33,21 @@ export function ScreenTrust({
 
   return (
     <div className="flex h-full w-full flex-col">
+      {/* Skip button */}
+      {onSkip && (
+        <button
+          type="button"
+          onClick={onSkip}
+          className="absolute right-4 z-10 rounded-xl bg-white/20 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/30 active:scale-95"
+          style={{ top: "max(1rem, env(safe-area-inset-top))" }}
+        >
+          Lewati
+        </button>
+      )}
+
       {/* ── Gradient hero ── */}
       <div
-        className="relative shrink-0 overflow-hidden"
+        className="relative isolate shrink-0 overflow-hidden"
         style={{
           height: "56%",
           background:

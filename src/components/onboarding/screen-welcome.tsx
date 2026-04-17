@@ -41,17 +41,6 @@ export function ScreenWelcome({
           aria-hidden
         />
 
-        {/* Skip button */}
-        {onSkip && (
-          <button
-            type="button"
-            onClick={onSkip}
-            className="absolute right-4 top-4 z-10 rounded-xl bg-white/20 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/30 active:scale-95"
-          >
-            Lewati
-          </button>
-        )}
-
         {/* Illustration */}
         <div className="relative z-10 flex h-full items-center justify-center pt-8">
           <WelcomeIllustration />
