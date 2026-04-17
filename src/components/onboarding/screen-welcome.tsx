@@ -7,12 +7,11 @@ import {
   ShieldCheckIcon,
 } from "@heroicons/react/24/solid";
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
-import { DotIndicators } from "@/components/ui";
+import { PrimaryButton, DotIndicators } from "@/components/ui";
 import { OnboardingScreenProps } from "./onboarding-shared";
 
 export function ScreenWelcome({
   onNext,
-  onSkip,
   currentIndex,
   totalScreens,
 }: OnboardingScreenProps) {
@@ -73,18 +72,10 @@ export function ScreenWelcome({
         {/* Footer */}
         <div className="mt-5 flex shrink-0 flex-col gap-3.5">
           <DotIndicators total={totalScreens} current={currentIndex} />
-          <button
-            type="button"
-            onClick={onNext}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold text-white transition-all hover:-translate-y-[1px] active:translate-y-0"
-            style={{
-              background: "var(--color-primary)",
-              boxShadow: "0 8px 22px -12px var(--color-primary-shadow)",
-            }}
-          >
+          <PrimaryButton onPress={onNext}>
             Berikutnya
-            <ArrowRightIcon className="h-4 w-4" />
-          </button>
+            <ArrowRightIcon className="ml-2 h-4 w-4" />
+          </PrimaryButton>
         </div>
       </div>
     </div>
@@ -140,7 +131,7 @@ function WelcomeIllustration() {
       </svg>
 
       {/* Centre: Home */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-[72px] w-[72px] items-center justify-center rounded-[22px] bg-white/30 shadow-lg backdrop-blur-sm">
+      <div className="absolute left-1/2 top-1/2 flex h-[72px] w-[72px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[22px] bg-white/30 shadow-lg backdrop-blur-sm">
         <HomeModernIcon className="h-9 w-9 text-white" />
       </div>
 
@@ -166,7 +157,7 @@ function WelcomeIllustration() {
 
       {/* Floating accent dots */}
       <div className="absolute right-14 top-1 h-2 w-2 rounded-full bg-white/35" />
-      <div className="absolute left-16 bottom-1 h-1.5 w-1.5 rounded-full bg-white/25" />
+      <div className="absolute bottom-1 left-16 h-1.5 w-1.5 rounded-full bg-white/25" />
       <div className="absolute right-0 top-20 h-1.5 w-1.5 rounded-full bg-white/20" />
     </div>
   );

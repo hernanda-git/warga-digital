@@ -10,11 +10,10 @@ import {
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { useOnboardingStore } from "@/stores/onboarding-store";
-import { DotIndicators } from "@/components/ui";
+import { PrimaryButton, DotIndicators } from "@/components/ui";
 import { OnboardingScreenProps } from "./onboarding-shared";
 
 export function ScreenTrust({
-  onSkip,
   currentIndex,
   totalScreens,
 }: OnboardingScreenProps) {
@@ -33,18 +32,6 @@ export function ScreenTrust({
 
   return (
     <div className="flex h-full w-full flex-col">
-      {/* Skip button */}
-      {onSkip && (
-        <button
-          type="button"
-          onClick={onSkip}
-          className="absolute right-4 z-10 rounded-xl bg-white/20 px-3.5 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/30 active:scale-95"
-          style={{ top: "max(1rem, env(safe-area-inset-top))" }}
-        >
-          Lewati
-        </button>
-      )}
-
       {/* ── Gradient hero ── */}
       <div
         className="relative isolate shrink-0 overflow-hidden"
@@ -112,22 +99,14 @@ export function ScreenTrust({
           </p>
         </div>
 
-        {/* Footer: indicators + CTA + login link */}
+        {/* Footer */}
         <div className="flex shrink-0 flex-col gap-3 pt-5">
           <DotIndicators total={totalScreens} current={currentIndex} />
 
-          <button
-            type="button"
-            onClick={handleMulai}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold text-white transition-all hover:-translate-y-[1px] active:translate-y-0"
-            style={{
-              background: "var(--color-primary)",
-              boxShadow: "0 8px 22px -12px var(--color-primary-shadow)",
-            }}
-          >
+          <PrimaryButton onPress={handleMulai}>
             Mulai Sekarang
-            <ArrowRightIcon className="h-4 w-4" />
-          </button>
+            <ArrowRightIcon className="ml-2 h-4 w-4" />
+          </PrimaryButton>
 
           <p className="text-center text-sm text-app-body-muted">
             Sudah punya akun?{" "}

@@ -5,14 +5,13 @@ import {
   BuildingOffice2Icon,
   CurrencyDollarIcon,
   BriefcaseIcon,
-  ArrowRightIcon,
 } from "@heroicons/react/24/solid";
-import { DotIndicators } from "@/components/ui";
+import { ArrowRightIcon } from "@heroicons/react/24/outline";
+import { PrimaryButton, DotIndicators } from "@/components/ui";
 import { OnboardingScreenProps } from "./onboarding-shared";
 
 export function ScreenCommunity({
   onNext,
-  onSkip,
   currentIndex,
   totalScreens,
 }: OnboardingScreenProps) {
@@ -72,18 +71,10 @@ export function ScreenCommunity({
         {/* Footer */}
         <div className="flex shrink-0 flex-col gap-3.5 pt-4">
           <DotIndicators total={totalScreens} current={currentIndex} />
-          <button
-            type="button"
-            onClick={onNext}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold text-white transition-all hover:-translate-y-[1px] active:translate-y-0"
-            style={{
-              background: "var(--color-primary)",
-              boxShadow: "0 8px 22px -12px var(--color-primary-shadow)",
-            }}
-          >
+          <PrimaryButton onPress={onNext}>
             Berikutnya
-            <ArrowRightIcon className="h-4 w-4" />
-          </button>
+            <ArrowRightIcon className="ml-2 h-4 w-4" />
+          </PrimaryButton>
         </div>
       </div>
     </div>
