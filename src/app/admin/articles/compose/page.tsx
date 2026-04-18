@@ -13,6 +13,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "sonner";
 import { FeaturedImagePicker } from "@/components/cms/FeaturedImagePicker";
 import { GalleryUploader } from "@/components/cms/GalleryUploader";
+import { hasAdminRoleInProfile } from "@/lib/roles";
 import type { ArticleImage } from "@/types/article-image";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -85,13 +86,44 @@ export default function ArticleComposerPage() {
 
   // ─── Auth Check ───────────────────────────────────────────────────────────
 
+  const [checkingAccess, setCheckingAccess] = useState(false);
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace(
         `/auth/login?redirect=/admin/articles/compose${editId ? `?id=${editId}` : ""}`,
       );
+      return;
     }
-  }, [isAuthenticated, router, editId]);
+
+    const checkAdminAccess = async () => {
+      setCheckingAccess(true);
+      try {
+        const res = await apiFetch("/api/profile");
+        if (!res.ok) {
+          if (res.status === 401) {
+            clearUser();
+            router.replace("/auth/login?redirect=/admin/articles/compose");
+            return;
+          }
+          router.push("/admin/articles");
+          return;
+        }
+        const profile = await res.json();
+        if (!hasAdminRoleInProfile(profile)) {
+          toast.error("Anda tidak memiliki akses ke halaman ini");
+          router.push("/admin/articles");
+          return;
+        }
+      } catch {
+        router.push("/admin/articles");
+      } finally {
+        setCheckingAccess(false);
+      }
+    };
+
+    checkAdminAccess();
+  }, [isAuthenticated, router, editId, clearUser]);
 
   // ─── Load Existing Article (Edit Mode) ─────────────────────────────────────
 
@@ -131,10 +163,10 @@ export default function ArticleComposerPage() {
   );
 
   useEffect(() => {
-    if (editId) {
+    if (editId && !checkingAccess) {
       loadArticle(editId);
     }
-  }, [editId, loadArticle]);
+  }, [editId, checkingAccess, loadArticle]);
 
   // ─── Auto-Slug from Title ──────────────────────────────────────────────────
 

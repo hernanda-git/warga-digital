@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
+import { deleteObjects } from "@/lib/r2";
 
 type RouteContext = { params: Promise<{ articleId: string }> };
 
@@ -301,6 +302,13 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
+    // Fetch article data before soft-delete (for image cleanup)
+    const { data: articleData } = await supabase
+      .from("articles")
+      .select("featured_image_url, article_images(object_key, url)")
+      .eq("id", articleId)
+      .single();
+
     // Soft-delete the article
     const { error: deleteError } = await supabase
       .from("articles")
@@ -318,14 +326,43 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Clean up images via the existing endpoint (best-effort)
-    try {
-      await fetch(`${request.url}/images`, {
-        method: "DELETE",
-        headers: { cookie: request.headers.get("cookie") || "" },
+    // Clean up images from R2 (best-effort, non-blocking)
+    const objectKeysToDelete: string[] = [];
+
+    // Add gallery images
+    if (articleData?.article_images) {
+      articleData.article_images.forEach((img: any) => {
+        if (img.object_key) {
+          objectKeysToDelete.push(img.object_key);
+        }
       });
-    } catch (cleanupError) {
-      console.error("Image cleanup failed (non-blocking):", cleanupError);
+    }
+
+    // Add featured image (extract object key from URL)
+    if (articleData?.featured_image_url) {
+      try {
+        const url = new URL(articleData.featured_image_url);
+        const pathSegments = url.pathname.split("/").filter(Boolean);
+        // Object key pattern: articles/{articleId}/{filename}
+        if (pathSegments.length >= 3) {
+          const objectKey = pathSegments.slice(-3).join("/");
+          objectKeysToDelete.push(objectKey);
+        }
+      } catch (e) {
+        console.error("Failed to parse featured image URL:", e);
+      }
+    }
+
+    // Delete from R2 if there are images
+    if (objectKeysToDelete.length > 0) {
+      try {
+        await deleteObjects(objectKeysToDelete);
+        console.log(
+          `Cleaned up ${objectKeysToDelete.length} images from R2`,
+        );
+      } catch (cleanupError) {
+        console.error("R2 cleanup failed (non-blocking):", cleanupError);
+      }
     }
 
     return NextResponse.json({ success: true });
