@@ -13,7 +13,7 @@ import {
 import { apiFetch } from "@/lib/api-client";
 import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "sonner";
-import { generateSignedUploadUrl } from "@/lib/r2";
+import { getSignedUploadUrl } from "./actions";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,12 +74,12 @@ async function uploadCoverImageToR2(
       .replace(/-+/g, "-");
     const objectKey = `articles/${articleId}/cover-${timestamp}-${sanitized}`;
 
-    // Get signed URL
+    // Get signed URL from server action
     const {
       objectKey: key,
       uploadUrl,
       publicUrl,
-    } = await generateSignedUploadUrl(
+    } = await getSignedUploadUrl(
       objectKey,
       file.type as any,
       300, // 5 minutes expiry
