@@ -166,10 +166,10 @@ export default function ArtikelDetailPage() {
       </Head>
 
       <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          {isAuthenticated ? (
+      {/* Header - Only shown for authenticated users */}
+      {isAuthenticated && (
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <button
               onClick={() => router.back()}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -177,14 +177,9 @@ export default function ArtikelDetailPage() {
               <ArrowLeftIcon className="h-5 w-5" />
               <span className="text-sm font-medium">Kembali</span>
             </button>
-          ) : (
-            <div className="flex items-center gap-2 text-gray-900">
-              <SparklesIcon className="h-6 w-6 text-blue-600" />
-              <span className="text-lg font-bold">Warga Digital</span>
-            </div>
-          )}
-        </div>
-      </header>
+          </div>
+        </header>
+      )}
 
         {/* Article Content */}
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -328,22 +323,73 @@ export default function ArtikelDetailPage() {
 
           {/* Login CTA for Anonymous Users */}
           {!isAuthenticated && (
-            <div className="mt-12 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                    Ingin membaca artikel lainnya?
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    Log in untuk melihat semua artikel dan konten eksklusif dari Warga Digital
-                  </p>
+            <div className="mt-16 mb-8">
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 sm:p-10 shadow-2xl">
+                {/* Decorative background pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-white blur-3xl"></div>
+                  <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-white blur-3xl"></div>
                 </div>
-                <Link
-                  href={`/auth/login?redirect=${encodeURIComponent(`/artikel/${slug}`)}`}
-                  className="flex-shrink-0 px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-                >
-                  Masuk Sekarang
-                </Link>
+
+                {/* Content */}
+                <div className="relative z-10">
+                  <div className="flex flex-col items-center text-center">
+                    {/* Icon */}
+                    <div className="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg">
+                      <SparklesIcon className="w-8 h-8 text-white" />
+                    </div>
+
+                    {/* Heading */}
+                    <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight">
+                      Nikmati Konten Tanpa Batas
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-blue-100 text-base sm:text-lg mb-8 max-w-xl leading-relaxed">
+                      Bergabunglah dengan Warga Digital untuk mengakses semua artikel, panduan eksklusif, dan konten premium lainnya.
+                    </p>
+
+                    {/* CTA Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                      <Link
+                        href={`/auth/login?redirect=${encodeURIComponent(`/artikel/${slug}`)}`}
+                        className="inline-flex items-center justify-center px-8 py-3.5 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl"
+                      >
+                        <span>Masuk Sekarang</span>
+                        <ArrowLeftIcon className="w-4 h-4 ml-2 rotate-180" />
+                      </Link>
+                      
+                      <Link
+                        href="/auth/register"
+                        className="inline-flex items-center justify-center px-8 py-3.5 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-white/30 hover:bg-white/20 active:scale-95 transition-all duration-200"
+                      >
+                        Daftar Gratis
+                      </Link>
+                    </div>
+
+                    {/* Trust indicators */}
+                    <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-white/70 text-sm">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span>Akses Semua Artikel</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span>Konten Eksklusif</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        <span>Gratis Selamanya</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
