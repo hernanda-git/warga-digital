@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const AVATARS_BUCKET = process.env.SUPABASE_BUCKET_AVATARS || "avatars";
+
+/**
+ * Construct full avatar URL from avatar_path
+ */
+function getAvatarUrl(avatarPath: string | null): string | null {
+  if (!avatarPath || !SUPABASE_URL) return null;
+  return `${SUPABASE_URL}/storage/v1/object/public/${AVATARS_BUCKET}/${avatarPath}`;
+}
+
 /**
  * GET /api/artikel
  *
@@ -32,7 +43,7 @@ export async function GET(request: NextRequest) {
         users!articles_author_id_fkey (
           id,
           full_name,
-          avatar_url
+          avatar_path
         )
       `,
         { count: "exact" },
@@ -62,7 +73,7 @@ export async function GET(request: NextRequest) {
       author: {
         id: article.users?.id ?? article.author_id,
         name: article.users?.full_name ?? "Anonim",
-        avatar_url: article.users?.avatar_url,
+        avatar_url: getAvatarUrl(article.users?.avatar_path),
       },
     }));
 
