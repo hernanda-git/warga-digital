@@ -201,15 +201,17 @@ export default function ArtikelDetailPage() {
             {/* Author */}
             <div className="flex items-center gap-2">
               {article.author.avatar_url ? (
-                <Image
-                  src={article.author.avatar_url}
-                  alt={article.author.name}
-                  width={32}
-                  height={32}
-                  className="rounded-full object-cover"
-                />
+                <div className="h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
+                  <Image
+                    src={article.author.avatar_url}
+                    alt={article.author.name}
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               ) : (
-                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
                   <UserIcon className="h-5 w-5 text-gray-500" />
                 </div>
               )}
