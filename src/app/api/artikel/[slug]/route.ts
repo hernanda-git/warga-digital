@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .select(
         `
         *,
-        users (
+        users!articles_author_id_fkey (
           id,
           full_name,
           avatar_url

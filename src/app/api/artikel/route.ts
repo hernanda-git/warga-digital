@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         published_at,
         created_at,
         author_id,
-        users (
+        users!articles_author_id_fkey (
           id,
           full_name,
           avatar_url
