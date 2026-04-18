@@ -33,7 +33,7 @@ The image upload flow uses **direct browser-to-R2 upload** pattern:
 
 ### 1. CSP Blocking R2 Connection
 
-**Error**: 
+**Error**:
 ```
 Connecting to 'https://warga-digital.a3741a45036312dd344b76c17dbe7bef.r2.cloudflarestorage.com/...'
 violates the following Content Security Policy directive: "connect-src 'self'"
@@ -55,7 +55,7 @@ response.headers.set(
 
 **Error**:
 ```
-Response to preflight request doesn't pass access control check: 
+Response to preflight request doesn't pass access control check:
 No 'Access-Control-Allow-Origin' header is present on the requested resource.
 ```
 
@@ -90,7 +90,7 @@ net::ERR_CERT_AUTHORITY_INVALID
 
 Update `R2_PUBLIC_BASE_URL` in environment to use native bucket domain:
 
-```
+```bash
 # .env.local / Environment Variables
 R2_PUBLIC_BASE_URL=https://warga-digital.a3741a45036312dd344b76c17dbe7bef.r2.cloudflarestorage.com
 ```
@@ -114,24 +114,29 @@ Configure proper SSL certificate for custom domain in Cloudflare:
 - ✅ CSP allows HTTPS connections
 - ✅ R2 CORS configured
 - ✅ Direct browser-to-R2 upload works
-- ⚠️ Image display fails due to SSL on custom R2 domain
+- ✅ `R2_PUBLIC_BASE_URL` correctly set to native R2 bucket URL
+- ✅ All R2 environment variables aligned with code expectations
 
 ### Image Display Fix
 
-In `src/middleware.ts`, ensure `img-src` includes both R2 domains:
+In `src/middleware.ts`, ensure `img-src` includes the R2 cloudflarestorage domain:
 
 ```typescript
-"img-src 'self' data: https://pub-e8fb49e00b3148128a9aa5967e921be2.r2.dev https://*.r2.cloudflarestorage.com https://*.supabase.co"
+"img-src 'self' data: https://*.r2.cloudflarestorage.com https://*.supabase.co"
 ```
 
-### Recommended Fix
-
-Update environment variable to use native R2 URL:
+## Required Environment Variables
 
 ```bash
-# In your deployment platform (Vercel, etc.)
+# R2 Configuration
+R2_ACCOUNT_ID=your_cloudflare_account_id
+R2_ACCESS_KEY_ID=your_r2_access_key_id
+R2_SECRET_ACCESS_KEY=your_r2_secret_access_key
+R2_BUCKET_NAME=warga-digital
 R2_PUBLIC_BASE_URL=https://warga-digital.a3741a45036312dd344b76c17dbe7bef.r2.cloudflarestorage.com
 ```
+
+**Note:** `R2_PUBLIC_BASE_URL` is the public-facing base URL for images. It is safe to expose to clients (used in `img.src` attributes). The other R2 variables are server-only secrets.
 
 ## Files Modified
 
@@ -139,17 +144,6 @@ R2_PUBLIC_BASE_URL=https://warga-digital.a3741a45036312dd344b76c17dbe7bef.r2.clo
 2. `src/app/api/cms/articles/[articleId]/images/route.ts` - Added image creation endpoint
 3. `src/app/admin/articles/page.tsx` - Added image record creation after upload
 4. `src/lib/r2.ts` - R2 upload utilities
-
-## Environment Variables Required
-
-```bash
-# R2 Configuration
-R2_ACCOUNT_ID=your_account_id
-R2_ACCESS_KEY_ID=your_access_key
-R2_SECRET_ACCESS_KEY=your_secret
-R2_BUCKET_NAME=warga-digital
-R2_PUBLIC_BASE_URL=https://warga-digital.a3741a45036312dd344b76c17dbe7bef.r2.cloudflarestorage.com
-```
 
 ## Testing Checklist
 

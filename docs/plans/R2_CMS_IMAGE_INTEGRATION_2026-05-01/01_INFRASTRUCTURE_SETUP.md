@@ -14,7 +14,7 @@ Set up Cloudflare R2 bucket and custom domain for CMS article images.
 - [ ] Note bucket endpoint URL for configuration
 
 #### 1.2 Custom Domain Setup
-- [ ] Configure custom domain: `media.wargadigital.id`
+- [ ] Configure custom domain: `oo.warga-digital.com`
 - [ ] Enable HTTPS on custom domain
 - [ ] Verify DNS propagation for media domain
 - [ ] Test public access via custom domain URL
@@ -46,7 +46,7 @@ Set up Cloudflare R2 bucket and custom domain for CMS article images.
   R2_ACCESS_KEY_ID=your_r2_access_key_id
   R2_SECRET_ACCESS_KEY=your_r2_secret_access_key
   R2_BUCKET_NAME=warga-digital
-  R2_PUBLIC_BASE_URL=https://media.wargadigital.id
+  R2_PUBLIC_BASE_URL=https://warga-digital.a3741a45036312dd344b76c17dbe7bef.r2.cloudflarestorage.com
   ```
 - [ ] Verify `R2_SECRET_ACCESS_KEY` does NOT have `NEXT_PUBLIC_` prefix
 - [ ] Add same variables to production secrets
@@ -64,7 +64,7 @@ Set up Cloudflare R2 bucket and custom domain for CMS article images.
 - Access to create API tokens
 
 ### Success Criteria
-- Bucket accessible via `https://media.wargadigital.id`
+- Bucket accessible via `https://oo.warga-digital.com`
 - CORS configured for browser uploads
 - Environment variables set in `.env.development`
 - No secrets leaked to client bundle

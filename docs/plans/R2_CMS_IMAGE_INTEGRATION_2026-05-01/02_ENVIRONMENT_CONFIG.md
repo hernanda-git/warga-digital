@@ -12,7 +12,7 @@ Add Cloudflare R2 credentials and configuration to the Next.js environment files
 
 - [ ] Cloudflare R2 bucket `warga-digital` created
 - [ ] R2 API token created with read/write permissions for `warga-digital` bucket
-- [ ] Custom domain `media.wargadigital.id` configured (or R2.dev URL available)
+- [ ] Custom domain `oo.warga-digital.com` configured (or R2.dev URL available)
 
 ## Tasks
 
@@ -26,7 +26,7 @@ R2_ACCOUNT_ID=your_cloudflare_account_id
 R2_ACCESS_KEY_ID=your_r2_access_key_id
 R2_SECRET_ACCESS_KEY=your_r2_secret_access_key
 R2_BUCKET_NAME=warga-digital
-R2_PUBLIC_BASE_URL=https://media.wargadigital.id
+R2_PUBLIC_BASE_URL=https://warga-digital.a3741a45036312dd344b76c17dbe7bef.r2.cloudflarestorage.com
 ```
 
 ### 2. Document Required Variables

@@ -173,7 +173,7 @@ This document provides a comprehensive security checklist for the R2 + Supabase 
 ### 8. Content Security Policy
 
 - [ ] **CSP header includes R2 media domain**
-  - `img-src 'self' data: https://pub-e8fb49e00b3148128a9aa5967e921be2.r2.dev;`
+  - `img-src 'self' data: https://oo.warga-digital.com;`
   - Also include R2 wildcard URL for testing
   - Configured in `src/middleware.ts`
 

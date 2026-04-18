@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
       // R2 custom domain
       {
         protocol: 'https',
-        hostname: 'media.wargadigital.id',
+        hostname: 'oo.warga-digital.com',
       },
       // R2 dev URL fallback (for development/staging)
       {
@@ -130,7 +130,7 @@ If using CSP headers, update middleware or config:
 
 ```ts
 // Add to src/middleware.ts or CSP configuration
-// img-src should include: 'self' data: https://media.wargadigital.id
+// img-src should include: 'self' data: https://oo.warga-digital.com
 ```
 
 ## Verification Checklist
@@ -176,7 +176,7 @@ const nextConfig: NextConfig = {
       // R2 custom domain
       {
         protocol: 'https',
-        hostname: 'media.wargadigital.id',
+        hostname: 'oo.warga-digital.com',
       },
       // R2 dev URL fallback (for development/staging)
       {
@@ -285,7 +285,7 @@ If using CSP headers, update middleware or config:
 
 ```ts
 // Add to src/middleware.ts or CSP configuration
-// img-src should include: 'self' data: https://media.wargadigital.id
+// img-src should include: 'self' data: https://oo.warga-digital.com
 ```
 
 ## Verification Checklist

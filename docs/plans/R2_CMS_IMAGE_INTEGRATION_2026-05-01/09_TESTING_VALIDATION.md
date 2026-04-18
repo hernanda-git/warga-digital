@@ -28,7 +28,7 @@ This sub-plan defines testing and validation checklists for the R2 + Supabase CM
 ### Staging/Production
 
 - [ ] Environment secrets configured in deployment platform (Vercel/other)
-- [ ] Custom media domain (`media.wargadigital.id`) configured and SSL active
+- [ ] Custom media domain (`oo.warga-digital.com`) configured and SSL active
 - [ ] Production CORS policy includes production domain
 - [ ] All environment variables verified in deployment dashboard
 
@@ -172,7 +172,7 @@ This sub-plan defines testing and validation checklists for the R2 + Supabase CM
 
 ### Infrastructure
 
-- [ ] Custom domain `media.wargadigital.id` active with HTTPS
+- [ ] Custom domain `oo.warga-digital.com` active with HTTPS
 - [ ] DNS points to Cloudflare R2 or Cloudflare CDN
 - [ ] SSL certificate valid and auto-renewing
 - [ ] R2 bucket region set to `Automatic` or specific region
@@ -180,7 +180,7 @@ This sub-plan defines testing and validation checklists for the R2 + Supabase CM
 ### Configuration
 
 - [ ] `next.config.ts` `remotePatterns` includes R2 domain
-- [ ] CSP headers include `media.wargadigital.id` in `img-src`
+- [ ] CSP headers include `oo.warga-digital.com` in `img-src`
 - [ ] Cache headers set to `public, max-age=31536000, immutable` for images
 - [ ] Rate limiting configured on upload URL endpoint
 

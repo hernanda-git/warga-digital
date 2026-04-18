@@ -59,7 +59,7 @@ This plan implements a hybrid storage strategy for CMS article images using Clou
 
 - **Guide:** `/CLOUDFLARE_R2_SUPABASE_ARTICLE_IMAGE_GUIDE.md`
 - **R2 Bucket:** `warga-digital`
-- **Custom Domain:** `media.wargadigital.id`
+- **Custom Domain:** `oo.warga-digital.com`
 - **Object Key Pattern:** `articles/{articleId}/{yyyy}/{mm}/{uuid}-{filename}`
 
 ---

@@ -43,7 +43,7 @@ const checks: SecurityCheck[] = [
         }
 
         return { passed: true, message: "No R2 secrets exposed to client" };
-      } catch (error) {
+      } catch {
         return {
           passed: false,
           message: "Failed to check for exposed secrets",
@@ -74,7 +74,7 @@ const checks: SecurityCheck[] = [
         }
 
         return { passed: true, message: "No secret logging found" };
-      } catch (error) {
+      } catch {
         return { passed: false, message: "Failed to check for secret logging" };
       }
     },
@@ -250,10 +250,7 @@ const checks: SecurityCheck[] = [
         return { passed: false, message: "CSP missing img-src directive" };
       }
 
-      if (
-        !content.includes("pub-e8fb49e00b3148128a9aa5967e921be2.r2.dev") &&
-        !content.includes("r2.cloudflarestorage.com")
-      ) {
+      if (!content.includes("r2.cloudflarestorage.com")) {
         return { passed: false, message: "CSP does not include R2 domain" };
       }
 
@@ -278,10 +275,7 @@ const checks: SecurityCheck[] = [
         return { passed: false, message: "remotePatterns not configured" };
       }
 
-      if (
-        !content.includes("pub-e8fb49e00b3148128a9aa5967e921be2.r2.dev") &&
-        !content.includes("r2.cloudflarestorage.com")
-      ) {
+      if (!content.includes("r2.cloudflarestorage.com")) {
         return {
           passed: false,
           message: "remotePatterns does not include R2 domain",
@@ -401,14 +395,17 @@ const checks: SecurityCheck[] = [
         return { passed: false, message: "Error handling not implemented" };
       }
 
-      if (
-        content.includes("console.error") &&
-        !content.includes("console.error('Error")
-      ) {
-        // Check if stack traces might be exposed
+      // Check that error responses to clients are generic (no stack traces)
+      // Proper pattern: catch block logs server-side, returns generic message to client
+      const hasServerSideErrorLogging = content.includes("console.error");
+      const hasGenericClientResponse =
+        content.includes('{ error: "Internal server error" }') ||
+        content.includes('"Internal server error"');
+
+      if (hasServerSideErrorLogging && !hasGenericClientResponse) {
         return {
           passed: false,
-          message: "Potential stack trace exposure in error handling",
+          message: "Error handling may expose details to clients",
         };
       }
 

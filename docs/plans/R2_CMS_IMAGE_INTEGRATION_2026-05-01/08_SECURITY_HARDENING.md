@@ -67,7 +67,7 @@ This sub-plan covers security hardening measures for the R2 + Supabase CMS image
 ### 13.8 Content Security Policy (Optional)
 
 - [ ] CSP header includes R2 media domain in `img-src`
-- [ ] Example: `img-src 'self' data: https://media.wargadigital.id;`
+- [ ] Example: `img-src 'self' data: https://oo.warga-digital.com;`
 - [ ] CSP configured in `next.config.ts` or hosting platform headers
 
 ### 13.9 Production Hardening

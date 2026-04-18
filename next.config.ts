@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "media.wargadigital.id",
+        hostname: "oo.warga-digital.com",
       },
       {
         protocol: "https",
