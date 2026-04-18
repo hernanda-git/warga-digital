@@ -9,7 +9,6 @@ import {
   ClockIcon,
   ArrowLeftIcon,
   ShareIcon,
-  ArrowDownIcon,
 } from "@heroicons/react/24/outline";
 import { PageLoader } from "@/components/ui";
 import { toast } from "sonner";
@@ -119,29 +118,6 @@ export default function ArtikelDetailPage() {
 
   const closeLightbox = () => {
     setLightboxOpen(false);
-  };
-
-  const handleDownloadImage = async (url: string, altText: string | null, index: number) => {
-    try {
-      toast.loading("Mengunduh gambar...", { duration: 500 });
-      
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `foto-${index + 1}-${altText || "article"}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-
-      toast.success("Gambar berhasil diunduh");
-    } catch {
-      window.open(url, "_blank");
-      toast.info("Membuka gambar di tab baru");
-    }
   };
 
   const formatDate = (dateString: string) => {
@@ -303,20 +279,6 @@ export default function ArtikelDetailPage() {
                       loading={index < 3 ? "eager" : "lazy"}
                     />
                     
-                    {/* Hover overlay with download button */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDownloadImage(image.url, image.alt_text, index);
-                        }}
-                        className="p-3 bg-white/90 hover:bg-white rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
-                        title="Unduh gambar"
-                      >
-                        <ArrowDownIcon className="h-6 w-6 text-gray-900" />
-                      </button>
-                    </div>
-
                     {/* Image counter badge */}
                     <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 text-white text-xs rounded-md">
                       {index + 1}
