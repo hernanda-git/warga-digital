@@ -115,6 +115,8 @@ export function ImageLightbox({
 
   const handleShare = async () => {
     const image = images[currentIndex];
+    
+    // Try native share first (mobile)
     if (navigator.share) {
       try {
         const response = await fetch(image.url);
@@ -126,12 +128,21 @@ export function ImageLightbox({
           files: [file],
         });
         toast.success("Berhasil berbagi");
-      } catch {
-        // User cancelled or share failed
+        return;
+      } catch (error) {
+        // User cancelled or share failed, fall through to clipboard
+        console.log("Share cancelled or failed:", error);
       }
-    } else {
+    }
+    
+    // Fallback: copy link to clipboard
+    try {
       await navigator.clipboard.writeText(image.url);
       toast.success("Link gambar disalin");
+    } catch (error) {
+      // Final fallback: open in new tab
+      window.open(image.url, "_blank");
+      toast.info("Membuka gambar di tab baru");
     }
   };
 
@@ -245,30 +256,51 @@ export function ImageLightbox({
 
           {/* Action buttons */}
           <div className="flex items-center gap-2">
-            {/* Zoom out */}
-            {zoom > 1 && (
-              <button
-                onClick={() => {
-                  setZoom(1);
-                  setImagePosition({ x: 0, y: 0 });
-                }}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-                title="Reset zoom (0)"
-              >
-                <MagnifyingGlassMinusIcon className="h-5 w-5 text-white" />
-              </button>
-            )}
+            {/* Zoom controls */}
+            <div className="flex items-center gap-1 bg-white/10 rounded-full px-1">
+              {/* Reset zoom (when at 100%) */}
+              {zoom === 1 ? (
+                <button
+                  onClick={() => {
+                    setZoom(1);
+                    setImagePosition({ x: 0, y: 0 });
+                  }}
+                  className="p-2 text-white/60 hover:text-white transition-colors"
+                  title="Reset zoom"
+                >
+                  <span className="text-xs font-medium">100%</span>
+                </button>
+              ) : (
+                /* Zoom out */
+                <button
+                  onClick={() => {
+                    setZoom((z) => Math.max(z - 0.25, 1));
+                    if (zoom <= 1.25) {
+                      setImagePosition({ x: 0, y: 0 });
+                    }
+                  }}
+                  className="p-2 hover:bg-white/20 text-white rounded-full transition-colors"
+                  title="Zoom out (-)"
+                >
+                  <MagnifyingGlassMinusIcon className="h-5 w-5" />
+                </button>
+              )}
 
-            {/* Zoom in */}
-            {zoom < 3 && (
+              {/* Zoom level indicator */}
+              <span className="text-white text-xs font-medium px-2 min-w-[3rem] text-center">
+                {Math.round(zoom * 100)}%
+              </span>
+
+              {/* Zoom in */}
               <button
                 onClick={() => setZoom((z) => Math.min(z + 0.25, 3))}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+                className={`p-2 rounded-full transition-colors ${zoom < 3 ? 'hover:bg-white/20 text-white' : 'text-white/30 cursor-not-allowed'}`}
                 title="Zoom in (+)"
+                disabled={zoom >= 3}
               >
-                <MagnifyingGlassPlusIcon className="h-5 w-5 text-white" />
+                <MagnifyingGlassPlusIcon className="h-5 w-5" />
               </button>
-            )}
+            </div>
 
             {/* Download */}
             <button
