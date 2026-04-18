@@ -91,8 +91,6 @@ export function ImageLightbox({
   const handleDownload = async () => {
     const image = images[currentIndex];
     try {
-      toast.loading("Mengunduh gambar...", { duration: 500 });
-      
       const response = await fetch(image.url);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
