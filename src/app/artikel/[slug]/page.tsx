@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import {
   CalendarDaysIcon,
@@ -9,11 +10,13 @@ import {
   ClockIcon,
   ArrowLeftIcon,
   ShareIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { PageLoader } from "@/components/ui";
 import { toast } from "sonner";
 import Head from "next/head";
 import { ImageLightbox } from "@/components/articles/ImageLightbox";
+import { useAuthStore } from "@/stores/auth-store";
 
 interface Article {
   id: string;
@@ -47,6 +50,7 @@ export default function ArtikelDetailPage() {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
@@ -162,9 +166,10 @@ export default function ArtikelDetailPage() {
       </Head>
 
       <div className="min-h-screen bg-white">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          {isAuthenticated ? (
             <button
               onClick={() => router.back()}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -172,8 +177,14 @@ export default function ArtikelDetailPage() {
               <ArrowLeftIcon className="h-5 w-5" />
               <span className="text-sm font-medium">Kembali</span>
             </button>
-          </div>
-        </header>
+          ) : (
+            <div className="flex items-center gap-2 text-gray-900">
+              <SparklesIcon className="h-6 w-6 text-blue-600" />
+              <span className="text-lg font-bold">Warga Digital</span>
+            </div>
+          )}
+        </div>
+      </header>
 
         {/* Article Content */}
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -312,6 +323,28 @@ export default function ArtikelDetailPage() {
           {article.updated_at !== article.published_at && (
             <div className="mt-12 pt-8 border-t border-gray-200 text-sm text-gray-500">
               Terakhir diperbarui: {formatDate(article.updated_at)}
+            </div>
+          )}
+
+          {/* Login CTA for Anonymous Users */}
+          {!isAuthenticated && (
+            <div className="mt-12 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    Ingin membaca artikel lainnya?
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    Log in untuk melihat semua artikel dan konten eksklusif dari Warga Digital
+                  </p>
+                </div>
+                <Link
+                  href={`/auth/login?redirect=${encodeURIComponent(`/artikel/${slug}`)}`}
+                  className="flex-shrink-0 px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                >
+                  Masuk Sekarang
+                </Link>
+              </div>
             </div>
           )}
         </main>
