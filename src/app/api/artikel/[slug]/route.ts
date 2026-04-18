@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .select(
         `
         *,
-        users!inner (
+        users (
           id,
           full_name,
           avatar_url
@@ -61,9 +61,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
       created_at: article.created_at,
       updated_at: article.updated_at,
       author: {
-        id: article.users.id,
-        name: article.users.full_name,
-        avatar_url: article.users.avatar_url,
+        id: article.users?.id ?? article.author_id,
+        name: article.users?.full_name ?? "Anonim",
+        avatar_url: article.users?.avatar_url,
       },
       images: article.article_images?.sort(
         (a: ArticleImage, b: ArticleImage) => (a.sort_order || 0) - (b.sort_order || 0),

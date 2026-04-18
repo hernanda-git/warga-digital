@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         published_at,
         created_at,
         author_id,
-        users!inner (
+        users (
           id,
           full_name,
           avatar_url
@@ -43,9 +43,9 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error("Error fetching published articles:", error);
+      console.error("Error fetching published articles:", JSON.stringify(error, null, 2));
       return NextResponse.json(
-        { error: "Failed to fetch articles" },
+        { error: "Failed to fetch articles", details: error.message },
         { status: 500 },
       );
     }
@@ -60,8 +60,8 @@ export async function GET(request: NextRequest) {
       published_at: article.published_at,
       created_at: article.created_at,
       author: {
-        id: article.users?.id,
-        name: article.users?.full_name,
+        id: article.users?.id ?? article.author_id,
+        name: article.users?.full_name ?? "Anonim",
         avatar_url: article.users?.avatar_url,
       },
     }));
