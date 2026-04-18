@@ -206,10 +206,10 @@ export default function ArtikelDetailPage() {
                   alt={article.author.name}
                   width={32}
                   height={32}
-                  className="rounded-full"
+                  className="rounded-full object-cover"
                 />
               ) : (
-                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                   <UserIcon className="h-5 w-5 text-gray-500" />
                 </div>
               )}
