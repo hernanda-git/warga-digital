@@ -1058,8 +1058,6 @@ export default function AdminArticlesPage() {
   const LIMIT = 12;
 
   // Modals
-  const [showForm, setShowForm] = useState(false);
-  const [editArticle, setEditArticle] = useState<Article | null>(null);
   const [deleteArticle, setDeleteArticle] = useState<Article | null>(null);
 
   // ── Mount ──────────────────────────────────────────────────────────────────
@@ -1151,7 +1149,7 @@ export default function AdminArticlesPage() {
     if (!checkingAccess && isAuthenticated) {
       void loadArticles();
     }
-  }, [checkingAccess, isAuthenticated]);
+  }, [checkingAccess, isAuthenticated, loadArticles]);
 
   const handleSearch = (q: string) => {
     setQuery(q);
@@ -1171,34 +1169,20 @@ export default function AdminArticlesPage() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleEdit = (article: Article) => {
-    setEditArticle(article);
-    setShowForm(true);
+    router.push(`/admin/articles/compose?id=${article.id}`);
   };
 
   const handleNew = () => {
-    setEditArticle(null);
-    setShowForm(true);
+    router.push("/admin/articles/compose");
   };
 
-  const handleFormClose = () => {
-    setShowForm(false);
-    setEditArticle(null);
-  };
-
-  const handleSaved = (article: Article) => {
-    if (editArticle) {
-      setArticles((prev) =>
-        prev.map((a) => (a.id === article.id ? article : a)),
-      );
-    } else {
-      setArticles((prev) => [article, ...prev]);
-      setTotalCount((c) => c + 1);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadArticles();
+    } finally {
+      setRefreshing(false);
     }
-  };
-
-  const handleDeleted = (id: string) => {
-    setArticles((prev) => prev.filter((a) => a.id !== id));
-    setTotalCount((c) => Math.max(0, c - 1));
   };
 
   const handlePageChange = (newPage: number) => {
@@ -1259,11 +1243,21 @@ export default function AdminArticlesPage() {
               </p>
             </div>
             <button
-              onClick={() => void handleNew()}
+              onClick={handleNew}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white text-blue-700 hover:bg-blue-50 rounded-lg transition-colors shadow-sm"
             >
               <PlusIcon className="h-4 w-4" />
-              Artikel Baru
+              Buat Artikel
+            </button>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 rounded-lg transition-colors shadow-sm"
+              title="Segarkan daftar"
+            >
+              <ArrowPathIcon
+                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              />
             </button>
           </div>
 
@@ -1389,19 +1383,14 @@ export default function AdminArticlesPage() {
       </main>
 
       {/* ── Modals ─────────────────────────────────────────────────────────── */}
-      {showForm && (
-        <ArticleFormModal
-          article={editArticle}
-          onClose={handleFormClose}
-          onSaved={handleSaved}
-        />
-      )}
-
       {deleteArticle && (
         <DeleteModal
           article={deleteArticle}
           onClose={() => setDeleteArticle(null)}
-          onDeleted={handleDeleted}
+          onDeleted={(id) => {
+            setArticles((prev) => prev.filter((a) => a.id !== id));
+            setTotalCount((c) => Math.max(0, c - 1));
+          }}
         />
       )}
     </>
