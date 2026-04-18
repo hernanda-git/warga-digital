@@ -25,13 +25,14 @@ const PUBLIC_PAGE_PATHS = new Set([
 /**
  * URL prefixes that are always allowed through without any auth check.
  *
- * • /api/auth/  — login, register, OTP, set-pin flows need to be reachable
- *                 before a session exists.
- * • /artikel/   — public article pages for SEO and content discovery
- * • /_next/     — Next.js build artefacts (handled by matcher, but kept as
- *                 a safety net).
+ * • /api/auth/   — login, register, OTP, set-pin flows need to be reachable
+ *                  before a session exists.
+ * • /api/artikel — public article API endpoints
+ * • /artikel/    — public article pages for SEO and content discovery
+ * • /_next/      — Next.js build artefacts (handled by matcher, but kept as
+ *                  a safety net).
  */
-const ALWAYS_ALLOW_PREFIXES = ["/api/auth/", "/artikel/"] as const;
+const ALWAYS_ALLOW_PREFIXES = ["/api/auth/", "/api/artikel", "/artikel/"] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
