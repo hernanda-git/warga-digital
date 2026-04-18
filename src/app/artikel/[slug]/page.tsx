@@ -9,8 +9,11 @@ import {
   UserIcon,
   ClockIcon,
   ArrowLeftIcon,
+  ArrowRightIcon,
   ShareIcon,
   SparklesIcon,
+  ShieldCheckIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import { PageLoader } from "@/components/ui";
 import { toast } from "sonner";
@@ -324,28 +327,50 @@ export default function ArtikelDetailPage() {
           {/* Login CTA for Anonymous Users */}
           {!isAuthenticated && (
             <div className="mt-16 mb-8">
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 sm:p-10 shadow-2xl">
-                {/* Decorative background pattern */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-white blur-3xl"></div>
-                  <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-white blur-3xl"></div>
-                </div>
+              <div
+                className="relative overflow-hidden rounded-[22px] p-8 sm:p-10 shadow-xl"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",
+                }}
+              >
+                {/* Decorative blobs */}
+                <div
+                  className="pointer-events-none absolute -right-14 -top-14 h-52 w-52 rounded-full bg-white/10"
+                  aria-hidden
+                />
+                <div
+                  className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-white/[0.07]"
+                  aria-hidden
+                />
+                <div
+                  className="pointer-events-none absolute bottom-16 right-10 h-20 w-20 rounded-full bg-white/[0.06]"
+                  aria-hidden
+                />
 
                 {/* Content */}
                 <div className="relative z-10">
                   <div className="flex flex-col items-center text-center">
                     {/* Icon */}
-                    <div className="mb-6 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shadow-lg">
-                      <SparklesIcon className="w-8 h-8 text-white" />
+                    <div className="mb-6 flex h-[72px] w-[72px] items-center justify-center rounded-[22px] bg-white/25 shadow-xl backdrop-blur-sm">
+                      <SparklesIcon className="h-9 w-9 text-white" />
+                    </div>
+
+                    {/* Badge */}
+                    <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 backdrop-blur-sm">
+                      <ShieldCheckIcon className="h-3 w-3 text-white/80" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">
+                        Akses Penuh
+                      </span>
                     </div>
 
                     {/* Heading */}
-                    <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3 tracking-tight">
+                    <h3 className="text-[24px] font-extrabold leading-tight text-white mb-3">
                       Nikmati Konten Tanpa Batas
                     </h3>
 
                     {/* Description */}
-                    <p className="text-blue-100 text-base sm:text-lg mb-8 max-w-xl leading-relaxed">
+                    <p className="text-white/70 text-sm sm:text-base mb-8 max-w-md leading-relaxed">
                       Bergabunglah dengan Warga Digital untuk mengakses semua artikel, panduan eksklusif, dan konten premium lainnya.
                     </p>
 
@@ -353,38 +378,33 @@ export default function ArtikelDetailPage() {
                     <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                       <Link
                         href={`/auth/login?redirect=${encodeURIComponent(`/artikel/${slug}`)}`}
-                        className="inline-flex items-center justify-center px-8 py-3.5 bg-white text-blue-700 font-semibold rounded-xl hover:bg-blue-50 active:scale-95 transition-all duration-200 shadow-lg hover:shadow-xl"
+                        className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-primary font-semibold rounded-xl hover:bg-white/90 active:scale-95 transition-all duration-200 shadow-lg"
+                        style={{ color: "var(--color-primary)" }}
                       >
                         <span>Masuk Sekarang</span>
-                        <ArrowLeftIcon className="w-4 h-4 ml-2 rotate-180" />
+                        <ArrowRightIcon className="w-5 h-5" />
                       </Link>
                       
                       <Link
                         href="/auth/register"
-                        className="inline-flex items-center justify-center px-8 py-3.5 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-white/30 hover:bg-white/20 active:scale-95 transition-all duration-200"
+                        className="inline-flex items-center justify-center px-6 py-3 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-white/30 hover:bg-white/20 active:scale-95 transition-all duration-200"
                       >
                         Daftar Gratis
                       </Link>
                     </div>
 
                     {/* Trust indicators */}
-                    <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-white/70 text-sm">
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
+                    <div className="mt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-white/70 text-xs sm:text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircleIcon className="w-4 h-4 text-white/80" />
                         <span>Akses Semua Artikel</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircleIcon className="w-4 h-4 text-white/80" />
                         <span>Konten Eksklusif</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircleIcon className="w-4 h-4 text-white/80" />
                         <span>Gratis Selamanya</span>
                       </div>
                     </div>
