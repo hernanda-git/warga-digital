@@ -9,10 +9,12 @@ import {
   ClockIcon,
   ArrowLeftIcon,
   ShareIcon,
+  ArrowDownIcon,
 } from "@heroicons/react/24/outline";
 import { PageLoader } from "@/components/ui";
 import { toast } from "sonner";
 import Head from "next/head";
+import { ImageLightbox } from "@/components/articles/ImageLightbox";
 
 interface Article {
   id: string;
@@ -50,6 +52,8 @@ export default function ArtikelDetailPage() {
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [readingTime, setReadingTime] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -105,6 +109,38 @@ export default function ArtikelDetailPage() {
     } else {
       await navigator.clipboard.writeText(url);
       toast.success("Link disalin ke clipboard");
+    }
+  };
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+  };
+
+  const handleDownloadImage = async (url: string, altText: string | null, index: number) => {
+    try {
+      toast.loading("Mengunduh gambar...", { duration: 500 });
+      
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `foto-${index + 1}-${altText || "article"}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
+      toast.success("Gambar berhasil diunduh");
+    } catch {
+      window.open(url, "_blank");
+      toast.info("Membuka gambar di tab baru");
     }
   };
 
@@ -251,22 +287,44 @@ export default function ArtikelDetailPage() {
               <h2 className="text-xl font-bold text-gray-900 mb-6">
                 Galeri Foto
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 {article.images.map((image, index) => (
                   <div
                     key={image.id}
-                    className="relative aspect-video rounded-lg overflow-hidden bg-gray-100"
+                    onClick={() => openLightbox(index)}
+                    className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer"
                   >
                     <Image
                       src={image.url}
                       alt={image.alt_text || article.title}
                       fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-110"
+                      sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 20vw"
                       loading={index < 3 ? "eager" : "lazy"}
                     />
+                    
+                    {/* Hover overlay with download button */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownloadImage(image.url, image.alt_text, index);
+                        }}
+                        className="p-3 bg-white/90 hover:bg-white rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
+                        title="Unduh gambar"
+                      >
+                        <ArrowDownIcon className="h-6 w-6 text-gray-900" />
+                      </button>
+                    </div>
+
+                    {/* Image counter badge */}
+                    <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 text-white text-xs rounded-md">
+                      {index + 1}
+                    </div>
+
+                    {/* Alt text on hover */}
                     {image.alt_text && (
-                      <p className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-3 py-2">
+                      <p className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs px-3 py-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                         {image.alt_text}
                       </p>
                     )}
@@ -274,6 +332,16 @@ export default function ArtikelDetailPage() {
                 ))}
               </div>
             </div>
+          )}
+
+          {/* Image Lightbox */}
+          {article.images && (
+            <ImageLightbox
+              images={article.images}
+              initialIndex={lightboxIndex}
+              isOpen={lightboxOpen}
+              onClose={closeLightbox}
+            />
           )}
 
           {/* Last Updated */}

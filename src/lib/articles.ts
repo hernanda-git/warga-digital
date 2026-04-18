@@ -54,3 +54,30 @@ export function generateExcerpt(
   const plainText = content.replace(/<[^>]*>/g, "");
   return truncateText(plainText, maxLength);
 }
+
+/**
+ * Download an image from URL
+ * @param url - Image URL
+ * @param filename - Download filename
+ */
+export async function downloadImage(
+  url: string,
+  filename: string,
+): Promise<void> {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    // Fallback: open in new tab
+    window.open(url, "_blank");
+  }
+}
