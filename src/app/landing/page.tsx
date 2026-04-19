@@ -15,7 +15,7 @@ import { JasaCard } from "@/components/jasa/JasaCard";
 import {
   useProfileData,
   useMarketplaceData,
-  useAnnouncementsData,
+  useArticlesData,
   useJasaServicesData,
 } from "@/hooks/landing";
 import {
@@ -70,10 +70,11 @@ export default function LandingPage() {
   } = useJasaServicesData();
 
   const {
-    items: announcements,
-    isLoaded: isAnnouncementsLoaded,
-    hasContent: hasAnnouncementContent,
-  } = useAnnouncementsData();
+    items: articles,
+    isLoaded: isArticlesLoaded,
+    hasContent: hasArticlesContent,
+    error: articlesError,
+  } = useArticlesData();
 
   // ── Notification Count ─────────────────────────────────────────────────────
   const [notificationCount, setNotificationCount] = useState(0);
@@ -132,20 +133,28 @@ export default function LandingPage() {
         {/* Feature Grid */}
         <FeatureGrid />
 
-        {/* Announcements Section */}
-        {isAnnouncementsLoaded && (
-          <LandingSection title="Info Warga">
-            {hasAnnouncementContent ? (
+        {/* Articles Section */}
+        {isArticlesLoaded && (
+          <LandingSection
+            title="Info Warga"
+            viewAllText="Lihat semua"
+            viewAllHref="/artikel"
+          >
+            {hasArticlesContent ? (
               <ResidentPostsSection
                 title=""
-                items={announcements}
-                detailHref={(id) => `#${id}`}
+                items={articles}
+                detailHref={(slug) => `/artikel/${slug}`}
               />
             ) : (
               <EmptyState
-                title={EMPTY_STATE_CONFIGS.ANNOUNCEMENTS.title}
-                description={EMPTY_STATE_CONFIGS.ANNOUNCEMENTS.description}
-                variant={EMPTY_STATE_CONFIGS.ANNOUNCEMENTS.variant}
+                title={articlesError ? "Gagal memuat artikel" : "Belum ada artikel"}
+                description={
+                  articlesError
+                    ? "Periksa koneksi internet Anda dan coba lagi"
+                    : "Artikel akan muncul setelah admin memposting konten baru"
+                }
+                variant="info"
               />
             )}
           </LandingSection>

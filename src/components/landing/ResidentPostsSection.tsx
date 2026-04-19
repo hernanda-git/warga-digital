@@ -83,10 +83,7 @@ export function ResidentPostsSection({
   detailHref = (id) => `#post-${id}`,
 }: ResidentPostsSectionProps) {
   return (
-    <section
-      className="px-4 py-4"
-      aria-labelledby="resident-posts-title"
-    >
+    <section aria-labelledby="resident-posts-title">
       <h2
         id="resident-posts-title"
         className="mb-3 text-lg font-bold text-app-title"
@@ -95,11 +92,7 @@ export function ResidentPostsSection({
       </h2>
       <div className="flex flex-col gap-3">
         {items.map((item) => (
-          <PostCard
-            key={item.id}
-            item={item}
-            href={detailHref(item.id)}
-          />
+          <PostCard key={item.id} item={item} href={detailHref(item.id)} />
         ))}
       </div>
     </section>

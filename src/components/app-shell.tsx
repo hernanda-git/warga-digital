@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/nav/BottomNav";
 
 const BOTTOM_NAV_ROUTES = [
   "/landing",
+  "/artikel",
   "/organisasi",
   "/dompet",
   "/kas-rt",

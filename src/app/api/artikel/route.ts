@@ -43,7 +43,14 @@ export async function GET(request: NextRequest) {
         users!articles_author_id_fkey (
           id,
           full_name,
-          avatar_path
+          avatar_path,
+          user_houses!user_houses_user_id_fkey (
+            house_id,
+            is_primary,
+            houses!user_houses_house_id_fkey (
+              blok_rumah
+            )
+          )
         )
       `,
         { count: "exact" },
@@ -62,20 +69,28 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform data
-    const transformedArticles = articles?.map((article: any) => ({
-      id: article.id,
-      title: article.title,
-      slug: article.slug,
-      excerpt: article.excerpt,
-      featured_image_url: article.featured_image_url,
-      published_at: article.published_at,
-      created_at: article.created_at,
-      author: {
-        id: article.users?.id ?? article.author_id,
-        name: article.users?.full_name ?? "Anonim",
-        avatar_url: getAvatarUrl(article.users?.avatar_path),
-      },
-    }));
+    const transformedArticles = articles?.map((article: any) => {
+      // Get primary house's blok_rumah from user_houses
+      const userHouses = article.users?.user_houses || [];
+      const primaryHouse = userHouses.find((uh: any) => uh.is_primary) || userHouses[0];
+      const blokRumah = primaryHouse?.houses?.blok_rumah || null;
+
+      return {
+        id: article.id,
+        title: article.title,
+        slug: article.slug,
+        excerpt: article.excerpt,
+        featured_image_url: article.featured_image_url,
+        published_at: article.published_at,
+        created_at: article.created_at,
+        author: {
+          id: article.users?.id ?? article.author_id,
+          name: article.users?.full_name ?? "Anonim",
+          avatar_url: getAvatarUrl(article.users?.avatar_path),
+          blok_rumah: blokRumah,
+        },
+      };
+    });
 
     return NextResponse.json({
       articles: transformedArticles || [],

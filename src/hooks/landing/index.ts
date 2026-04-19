@@ -12,9 +12,11 @@ export { useProfileData } from "./useProfileData";
 export { useMarketplaceData } from "./useMarketplaceData";
 export { useAnnouncementsData } from "./useAnnouncementsData";
 export { useJasaServicesData } from "./useJasaServicesData";
+export { useArticlesData } from "./useArticlesData";
 
 // Re-export types for convenience
 export type { UseProfileDataReturn } from "./useProfileData";
 export type { UseMarketplaceDataReturn } from "./useMarketplaceData";
 export type { UseAnnouncementsDataReturn } from "./useAnnouncementsData";
 export type { UseJasaServicesDataReturn } from "./useJasaServicesData";
+export type { UseArticlesDataReturn } from "./useArticlesData";
