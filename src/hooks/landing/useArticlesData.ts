@@ -34,6 +34,7 @@ interface Article {
     id: string;
     name: string;
     avatar_url: string | null;
+    blok_rumah: string | null;
   };
 }
 
@@ -76,6 +77,9 @@ function transformArticleToPost(article: Article): ResidentPostItem {
     excerpt: article.excerpt ?? undefined,
     imageUrl: article.featured_image_url ?? null,
     author: article.author?.name ?? "Anonim",
+    authorAvatar: article.author?.avatar_url ?? null,
+    authorBlock: article.author?.blok_rumah ?? null,
+    createdAt: article.created_at,
   };
 }
 

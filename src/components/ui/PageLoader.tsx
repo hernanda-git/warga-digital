@@ -4,7 +4,7 @@ interface PageLoaderProps {
 
 export function PageLoader({ message = "Memuat..." }: PageLoaderProps) {
   return (
-    <main className="flex h-full min-h-0 flex-col items-center justify-center bg-app-surface-alt">
+    <main className="flex min-h-screen w-full flex-col items-center justify-center bg-app-surface-alt">
       <div className="flex flex-col items-center gap-6" aria-busy="true" aria-live="polite">
         <div className="relative h-16 w-16">
           <div

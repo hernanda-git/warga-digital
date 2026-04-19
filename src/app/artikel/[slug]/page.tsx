@@ -137,7 +137,7 @@ export default function ArtikelDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="flex min-h-screen items-center justify-center bg-white">
         <PageLoader />
       </div>
     );
@@ -328,87 +328,26 @@ export default function ArtikelDetailPage() {
           {!isAuthenticated && (
             <div className="mt-16 mb-8">
               <div
-                className="relative overflow-hidden rounded-[22px] p-8 sm:p-10 shadow-xl"
+                className="relative overflow-hidden rounded-2xl p-6 shadow-lg"
                 style={{
                   background:
                     "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",
                 }}
               >
-                {/* Decorative blobs */}
-                <div
-                  className="pointer-events-none absolute -right-14 -top-14 h-52 w-52 rounded-full bg-white/10"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-white/[0.07]"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute bottom-16 right-10 h-20 w-20 rounded-full bg-white/[0.06]"
-                  aria-hidden
-                />
-
-                {/* Content */}
-                <div className="relative z-10">
-                  <div className="flex flex-col items-center text-center">
-                    {/* Icon */}
-                    <div className="mb-6 flex h-[72px] w-[72px] items-center justify-center rounded-[22px] bg-white/25 shadow-xl backdrop-blur-sm">
-                      <SparklesIcon className="h-9 w-9 text-white" />
-                    </div>
-
-                    {/* Badge */}
-                    <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 backdrop-blur-sm">
-                      <ShieldCheckIcon className="h-3 w-3 text-white/80" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">
-                        Akses Penuh
-                      </span>
-                    </div>
-
-                    {/* Heading */}
-                    <h3 className="text-[24px] font-extrabold leading-tight text-white mb-3">
-                      Nikmati Konten Tanpa Batas
-                    </h3>
-
-                    {/* Description */}
-                    <p className="text-white/70 text-sm sm:text-base mb-8 max-w-md leading-relaxed">
-                      Bergabunglah dengan Warga Digital untuk mengakses semua artikel, panduan eksklusif, dan konten premium lainnya.
+                <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-center sm:text-left">
+                    <p className="text-sm font-semibold text-white/90">
+                      Login untuk melihat semua fitur
                     </p>
-
-                    {/* CTA Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                      <Link
-                        href={`/auth/login?redirect=${encodeURIComponent(`/artikel/${slug}`)}`}
-                        className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-primary font-semibold rounded-xl hover:bg-white/90 active:scale-95 transition-all duration-200 shadow-lg"
-                        style={{ color: "var(--color-primary)" }}
-                      >
-                        <span>Masuk Sekarang</span>
-                        <ArrowRightIcon className="w-5 h-5" />
-                      </Link>
-                      
-                      <Link
-                        href="/auth/register"
-                        className="inline-flex items-center justify-center px-6 py-3 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-xl border-2 border-white/30 hover:bg-white/20 active:scale-95 transition-all duration-200"
-                      >
-                        Daftar Gratis
-                      </Link>
-                    </div>
-
-                    {/* Trust indicators */}
-                    <div className="mt-8 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-white/70 text-xs sm:text-sm">
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircleIcon className="w-4 h-4 text-white/80" />
-                        <span>Akses Semua Artikel</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircleIcon className="w-4 h-4 text-white/80" />
-                        <span>Konten Eksklusif</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircleIcon className="w-4 h-4 text-white/80" />
-                        <span>Gratis Selamanya</span>
-                      </div>
-                    </div>
                   </div>
+                  <Link
+                    href={`/auth/login?redirect=${encodeURIComponent(`/artikel/${slug}`)}`}
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-primary font-semibold rounded-xl hover:bg-white/90 active:scale-95 transition-all duration-200 shadow-lg shrink-0"
+                    style={{ color: "var(--color-primary)" }}
+                  >
+                    <span>Login</span>
+                    <ArrowRightIcon className="w-4 h-4" />
+                  </Link>
                 </div>
               </div>
             </div>

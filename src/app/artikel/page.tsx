@@ -106,7 +106,7 @@ export default function ArtikelPage() {
 
   if (loading && articles.length === 0) {
     return (
-      <div className="min-h-screen bg-app-surface-alt">
+      <div className="flex min-h-screen items-center justify-center bg-app-surface-alt">
         <PageLoader />
       </div>
     );

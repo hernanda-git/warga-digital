@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { BottomNav } from "@/components/nav/BottomNav";
+import { useAuthStore } from "@/stores/auth-store";
 
 const BOTTOM_NAV_ROUTES = [
   "/landing",
@@ -20,7 +21,8 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
-  const showBottomNav = BOTTOM_NAV_ROUTES.some(
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const showBottomNav = isAuthenticated && BOTTOM_NAV_ROUTES.some(
     (route) => pathname === route || pathname?.startsWith(route + "/"),
   );
 
