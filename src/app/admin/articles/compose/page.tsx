@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeftIcon,
@@ -57,7 +57,7 @@ function generateSlug(text: string): string {
 
 // ─── Article Composer Page ──────────────────────────────────────────────────
 
-export default function ArticleComposerPage() {
+function ArticleComposerContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("id");
@@ -567,5 +567,24 @@ export default function ArticleComposerPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="text-center">
+        <ArrowPathIcon className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-spin" />
+        <p className="text-gray-500">Memuat...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function ArticleComposerPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ArticleComposerContent />
+    </Suspense>
   );
 }
