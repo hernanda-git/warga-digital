@@ -517,7 +517,7 @@ export async function GET(request: Request) {
     let query = supabase
       .from("kas_rt_transactions")
       .select(
-        "id, title, amount, type, date, created_at, created_by, reference, details, category, created_by_user:users!kas_rt_transactions_created_by_fkey(full_name), kas_rt_attachments(file_name, storage_path, mime_type), kas_rt_transaction_details(id, name, rate_per_warga, jumlah_warga, subtotal, sort_order)",
+        "id, title, amount, type, date, created_at, created_by, reference, details, category, created_by_user:users!kas_rt_transactions_created_by_fkey(full_name), kas_rt_attachments(id, file_name, storage_path, mime_type), kas_rt_transaction_details(id, name, rate_per_warga, jumlah_warga, subtotal, sort_order)",
       )
       .eq("tenant_id", tenantId)
       .eq("community_id", communityId)
@@ -560,6 +560,7 @@ export async function GET(request: Request) {
       (transactions ?? []).map(async (tx) => {
         const attachments = tx.kas_rt_attachments ?? [];
         const attachmentPayload: {
+          id: string;
           file_name: string;
           url: string;
           mime_type: string | null;
@@ -570,6 +571,7 @@ export async function GET(request: Request) {
             .from(bucketId)
             .createSignedUrl(att.storage_path, signedUrlExpiresIn);
           attachmentPayload.push({
+            id: att.id,
             file_name: att.file_name,
             url: signed?.signedUrl ?? "",
             mime_type: att.mime_type,

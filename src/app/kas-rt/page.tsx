@@ -22,6 +22,7 @@ import {
 } from "@/components/kas-rt";
 import { KasRtTransactionListSkeleton } from "@/components/kas-rt/skeletons";
 import type { KasRtDownloadState, TransactionItem } from "@/types/kas-rt";
+import { toast } from "sonner";
 
 export default function KasRTPage() {
   // Memoize 'now' to prevent unnecessary re-renders
@@ -250,6 +251,44 @@ export default function KasRTPage() {
     [formHook],
   );
 
+  // ── Remove attachment handler ─────────────────────────────────────────────
+  const handleRemoveAttachment = useCallback(
+    async (attachmentId: string) => {
+      if (!editingTxId) return;
+      try {
+        const res = await apiFetch(
+          `/api/kas-rt/transactions/${editingTxId}/attachments?attachmentIds=${attachmentId}`,
+          {
+            method: "DELETE",
+          },
+        );
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as {
+            message?: string;
+          };
+          throw new Error(body.message ?? "Gagal menghapus lampiran.");
+        }
+        // Update the transaction in the local state
+        setTransactions((prev) =>
+          prev.map((t) =>
+            t.id === editingTxId
+              ? {
+                  ...t,
+                  attachments: t.attachments.filter((a) => a.id !== attachmentId),
+                }
+              : t,
+          ),
+        );
+        toast.success("Lampiran berhasil dihapus.");
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : "Gagal menghapus lampiran.",
+        );
+      }
+    },
+    [editingTxId, setTransactions],
+  );
+
   // ── Loading state - Show spinner while loading essential data ─────────────
   if (isPageLoading) {
     return <PageLoader message="Memuat kas RT..." />;
@@ -339,6 +378,11 @@ export default function KasRTPage() {
         isOpen={isFormOpen}
         onClose={closeForm}
         editingTxId={editingTxId}
+        editingTxAttachments={
+          editingTxId
+            ? transactions.find((t) => t.id === editingTxId)?.attachments ?? null
+            : null
+        }
         form={formHook.form}
         formStep={formHook.formStep}
         isSubmitting={formHook.isSubmitting}
@@ -369,6 +413,7 @@ export default function KasRTPage() {
         handleSubmit={formHook.handleSubmit}
         onDuplicateCheck={handleDuplicateCheck}
         placeholderTemplate={formHook.placeholderTemplate}
+        onRemoveAttachment={handleRemoveAttachment}
       />
 
       {/* Duplicate warning dialog */}

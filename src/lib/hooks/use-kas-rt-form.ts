@@ -406,18 +406,27 @@ export function useKasRtForm({
         let response: Response;
 
         if (editingTxId) {
+          // Use FormData for PATCH to support file uploads
+          const formData = new FormData();
+          formData.append("title", finalTitle);
+          formData.append("amount", String(amountNumber));
+          formData.append("type", form.type);
+          formData.append("date", form.date);
+          formData.append("reference", form.reference.trim());
+          formData.append("details", finalDetails);
+          if (categoryName) formData.append("category", categoryName);
+
+          // Include new attachments if any
+          const files = fileInputRef.current?.files;
+          if (files && files.length) {
+            Array.from(files).forEach((file) => {
+              formData.append("attachments", file);
+            });
+          }
+
           response = await apiFetch(`/api/kas-rt/transactions/${editingTxId}`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              title: finalTitle,
-              amount: amountNumber,
-              type: form.type,
-              date: form.date,
-              reference: form.reference.trim() || null,
-              details: finalDetails,
-              category: categoryName,
-            }),
+            body: formData,
           });
         } else {
           const formData = new FormData();

@@ -193,7 +193,8 @@ export async function PATCH(
     );
   }
 
-  const body = (await request.json().catch(() => ({}))) as {
+  const contentType = request.headers.get("content-type") ?? "";
+  let body: {
     title?: string;
     amount?: number;
     type?: string;
@@ -202,7 +203,49 @@ export async function PATCH(
     details?: string | null;
     category?: string | null;
     transaction_details?: { name: string; rate_per_warga: number; jumlah_warga: number; subtotal: number }[] | null;
-  };
+    attachments?: File[];
+  } = {};
+
+  if (contentType.includes("multipart/form-data")) {
+    const form = await request.formData();
+    const getString = (key: string) => {
+      const value = form.get(key);
+      return typeof value === "string" ? value : null;
+    };
+
+    body.title = getString("title") ?? undefined;
+    const amountRaw = getString("amount");
+    body.amount = amountRaw != null ? Number(amountRaw) : undefined;
+    const typeRaw = getString("type");
+    body.type =
+      typeRaw === "income" || typeRaw === "expense" ? typeRaw : undefined;
+    body.date = getString("date") ?? undefined;
+    body.reference = getString("reference");
+    body.details = getString("details");
+    const catRaw = getString("category");
+    body.category =
+      catRaw != null && String(catRaw).trim() ? String(catRaw).trim() : null;
+
+    const detailsRaw = getString("transaction_details");
+    if (detailsRaw) {
+      try {
+        body.transaction_details = JSON.parse(detailsRaw) as {
+          name: string;
+          rate_per_warga: number;
+          jumlah_warga: number;
+          subtotal: number;
+        }[];
+      } catch {
+        // Invalid JSON, ignore
+      }
+    }
+
+    body.attachments = form
+      .getAll("attachments")
+      .filter((value): value is File => value instanceof File);
+  } else {
+    body = await request.json().catch(() => ({}));
+  }
 
   // Build partial update payload
   const patch: Record<string, unknown> = {};
@@ -383,6 +426,122 @@ export async function PATCH(
     }
   }
 
+  // ── Handle attachments ───────────────────────────────────────────────────────
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  let savedAttachments: { id: string; file_name: string; url: string; mime_type: string | null }[] = [];
+  
+  // First, fetch existing attachments
+  const { data: existingAttachments } = await supabase
+    .from("kas_rt_attachments")
+    .select("id, file_name, storage_path, mime_type")
+    .eq("transaction_id", id)
+    .order("created_at", { ascending: true });
+
+  const bucketId =
+    process.env.SUPABASE_BUCKET_KAS_RT ?? "kas-rt-attachments";
+  const signedUrlExpiresIn = 3600;
+
+  // Generate signed URLs for existing attachments
+  if (existingAttachments && existingAttachments.length > 0) {
+    for (const att of existingAttachments) {
+      const { data: signed } = await supabase.storage
+        .from(bucketId)
+        .createSignedUrl(att.storage_path, signedUrlExpiresIn);
+      
+      savedAttachments.push({
+        id: att.id,
+        file_name: att.file_name,
+        url: signed?.signedUrl ?? "",
+        mime_type: att.mime_type,
+      });
+    }
+  }
+
+  // Upload new attachments if provided
+  if (body.attachments && body.attachments.length > 0) {
+    const attachmentsToInsert: {
+      transaction_id: string;
+      file_name: string;
+      storage_path: string;
+      mime_type: string | null;
+      size_bytes: number;
+    }[] = [];
+
+    for (const file of body.attachments) {
+      if (file.size > MAX_FILE_SIZE) {
+        return NextResponse.json(
+          {
+            message: `Ukuran file ${file.name} melebihi batas maksimal 5MB.`,
+            fileName: file.name,
+          },
+          { status: 400 },
+        );
+      }
+
+      try {
+        const extension =
+          file.name.includes(".") && file.name.split(".").length > 1
+            ? file.name.split(".").pop()
+            : "bin";
+        const path = `${id}/${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}.${extension}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from(bucketId)
+          .upload(path, file, {
+            contentType: file.type || undefined,
+          });
+
+        if (uploadError) {
+          console.error(
+            "[Kas RT] PATCH upload attachment error:",
+            uploadError,
+          );
+          continue;
+        }
+
+        attachmentsToInsert.push({
+          transaction_id: id,
+          file_name: file.name,
+          storage_path: path,
+          mime_type: file.type || null,
+          size_bytes: file.size,
+        });
+      } catch (err) {
+        console.error("[Kas RT] PATCH unexpected upload error:", err);
+      }
+    }
+
+    if (attachmentsToInsert.length > 0) {
+      const { data: insertedAttachments, error: attachmentError } = await supabase
+        .from("kas_rt_attachments")
+        .insert(attachmentsToInsert)
+        .select("id, file_name, storage_path, mime_type");
+
+      if (attachmentError) {
+        console.error(
+          "[Kas RT] PATCH insert attachment rows error:",
+          attachmentError,
+        );
+      } else if (insertedAttachments) {
+        // Generate signed URLs for newly uploaded attachments
+        for (const att of insertedAttachments) {
+          const { data: signed } = await supabase.storage
+            .from(bucketId)
+            .createSignedUrl(att.storage_path, signedUrlExpiresIn);
+          
+          savedAttachments.push({
+            id: att.id,
+            file_name: att.file_name,
+            url: signed?.signedUrl ?? "",
+            mime_type: att.mime_type,
+          });
+        }
+      }
+    }
+  }
+
   return NextResponse.json({
     id: data.id,
     title: data.title,
@@ -394,7 +553,7 @@ export async function PATCH(
     reference: data.reference ?? "",
     details: data.details ?? "",
     category: data.category ?? null,
-    attachments: [],
+    attachments: savedAttachments,
     transaction_details: savedTransactionDetails,
   });
 }
