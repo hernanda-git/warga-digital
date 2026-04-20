@@ -183,7 +183,7 @@ export default function LandingPage() {
         {isJasaServicesLoaded ? (
           <LandingSection title="Jasa RT 03">
             {hasDirectJasaContent ? (
-              <div className="grid grid-cols-1 gap-3 px-4">
+              <div className="grid grid-cols-1 gap-3">
                 {jasaServices.map((service) => (
                   <JasaCard
                     key={service.id}
