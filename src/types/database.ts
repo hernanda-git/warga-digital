@@ -439,6 +439,7 @@ export interface JasaServiceWithMedia {
   is_featured: boolean;
   published_at: string | null;
   owner_display_name: string;
+  owner_blok_rumah: string | null;
   category_name: string;
   category_icon: string | null;
   primary_image_url: string | null;

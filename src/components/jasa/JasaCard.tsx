@@ -123,9 +123,9 @@ export function JasaCard({ service, onClick }: JasaCardProps) {
 
       {/* ── Right: content ─────────────────────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 overflow-hidden px-3 py-2.5">
-        {/* Row 1: service name (1 line) */}
+        {/* Row 1: service name (wrap to 2 lines) */}
         <h3
-          className="truncate text-base font-bold"
+          className="line-clamp-2 text-base font-bold leading-snug"
           style={{ color: "var(--color-title)" }}
         >
           {service.name}
@@ -147,7 +147,7 @@ export function JasaCard({ service, onClick }: JasaCardProps) {
           style={{ color: "var(--color-body)" }}
         >
           {service.owner_display_name}
-          {service.location_note && ` - ${service.location_note}`}
+          {service.owner_blok_rumah && ` - ${service.owner_blok_rumah}`}
         </p>
 
         {/* Row 4: price */}

@@ -34,6 +34,7 @@ interface JasaServiceWithMedia {
   is_featured: boolean;
   published_at: string | null;
   owner_display_name: string;
+  owner_blok_rumah: string | null;
   category_name: string;
   category_icon: string | null;
   primary_image_url: string | null;
@@ -313,7 +314,7 @@ export async function GET(request: Request) {
 
       .from("users")
 
-      .select("id, full_name")
+      .select("id, full_name, blok_rumah")
 
       .in("id", ownerIds);
     console.log("[Jasa GET] Owners result:", {
@@ -321,7 +322,12 @@ export async function GET(request: Request) {
       owners,
     });
 
-    const ownerMap = new Map((owners || []).map((u) => [u.id, u.full_name]));
+    const ownerMap = new Map(
+      (owners || []).map((u) => [
+        u.id,
+        { name: u.full_name, blok: u.blok_rumah },
+      ]),
+    );
 
     const categoryIds = [...new Set(services.map((s) => s.category_id))];
     const { data: categories } = await supabase
@@ -356,17 +362,21 @@ export async function GET(request: Request) {
     const mediaMap = new Map((media || []).map((m) => [m.service_id, m.url]));
 
     const enrichedServices: JasaServiceWithMedia[] = services.map(
-      (service) => ({
-        ...service,
+      (service) => {
+        const owner = ownerMap.get(service.owner_user_id);
+        return {
+          ...service,
 
-        owner_display_name: ownerMap.get(service.owner_user_id) || "Unknown",
-        category_name:
-          categoryMap.get(service.category_id)?.name || "Tidak Diketahui",
+          owner_display_name: owner?.name || "Unknown",
+          owner_blok_rumah: owner?.blok || null,
+          category_name:
+            categoryMap.get(service.category_id)?.name || "Tidak Diketahui",
 
-        category_icon: categoryMap.get(service.category_id)?.icon || null,
+          category_icon: categoryMap.get(service.category_id)?.icon || null,
 
-        primary_image_url: mediaMap.get(service.id) || null,
-      }),
+          primary_image_url: mediaMap.get(service.id) || null,
+        };
+      },
     );
 
     console.log("[Jasa GET] Fetching all categories for JASA domain");
