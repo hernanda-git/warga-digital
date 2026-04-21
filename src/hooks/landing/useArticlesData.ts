@@ -141,12 +141,9 @@ export function useArticlesData(): UseArticlesDataReturn {
       }
 
       const data: ArticlesApiResponse = await response.json();
-
-      // Transform API response to UI models
       const posts = data.articles.map(transformArticleToPost);
 
       setItems(posts);
-      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal memuat artikel");
       setItems([]);
@@ -159,7 +156,6 @@ export function useArticlesData(): UseArticlesDataReturn {
   // ── Auto-fetch on Authentication ──────────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {
-      // Reset state when not authenticated
       setItems([]);
       setIsLoaded(false);
       setError(null);
@@ -186,12 +182,9 @@ export function useArticlesData(): UseArticlesDataReturn {
         }
 
         const data: ArticlesApiResponse = await response.json();
-
-        // Transform API data to UI models
         const posts = data.articles.map(transformArticleToPost);
 
         setItems(posts);
-        setError(null);
       } catch (err) {
         if (cancelled) {
           return;
@@ -209,7 +202,7 @@ export function useArticlesData(): UseArticlesDataReturn {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loadArticles]);
 
   // ── Compute Derived State ─────────────────────────────────────────────────
   const hasContent = hasArticlesContent(items);
