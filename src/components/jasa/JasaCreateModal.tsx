@@ -859,6 +859,8 @@ export function JasaCreateModal({
                         style={{
                           border: "2px solid var(--color-primary)",
                         }}
+                        width={64}
+                        height={64}
                         unoptimized
                       />
                       <div className="min-w-0 text-left">
@@ -978,6 +980,8 @@ export function JasaCreateModal({
                               ? "2px solid var(--color-primary)"
                               : "2px solid var(--color-input-border)",
                           }}
+                          width={80}
+                          height={80}
                           unoptimized
                         />
                         {img.isPrimary && (
