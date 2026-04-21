@@ -32,11 +32,7 @@ export function getHeaderProfileCookie(): HeaderProfileCookie | null {
       return {
         name: p.name,
         profilePictureUrl:
-          typeof p.profilePictureUrl === "string"
-            ? p.profilePictureUrl
-            : p.profilePictureUrl === null
-              ? null
-              : null,
+          typeof p.profilePictureUrl === "string" ? p.profilePictureUrl : null,
         blokRumah: typeof p.blokRumah === "string" ? p.blokRumah : "Blok —",
       };
     }
