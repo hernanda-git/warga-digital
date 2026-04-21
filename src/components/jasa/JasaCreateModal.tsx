@@ -46,6 +46,7 @@ export function JasaCreateModal({
 }: JasaCreateModalProps) {
   const [step, setStep] = useState(1);
   const [closing, setClosing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formState, setFormState] = useState({
     name: "",
@@ -121,6 +122,7 @@ export function JasaCreateModal({
 
   // ── Close handler ─────────────────────────────────────────────────────────
   const handleClose = () => {
+    if (isSubmitting || isLoading) return; // Prevent closing during submission
     setClosing(true);
     setTimeout(() => {
       setClosing(false);
@@ -288,7 +290,9 @@ export function JasaCreateModal({
 
   // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!validateStep(3)) return;
+    if (!validateStep(3) || isSubmitting) return;
+
+    setIsSubmitting(true);
 
     try {
       const submitFormData = new FormData();
@@ -327,6 +331,8 @@ export function JasaCreateModal({
       const msg =
         error instanceof Error ? error.message : "Gagal membuat layanan";
       setErrors((prev) => ({ ...prev, submit: msg }));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -392,6 +398,7 @@ export function JasaCreateModal({
           animation: closing
             ? "fadeOut 0.26s ease forwards"
             : "fadeIn 0.22s ease",
+          pointerEvents: (isSubmitting || isLoading) ? "none" : "auto",
         }}
         onClick={handleClose}
       />
@@ -410,10 +417,11 @@ export function JasaCreateModal({
       >
         {/* Drag handle */}
         <div
-          className="flex shrink-0 justify-center pb-1 pt-3"
-          onClick={handleClose}
+          className={`flex shrink-0 justify-center pb-1 pt-3 transition-opacity ${(isSubmitting || isLoading) ? 'opacity-50' : ''}`}
+          onClick={(isSubmitting || isLoading) ? undefined : handleClose}
           role="button"
           aria-label="Tutup"
+          style={{ pointerEvents: (isSubmitting || isLoading) ? 'none' : 'auto' }}
         >
           <div
             className="h-1 w-10 rounded-full"
@@ -433,7 +441,8 @@ export function JasaCreateModal({
               {step > 1 ? (
                 <button
                   onClick={handleBack}
-                  className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity active:opacity-70"
+                  disabled={isSubmitting || isLoading}
+                  className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity disabled:cursor-not-allowed disabled:opacity-40 active:opacity-70"
                   style={{ background: "var(--color-surface-alt)" }}
                   aria-label="Kembali"
                 >
@@ -467,7 +476,8 @@ export function JasaCreateModal({
             <div className="flex shrink-0">
               <button
                 onClick={handleClose}
-                className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity active:opacity-70"
+                disabled={isSubmitting || isLoading}
+                className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity disabled:cursor-not-allowed disabled:opacity-40 active:opacity-70"
                 style={{ background: "var(--color-surface-alt)" }}
                 aria-label="Tutup"
               >
@@ -546,7 +556,36 @@ export function JasaCreateModal({
         </div>
 
         {/* ── Scrollable content ─────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-5">
+        <div className="relative flex-1 overflow-y-auto overscroll-contain px-4 py-5">
+          {/* Loading overlay */}
+          {(isSubmitting || isLoading) && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-app-surface/60 backdrop-blur-[2px]">
+              <div className="flex flex-col items-center gap-3">
+                <svg
+                  className="h-10 w-10 animate-spin text-primary"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+                <p className="text-sm font-semibold text-app-title">
+                  Menyimpan layanan...
+                </p>
+              </div>
+            </div>
+          )}
           {/* ════════════════════ STEP 1 – Info Dasar ════════════════════ */}
           {step === 1 && (
             <div className="space-y-5">
@@ -1131,7 +1170,8 @@ export function JasaCreateModal({
               <button
                 type="button"
                 onClick={handleNext}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-3.5 text-sm font-semibold text-white transition-all active:scale-[0.97]"
+                disabled={isSubmitting || isLoading}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-3.5 text-sm font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.97]"
                 style={{
                   background: "var(--color-primary)",
                   boxShadow:
@@ -1157,15 +1197,15 @@ export function JasaCreateModal({
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isLoading}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold text-white transition-all disabled:opacity-60 active:scale-[0.97]"
+                disabled={isSubmitting || isLoading}
+                className="relative flex flex-1 items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.97]"
                 style={{
-                  background: "var(--color-primary)",
+                  background: isSubmitting || isLoading ? "var(--color-primary)" : "var(--color-primary)",
                   boxShadow:
                     "0 2px 12px 0 color-mix(in srgb, var(--color-primary) 35%, transparent)",
                 }}
               >
-                {isLoading ? (
+                {(isSubmitting || isLoading) ? (
                   <>
                     <svg
                       className="h-4 w-4 animate-spin"
@@ -1186,10 +1226,12 @@ export function JasaCreateModal({
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                       />
                     </svg>
-                    Membuat...
+                    <span className="font-medium">Menyimpan...</span>
                   </>
                 ) : (
-                  "Buat Layanan"
+                  <>
+                    <span>Buat Layanan</span>
+                  </>
                 )}
               </button>
             )}
