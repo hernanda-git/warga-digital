@@ -85,7 +85,7 @@ export const JasaCard = memo(function JasaCard({ service, onClick }: JasaCardPro
         }
       }}
       aria-label={`${service.name} – ${formatRupiah(service.estimated_price)}`}
-      className="group flex h-40 cursor-pointer overflow-hidden rounded-2xl bg-app-surface shadow-sm transition-all active:scale-[0.985]"
+      className="group flex h-40 cursor-pointer overflow-hidden rounded-2xl bg-app-surface shadow-sm transition-all active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-primary"
       style={{ border: "1px solid var(--color-input-border)" }}
     >
       <div className="relative h-full w-[140px] shrink-0 overflow-hidden bg-app-surface-alt">
