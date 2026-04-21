@@ -118,7 +118,7 @@ export function transformCategoryToCard(
   category: MarketplaceCategorySummary,
 ): HorizontalCardItem {
   const description =
-    category.cheapest != null
+    category.cheapest !== null && category.cheapest !== undefined
       ? `Mulai ${formatRupiah(category.cheapest)}`
       : (category.description ?? "");
 
