@@ -583,7 +583,6 @@ export default function JasaPage() {
                     key={service.id}
                     service={service}
                     onClick={() => handleViewService(service.id)}
-                    onContact={() => handleContact(service)}
                   />
                 ))}
               </div>
