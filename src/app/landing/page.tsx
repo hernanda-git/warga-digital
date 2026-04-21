@@ -90,7 +90,7 @@ export default function LandingPage() {
       try {
         const res = await apiFetch("/api/notifications?count=true");
         if (res.ok) {
-          const data = await res.json();
+          const data = (await res.json()) as { unreadCount: number };
           setNotificationCount(data.unreadCount ?? 0);
         }
       } catch (e) {
