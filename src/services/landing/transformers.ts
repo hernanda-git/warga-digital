@@ -49,6 +49,8 @@ export function buildBlokLabel(
   return UI_CONFIG.DEFAULT_BLOK_LABEL;
 }
 
+
+
 /**
  * Transforms API profile response into header profile UI model
  *
