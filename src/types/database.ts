@@ -416,93 +416,43 @@ export interface JasaService {
 /** Combined type for listing grid */
 export interface JasaServiceWithMedia {
   id: string;
-
   name: string;
-  summary: string | null;
   description: string | null;
   estimated_price: number;
-  currency_code: string;
-
   hari_operasional: Record<string, boolean>;
-
-  jam_operasional_mulai: string;
-
-  jam_operasional_selesai: string;
-
   is_available: boolean;
-
   wa_number: string | null;
-
-  location_note: string | null;
-  rating_avg: number;
-  rating_count: number;
-  is_featured: boolean;
-  published_at: string | null;
   owner_display_name: string;
   owner_blok_rumah: string | null;
-  category_name: string;
   category_icon: string | null;
   primary_image_url: string | null;
-
-  created_at: string;
 }
 
 export interface JasaServiceDetailWithMedia {
   id: string;
-
   name: string;
-
-  summary: string | null;
-
   description: string | null;
-
   estimated_price: number;
-
-  currency_code: string;
-
   hari_operasional: Record<string, boolean>;
-
   jam_operasional_mulai: string;
-
   jam_operasional_selesai: string;
-
   is_available: boolean;
-
   wa_number: string | null;
-
   location_note: string | null;
-
-  rating_avg: number;
-
-  rating_count: number;
-
-  is_featured: boolean;
-
-  published_at: string | null;
-
   owner_display_name: string;
-
   owner_user_id: string;
-
+  owner_blok_rumah: string | null;
   category_id: string;
   category_name: string;
-
   category_icon: string | null;
-
   media: Array<{
     id: string;
-
     url: string;
-
     alt_text: string | null;
-
     sort_order: number;
-
     is_primary: boolean;
   }>;
-
   created_at: string;
-
   updated_at: string | null;
 }
 

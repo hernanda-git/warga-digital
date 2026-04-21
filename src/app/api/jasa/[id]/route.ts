@@ -8,19 +8,12 @@ interface JasaServiceDetailWithMedia {
   summary: string | null;
   description: string | null;
   estimated_price: number;
-  currency_code: string;
   hari_operasional: Record<string, boolean>;
   jam_operasional_mulai: string;
   jam_operasional_selesai: string;
-
   is_available: boolean;
-
   wa_number: string | null;
   location_note: string | null;
-  rating_avg: number;
-  rating_count: number;
-  is_featured: boolean;
-  published_at: string | null;
   owner_display_name: string;
   owner_user_id: string;
   category_name: string;
@@ -46,7 +39,7 @@ interface UpdateJasaRequest {
   hari_operasional?: Record<string, boolean>;
   jam_operasional_mulai?: string;
   jam_operasional_selesai?: string;
-  status?: string;
+  is_available?: boolean;
   wa_number?: string;
   location_note?: string;
 }
@@ -70,67 +63,28 @@ export async function GET(
   try {
     console.log("[Jasa [id] GET] Fetching service with id:", id);
     const { data: service, error: serviceError } = await supabase
-
       .from("jasa_services")
-
       .select(
         `
-
         id,
-
         name,
-
         summary,
-
         description,
-
         estimated_price,
-
-        currency_code,
-
         hari_operasional,
-
-
         jam_operasional_mulai,
-
-
-
         jam_operasional_selesai,
-
-
-
-
-
         is_available,
-
         wa_number,
-
-
         location_note,
-
-        rating_avg,
-
-        rating_count,
-
-        is_featured,
-
-        published_at,
-
         owner_display_name,
-
         owner_user_id,
-
         category_id,
-
         created_at,
-
         updated_at
-
       `,
       )
-
       .eq("id", id)
-
       .single();
     console.log("[Jasa [id] GET] Service fetch result:", {
       service,
@@ -200,6 +154,8 @@ export async function GET(
       media: media || [],
     };
 
+    console.log("[Jasa [id] GET] Final response:", response);
+
     return NextResponse.json({ success: true, data: response });
   } catch (error: any) {
     console.error("Error fetching jasa service:", error);
@@ -264,7 +220,10 @@ export async function PUT(
     }
 
     // Build update object
-    const updateData: any = { updated_at: new Date().toISOString() };
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
+      updated_by: session.userId,
+    };
 
     if (body.name !== undefined) updateData.name = body.name;
     if (body.description !== undefined)
@@ -280,7 +239,8 @@ export async function PUT(
       updateData.jam_operasional_mulai = body.jam_operasional_mulai;
     if (body.jam_operasional_selesai !== undefined)
       updateData.jam_operasional_selesai = body.jam_operasional_selesai;
-    if (body.status !== undefined) updateData.status = body.status;
+    if (body.is_available !== undefined)
+      updateData.is_available = body.is_available;
     if (body.wa_number !== undefined) updateData.wa_number = body.wa_number;
     if (body.location_note !== undefined)
       updateData.location_note = body.location_note;

@@ -19,26 +19,15 @@ interface JasaListQuery {
 interface JasaServiceWithMedia {
   id: string;
   name: string;
-  summary: string | null;
   description: string | null;
   estimated_price: number;
-  currency_code: string;
   hari_operasional: Record<string, boolean>;
-  jam_operasional_mulai: string;
-  jam_operasional_selesai: string;
   is_available: boolean;
   wa_number: string | null;
-  location_note: string | null;
-  rating_avg: number;
-  rating_count: number;
-  is_featured: boolean;
-  published_at: string | null;
   owner_display_name: string;
   owner_blok_rumah: string | null;
-  category_name: string;
   category_icon: string | null;
   primary_image_url: string | null;
-  created_at: string;
 }
 
 interface JasaListResponse {
@@ -138,58 +127,20 @@ export async function GET(request: Request) {
     }
 
     let baseQuery = supabase
-
       .from("jasa_services")
-
       .select(
         `
-
         id,
-
         name,
-
-        summary,
-
         description,
-
         estimated_price,
-
-        currency_code,
-
         hari_operasional,
-
-        jam_operasional_mulai,
-
-        jam_operasional_selesai,
-
         is_available,
-
         wa_number,
-
-        location_note,
-
-        rating_avg,
-
-        rating_count,
-
-        is_featured,
-
-
-        published_at,
-
-
-
         owner_user_id,
-
-
-
         category_id,
-
-
         created_at
-
       `,
-
         { count: "exact" },
       )
 
@@ -309,14 +260,23 @@ export async function GET(request: Request) {
 
     const ownerIds = [...new Set(services.map((s) => s.owner_user_id))];
 
-    console.log("[Jasa GET] Fetching owners for ids:", ownerIds);
+    console.log("[Jasa GET] Fetching owners with primary house for ids:", ownerIds);
     const { data: owners } = await supabase
-
       .from("users")
-
-      .select("id, full_name, blok_rumah")
-
-      .in("id", ownerIds);
+      .select(
+        `
+        id,
+        full_name,
+        user_houses!inner(
+          houses(
+            blok_rumah
+          )
+        )
+      `
+      )
+      .in("id", ownerIds)
+      .eq("user_houses.is_primary", true);
+    
     console.log("[Jasa GET] Owners result:", {
       ownersCount: owners?.length,
       owners,
@@ -325,7 +285,10 @@ export async function GET(request: Request) {
     const ownerMap = new Map(
       (owners || []).map((u) => [
         u.id,
-        { name: u.full_name, blok: u.blok_rumah },
+        { 
+          name: u.full_name, 
+          blok: (u.user_houses as any[])?.[0]?.houses?.blok_rumah ?? null 
+        },
       ]),
     );
 
@@ -366,14 +329,9 @@ export async function GET(request: Request) {
         const owner = ownerMap.get(service.owner_user_id);
         return {
           ...service,
-
           owner_display_name: owner?.name || "Unknown",
           owner_blok_rumah: owner?.blok || null,
-          category_name:
-            categoryMap.get(service.category_id)?.name || "Tidak Diketahui",
-
           category_icon: categoryMap.get(service.category_id)?.icon || null,
-
           primary_image_url: mediaMap.get(service.id) || null,
         };
       },
@@ -640,47 +598,29 @@ export async function POST(request: Request) {
     }
 
     const { data: newService, error: insertError } = await supabase
-
       .from("jasa_services")
-
       .insert({
         tenant_id: tenantUser.tenant_id,
-
         category_id,
-
         owner_user_id: session.userId,
-
         owner_display_name: user.full_name,
-
         name,
-
         slug,
-
         description,
-
         summary,
-
         estimated_price,
-
         currency_code: "IDR",
-
         hari_operasional,
-
         jam_operasional_mulai: jam_mulai,
-
         jam_operasional_selesai: jam_selesai,
-
-        status: finalStatus,
-
+        is_available: finalStatus === "AVAILABLE",
         published_at: new Date().toISOString(),
-
         wa_number,
-
         location_note,
+        created_by: session.userId,
+        updated_by: session.userId,
       })
-
       .select()
-
       .single();
 
     console.log("[Jasa POST] Service insert result:", {
