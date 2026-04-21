@@ -245,13 +245,7 @@ export async function GET(request: Request) {
     }
 
     const { data: services, error: servicesError } = await baseQuery
-
-      .order("is_featured", { ascending: false })
-
-      .order("published_at", { ascending: false })
-
       .order("created_at", { ascending: false })
-
       .range(offset, offset + limit - 1);
 
     if (servicesError) {
@@ -337,32 +331,29 @@ export async function GET(request: Request) {
       },
     );
 
+    console.log("[Jasa GET] Fetching JASA domain");
+    const { data: jasaDomain, error: domainError } = await supabase
+      .from("marketplace_domains")
+      .select("id")
+      .eq("code", "JASA")
+      .single();
+    
+    if (domainError || !jasaDomain) {
+      console.error("[Jasa GET] Failed to fetch JASA domain:", domainError);
+      return NextResponse.json(
+        { success: false, error: "Domain JASA tidak ditemukan" },
+        { status: 500 },
+      );
+    }
+
     console.log("[Jasa GET] Fetching all categories for JASA domain");
     const { data: allCategories } = await supabase
-
       .from("marketplace_categories")
-
       .select("id, name, icon")
-
-      .eq(
-        "domain_id",
-
-        (
-          await supabase
-
-            .from("marketplace_domains")
-
-            .select("id")
-
-            .eq("code", "JASA")
-
-            .single()
-        ).data?.id,
-      )
-
+      .eq("domain_id", jasaDomain.id)
       .eq("is_active", true)
-
       .order("sort_order");
+    
     console.log("[Jasa GET] All categories result:", {
       allCategoriesCount: allCategories?.length,
       allCategories,
