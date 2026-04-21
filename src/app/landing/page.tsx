@@ -109,6 +109,10 @@ export default function LandingPage() {
   }, []);
 
   // ── Jasa Detail Handlers ──────────────────────────────────────────────────
+  /**
+   * Fetches and displays service detail modal
+   * @param serviceId - The ID of the service to view
+   */
   const handleViewService = async (serviceId: string) => {
     try {
       const response = await apiFetch(`/api/jasa/${serviceId}`);
