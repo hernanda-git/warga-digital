@@ -60,7 +60,7 @@ function Card({ item }: { item: HorizontalCardItem }) {
         {item.imageUrl ? (
           <Image
             src={item.imageUrl}
-            alt=""
+            alt={item.title}
             className="h-full w-full object-cover"
             unoptimized
             fill
