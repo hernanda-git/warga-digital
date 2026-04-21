@@ -8,7 +8,6 @@ import { memo } from "react";
 interface JasaCardProps {
   service: JasaServiceWithMedia;
   onClick?: () => void;
-  onContact?: () => void;
 }
 
 const DAY_ORDER = [
