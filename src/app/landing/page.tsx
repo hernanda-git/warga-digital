@@ -86,10 +86,12 @@ export default function LandingPage() {
   const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchNotificationCount = async () => {
       try {
         const res = await apiFetch("/api/notifications?count=true");
-        if (res.ok) {
+        if (res.ok && !cancelled) {
           const data = (await res.json()) as { unreadCount: number };
           setNotificationCount(data.unreadCount ?? 0);
         }
@@ -98,6 +100,10 @@ export default function LandingPage() {
       }
     };
     fetchNotificationCount();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ── Jasa Detail Handlers ──────────────────────────────────────────────────
