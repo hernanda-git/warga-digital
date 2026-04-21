@@ -96,7 +96,9 @@ export default function LandingPage() {
           setNotificationCount(data.unreadCount ?? 0);
         }
       } catch (e) {
-        // ignore
+        if (process.env.NODE_ENV === "development") {
+          console.warn("Notification count fetch failed:", e);
+        }
       }
     };
     fetchNotificationCount();
