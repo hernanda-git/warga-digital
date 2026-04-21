@@ -108,8 +108,11 @@ export default function LandingPage() {
       if (data.success) {
         setViewingService(data.data);
       }
-    } catch (err) {
-      console.error("Failed to view service:", err);
+    } catch (error) {
+      console.error(
+        "Failed to view service:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
     }
   };
 
