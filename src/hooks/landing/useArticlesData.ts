@@ -18,6 +18,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import { apiFetch } from "@/lib/api-client";
+import { LANDING_API_ENDPOINTS } from "@/config/landing";
 import type { ResidentPostItem } from "@/components/landing/ResidentPostsSection";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -132,7 +133,7 @@ export function useArticlesData(): UseArticlesDataReturn {
     setError(null);
 
     try {
-      const response = await apiFetch("/api/artikel?page=1&limit=5");
+      const response = await apiFetch(LANDING_API_ENDPOINTS.ARTICLES);
 
       if (!response.ok) {
         throw new Error(
@@ -153,7 +154,6 @@ export function useArticlesData(): UseArticlesDataReturn {
     }
   }, []);
 
-  // ── Auto-fetch on Authentication ──────────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {
       setItems([]);
@@ -169,7 +169,7 @@ export function useArticlesData(): UseArticlesDataReturn {
       setError(null);
 
       try {
-        const response = await apiFetch("/api/artikel?page=1&limit=5");
+        const response = await apiFetch(LANDING_API_ENDPOINTS.ARTICLES);
 
         if (cancelled) {
           return;

@@ -13,6 +13,8 @@ export const LANDING_API_ENDPOINTS = {
   PROFILE: '/api/profile',
   MARKETPLACE_SUMMARY: '/api/marketplace/summary',
   ANNOUNCEMENTS: '/api/announcements',
+  ARTICLES: '/api/artikel?page=1&limit=5',
+  JASA_SERVICES: '/api/jasa?limit=10&is_available=true',
 } as const;
 
 // ─── Cookie Configuration ─────────────────────────────────────────────────────
