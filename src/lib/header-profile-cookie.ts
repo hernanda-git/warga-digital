@@ -46,7 +46,7 @@ export function setHeaderProfileCookie(profile: HeaderProfileCookie): void {
   if (typeof document === "undefined") return;
   const value = encodeURIComponent(JSON.stringify(profile));
   const maxAge = MAX_AGE_DAYS * 24 * 60 * 60;
-  document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${maxAge}; samesite=lax`;
+  document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${maxAge}; samesite=lax; secure`;
 }
 
 export function clearHeaderProfileCookie(): void {
