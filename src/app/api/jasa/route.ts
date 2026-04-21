@@ -261,7 +261,7 @@ export async function GET(request: Request) {
         `
         id,
         full_name,
-        user_houses!inner(
+        user_houses!left(
           houses(
             blok_rumah
           )
@@ -269,7 +269,7 @@ export async function GET(request: Request) {
       `
       )
       .in("id", ownerIds)
-      .eq("user_houses.is_primary", true);
+      .filter('user_houses.is_primary', 'eq', true);
     
     console.log("[Jasa GET] Owners result:", {
       ownersCount: owners?.length,
@@ -280,7 +280,7 @@ export async function GET(request: Request) {
       (owners || []).map((u) => [
         u.id,
         { 
-          name: u.full_name, 
+          name: u.full_name?.trim() || 'Unknown', 
           blok: (u.user_houses as any[])?.[0]?.houses?.blok_rumah ?? null 
         },
       ]),
@@ -323,8 +323,10 @@ export async function GET(request: Request) {
         const owner = ownerMap.get(service.owner_user_id);
         return {
           ...service,
-          owner_display_name: owner?.name || "Unknown",
-          owner_blok_rumah: owner?.blok || null,
+          owner_display_name: (owner?.name && owner.name.trim()) 
+            ? owner.name.trim() 
+            : "Unknown",
+          owner_blok_rumah: owner?.blok ?? null,
           category_icon: categoryMap.get(service.category_id)?.icon || null,
           primary_image_url: mediaMap.get(service.id) || null,
         };
