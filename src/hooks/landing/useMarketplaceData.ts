@@ -98,7 +98,6 @@ export function useMarketplaceData(): UseMarketplaceDataReturn {
       return;
     }
 
-    // Transform API response to UI models
     const umkm = transformCategoriesToCards(result.data.data.UMKM ?? []);
     const jasa = transformCategoriesToCards(result.data.data.JASA ?? []);
 
@@ -111,7 +110,6 @@ export function useMarketplaceData(): UseMarketplaceDataReturn {
   // ── Auto-fetch on Authentication ──────────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {
-      // Reset state when not authenticated
       setUmkmItems([]);
       setJasaItems([]);
       setIsLoaded(false);
@@ -138,7 +136,6 @@ export function useMarketplaceData(): UseMarketplaceDataReturn {
         return;
       }
 
-      // Transform API data to UI models
       const umkm = transformCategoriesToCards(result.data.data.UMKM ?? []);
       const jasa = transformCategoriesToCards(result.data.data.JASA ?? []);
 
@@ -153,7 +150,7 @@ export function useMarketplaceData(): UseMarketplaceDataReturn {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loadMarketplace]);
 
   // ── Compute Derived State ─────────────────────────────────────────────────
   const hasUmkmContent = hasMarketplaceContent(umkmItems);
