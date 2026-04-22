@@ -150,19 +150,25 @@ export function useKasRtForm({
     const referenceValid = isIncomeForm
       ? form.reference.trim().length > 0
       : true;
+    // For edit mode, title is required
+    const titleValid = editingTxId
+      ? form.title.trim().length > 0
+      : true;
     return (
       form.date.length > 0 &&
       referenceValid &&
       !Number.isNaN(amountNumber) &&
-      amountNumber > 0
+      amountNumber > 0 &&
+      titleValid
     );
-  }, [form.amount, form.date, form.reference, isIncomeForm]);
+  }, [form.amount, form.date, form.reference, isIncomeForm, editingTxId, form.title]);
 
   const isStep3Valid = useMemo(() => {
-    // Title and details are optional — they are auto-filled from category
-    // template at submit time if left empty. Only attachment is conditionally required.
+    // For create mode: attachment required for expense
+    // For edit mode: attachment is always optional
     const attachmentRequired = isExpenseForm && !editingTxId;
     const attachmentValid = attachmentRequired ? hasAttachment : true;
+    // For edit mode step 2, title validation is handled in isStep2Valid
     return attachmentValid;
   }, [isExpenseForm, editingTxId, hasAttachment]);
 
@@ -381,27 +387,33 @@ export function useKasRtForm({
         );
         const categoryName = selectedCategory?.name ?? null;
 
-        // Apply template at submit time if title/details are empty
-        const monthName = getMonthNameIndonesian(new Date());
-        const blok =
-          form.type === "expense" ? "-" : form.reference.trim() || "-";
+        // Apply template only for create mode, not edit mode
+        let finalTitle = form.title.trim();
+        let finalDetails = form.details.trim();
+        
+        if (!editingTxId) {
+          // For create mode: apply template if title/details are empty
+          const monthName = getMonthNameIndonesian(new Date());
+          const blok =
+            form.type === "expense" ? "-" : form.reference.trim() || "-";
 
-        const finalTitle =
-          form.title.trim() ||
-          (selectedCategory
-            ? applyTemplate(selectedCategory.title_template, {
-                bulan: monthName,
-                blok,
-              })
-            : "");
-        const finalDetails =
-          form.details.trim() ||
-          (selectedCategory
-            ? applyTemplate(selectedCategory.desc_template, {
-                bulan: monthName,
-                blok,
-              })
-            : "");
+          finalTitle =
+            finalTitle ||
+            (selectedCategory
+              ? applyTemplate(selectedCategory.title_template, {
+                  bulan: monthName,
+                  blok,
+                })
+              : "");
+          finalDetails =
+            finalDetails ||
+            (selectedCategory
+              ? applyTemplate(selectedCategory.desc_template, {
+                  bulan: monthName,
+                  blok,
+                })
+              : "");
+        }
 
         let response: Response;
 

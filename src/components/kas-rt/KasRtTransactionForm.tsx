@@ -198,131 +198,307 @@ export function KasRtTransactionForm(props: KasRtTransactionFormProps) {
               ))}
             </div>
           )}
+          {editingTxId && (
+            <div className="mb-5 flex gap-2">
+              {([1, 2] as const).map((step) => (
+                <button
+                  key={step}
+                  type="button"
+                  onClick={() => setFormStep(step)}
+                  className="h-1.5 flex-1 rounded-full transition-all"
+                  style={stepButtonStyle(step)}
+                  aria-label={`Langkah ${step}`}
+                />
+              ))}
+            </div>
+          )}
           <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
             {editingTxId ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
-                    Jumlah{" "}
-                    <span className="font-normal normal-case text-red-500">
-                      *
-                    </span>
-                  </label>
-                  <div
-                    className="flex items-center gap-2 rounded-2xl border bg-white px-4 py-3 transition-all"
-                    style={{ borderColor: "var(--color-input-border)" }}
-                  >
-                    <span className="text-sm font-bold text-app-body-muted">
-                      Rp
-                    </span>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={formatAmountDisplay(form.amount)}
-                      onChange={(e) =>
-                        updateFormField(
-                          "amount",
-                          parseAmountInput(e.target.value),
-                        )
-                      }
-                      className="flex-1 bg-transparent text-sm font-semibold text-app-title placeholder:text-app-body-muted/50 outline-none"
-                      placeholder="0"
-                      autoFocus
-                      onFocus={(e) => {
-                        const parent = e.currentTarget.parentElement;
-                        if (parent) applyFocusRing(parent as HTMLElement);
-                      }}
-                      onBlur={(e) => {
-                        const parent = e.currentTarget.parentElement;
-                        if (parent) clearFocusRing(parent as HTMLElement);
-                      }}
-                    />
+              <>
+                {formStep === 1 && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
+                        Judul Transaksi{" "}
+                        <span className="font-normal normal-case text-red-500">
+                          *
+                        </span>
+                      </label>
+                      <input
+                        type="text"
+                        value={form.title}
+                        onChange={(e) =>
+                          updateFormField("title", e.target.value)
+                        }
+                        placeholder="Masukkan judul transaksi"
+                        className="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-app-title placeholder:text-app-body-muted/50 focus:outline-none"
+                        style={{ borderColor: "var(--color-input-border)" }}
+                        onFocus={(e) => applyFocusRing(e.currentTarget)}
+                        onBlur={(e) => clearFocusRing(e.currentTarget)}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
+                        Deskripsi{" "}
+                        <span className="font-normal normal-case text-app-body-muted/70">
+                          (opsional)
+                        </span>
+                      </label>
+                      <textarea
+                        value={form.details}
+                        onChange={(e) =>
+                          updateFormField("details", e.target.value)
+                        }
+                        rows={3}
+                        placeholder="Catatan, rincian, dll."
+                        className="w-full resize-none rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-app-title placeholder:text-app-body-muted/50 focus:outline-none"
+                        style={{ borderColor: "var(--color-input-border)" }}
+                        onFocus={(e) => applyFocusRing(e.currentTarget)}
+                        onBlur={(e) => clearFocusRing(e.currentTarget)}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
+                        Jumlah{" "}
+                        <span className="font-normal normal-case text-red-500">
+                          *
+                        </span>
+                      </label>
+                      <div
+                        className="flex items-center gap-2 rounded-2xl border bg-white px-4 py-3 transition-all"
+                        style={{ borderColor: "var(--color-input-border)" }}
+                      >
+                        <span className="text-sm font-bold text-app-body-muted">
+                          Rp
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={formatAmountDisplay(form.amount)}
+                          onChange={(e) =>
+                            updateFormField(
+                              "amount",
+                              parseAmountInput(e.target.value),
+                            )
+                          }
+                          className="flex-1 bg-transparent text-sm font-semibold text-app-title placeholder:text-app-body-muted/50 outline-none"
+                          placeholder="0"
+                          autoFocus
+                          onFocus={(e) => {
+                            const parent = e.currentTarget.parentElement;
+                            if (parent) applyFocusRing(parent as HTMLElement);
+                          }}
+                          onBlur={(e) => {
+                            const parent = e.currentTarget.parentElement;
+                            if (parent) clearFocusRing(parent as HTMLElement);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {form.type === "income" && (
+                      <div>
+                        <label
+                          htmlFor="edit-reference"
+                          className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted"
+                        >
+                          Blok{" "}
+                          <span className="font-normal normal-case text-red-500">
+                            *
+                          </span>
+                        </label>
+                        <input
+                          id="edit-reference"
+                          type="text"
+                          value={form.reference}
+                          onChange={(e) =>
+                            updateFormField("reference", e.target.value)
+                          }
+                          placeholder="Contoh: N2"
+                          maxLength={20}
+                          className="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-app-title placeholder:text-app-body-muted/50 focus:outline-none"
+                          style={{ borderColor: "var(--color-input-border)" }}
+                          onFocus={(e) => applyFocusRing(e.currentTarget)}
+                          onBlur={(e) => clearFocusRing(e.currentTarget)}
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label
+                        htmlFor="edit-date"
+                        className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted"
+                      >
+                        Tanggal{" "}
+                        <span className="font-normal normal-case text-red-500">
+                          *
+                        </span>
+                      </label>
+                      <input
+                        id="edit-date"
+                        type="date"
+                        value={form.date}
+                        onChange={(e) => updateFormField("date", e.target.value)}
+                        className="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-app-title focus:outline-none"
+                        style={{ borderColor: "var(--color-input-border)" }}
+                        onFocus={(e) => applyFocusRing(e.currentTarget)}
+                        onBlur={(e) => clearFocusRing(e.currentTarget)}
+                      />
+                    </div>
+                    {formError && (
+                      <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
+                        <p className="text-[13px] text-red-600">{formError}</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div>
-                  <label
-                    htmlFor="edit-reference"
-                    className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted"
-                  >
-                    Blok{" "}
-                    <span className="font-normal normal-case text-red-500">
-                      *
-                    </span>
-                  </label>
-                  <input
-                    id="edit-reference"
-                    type="text"
-                    value={form.reference}
-                    onChange={(e) =>
-                      updateFormField("reference", e.target.value)
-                    }
-                    placeholder="Contoh: N2"
-                    maxLength={20}
-                    className="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-app-title placeholder:text-app-body-muted/50 focus:outline-none"
-                    style={{ borderColor: "var(--color-input-border)" }}
-                    onFocus={(e) => applyFocusRing(e.currentTarget)}
-                    onBlur={(e) => clearFocusRing(e.currentTarget)}
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="edit-date"
-                    className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted"
-                  >
-                    Tanggal{" "}
-                    <span className="font-normal normal-case text-red-500">
-                      *
-                    </span>
-                  </label>
-                  <input
-                    id="edit-date"
-                    type="date"
-                    value={form.date}
-                    onChange={(e) => updateFormField("date", e.target.value)}
-                    className="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-app-title focus:outline-none"
-                    style={{ borderColor: "var(--color-input-border)" }}
-                    onFocus={(e) => applyFocusRing(e.currentTarget)}
-                    onBlur={(e) => clearFocusRing(e.currentTarget)}
-                  />
-                </div>
-                {formError && (
-                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
-                    <p className="text-[13px] text-red-600">{formError}</p>
+                )}
+                {formStep === 2 && (
+                  <div className="space-y-4">
+                    <div>
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
+                        Lampiran Existing ({editingTxAttachments?.length ?? 0})
+                      </p>
+                      {editingTxAttachments && editingTxAttachments.length > 0 ? (
+                        <div className="space-y-2">
+                          {editingTxAttachments.map((att) => {
+                            const isImage = att.mime_type?.startsWith("image/");
+                            return (
+                              <div
+                                key={att.id || att.url}
+                                className="flex items-center gap-2 rounded-xl bg-app-surface-alt p-2"
+                              >
+                                {isImage ? (
+                                  <img
+                                    src={att.url}
+                                    alt={att.file_name}
+                                    className="h-12 w-12 rounded-lg object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-app-primary-muted">
+                                    <span className="text-lg">📄</span>
+                                  </div>
+                                )}
+                                <span className="flex-1 truncate text-xs text-app-body">
+                                  {att.file_name}
+                                </span>
+                                {onRemoveAttachment && att.id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onRemoveAttachment(att.id!)}
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-red-500 transition hover:bg-red-50 active:scale-90"
+                                    aria-label={`Hapus ${att.file_name}`}
+                                  >
+                                    <XMarkIcon className="h-4 w-4" />
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-app-body-muted">
+                          Belum ada lampiran
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
+                        Tambah Lampiran Baru
+                      </p>
+                      <div className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          multiple
+                          onChange={(e) => {
+                            const files = e.target.files;
+                            if (!files?.length) {
+                              setAttachmentLabel("Belum ada file dipilih");
+                              setHasAttachment(false);
+                            } else if (files.length === 1) {
+                              setAttachmentLabel(files[0].name);
+                              setHasAttachment(true);
+                            } else {
+                              setAttachmentLabel(
+                                `${files.length} file dipilih`,
+                              );
+                              setHasAttachment(true);
+                            }
+                          }}
+                          className="absolute h-0 w-0 opacity-0"
+                          id="kas-rt-attachment-input"
+                        />
+                        <label
+                          htmlFor="kas-rt-attachment-input"
+                          className="shrink-0 cursor-pointer rounded-xl px-3 py-1.5 text-xs font-bold text-white transition active:scale-90"
+                          style={{ background: "var(--color-primary)" }}
+                        >
+                          Pilih File
+                        </label>
+                        <span className="flex-1 truncate text-xs text-app-body-muted">
+                          {attachmentLabel}
+                        </span>
+                      </div>
+                      {hasAttachment && attachmentLabel !== "Belum ada file dipilih" && (
+                        <div className="mt-2 text-[10px] text-app-body-muted">
+                          ✓ {attachmentLabel} akan diupload
+                        </div>
+                      )}
+                    </div>
+                    {formError && (
+                      <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
+                        <p className="text-[13px] text-red-600">{formError}</p>
+                      </div>
+                    )}
                   </div>
                 )}
                 <div className="flex gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={onClose}
+                    onClick={() =>
+                      formStep > 1
+                        ? setFormStep((s) => (s - 1) as 1 | 2 | 3)
+                        : onClose()
+                    }
                     disabled={isSubmitting}
                     className="flex-1 rounded-2xl py-3 text-sm font-bold text-app-body transition hover:bg-app-surface-alt active:scale-95 disabled:opacity-50"
                     style={{ background: "var(--color-surface-alt)" }}
                   >
-                    Batal
+                    {formStep > 1 ? "Kembali" : "Batal"}
                   </button>
-                  <button
-                    type="button"
-                    disabled={!isStep2Valid || isSubmitting}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSubmit(
-                        e as unknown as React.FormEvent<HTMLFormElement>,
-                      );
-                    }}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                    style={actionButtonStyle(!isStep2Valid || isSubmitting)}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                        Menyimpan...
-                      </>
-                    ) : (
-                      "Simpan"
-                    )}
-                  </button>
+                  {formStep === 1 ? (
+                    <button
+                      type="button"
+                      disabled={!isStep2Valid || isSubmitting}
+                      onClick={() => setFormStep(2)}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                      style={actionButtonStyle(!isStep2Valid || isSubmitting)}
+                    >
+                      Lanjut
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!isStep2Valid || isSubmitting}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleSubmit(
+                          e as unknown as React.FormEvent<HTMLFormElement>,
+                        );
+                      }}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                      style={actionButtonStyle(!isStep2Valid || isSubmitting)}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                          Menyimpan...
+                        </>
+                      ) : (
+                        "Simpan"
+                      )}
+                    </button>
+                  )}
                 </div>
-              </div>
+              </>
             ) : (
               <>
                 {formStep === 1 && (
