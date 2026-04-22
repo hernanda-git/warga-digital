@@ -63,20 +63,65 @@ export async function GET() {
       }, {});
     }
 
+    // Fetch custom data for all members
+    const memberIds = memberList.map((m) => m.id);
+    console.log("[Organisation API] Fetching custom data for", memberIds.length, "members");
+    console.log("[Organisation API] Member IDs:", memberIds);
+    
+    let customDataMap: Record<string, { fullName: string; blockName: string; whatsappNumber: string; profilePictureUrl: string | null }> = {};
+    if (memberIds.length > 0) {
+      const { data: customs, error: customsError } = await supabase
+        .from("organisation_member_customs")
+        .select("organisation_member_id, custom_full_name, custom_block_name, custom_whatsapp_number, custom_profile_picture_url")
+        .in("organisation_member_id", memberIds);
+      
+      console.log("[Organisation API] Customs query result:", {
+        data: customs,
+        error: customsError,
+        count: customs?.length ?? 0
+      });
+      
+      if (customsError) {
+        console.error("[Organisation API] Error fetching customs:", customsError);
+      }
+      
+      customDataMap = (customs ?? []).reduce<Record<string, { fullName: string; blockName: string; whatsappNumber: string; profilePictureUrl: string | null }>>((acc, c) => {
+        acc[c.organisation_member_id] = {
+          fullName: c.custom_full_name,
+          blockName: c.custom_block_name ?? "",
+          whatsappNumber: c.custom_whatsapp_number,
+          profilePictureUrl: c.custom_profile_picture_url ?? null,
+        };
+        return acc;
+      }, {});
+      
+      console.log("[Organisation API] Custom data map:", customDataMap);
+    }
+
     const membersByRole = memberList.reduce<Record<string, OrganisationMemberApi[]>>((acc, m) => {
       const roleId = m.organisation_role_id;
       if (!acc[roleId]) acc[roleId] = [];
       const profilePictureUrl = m.user_id
         ? (userAvatarMap[m.user_id] ?? m.profile_picture_url ?? null)
         : (m.profile_picture_url ?? null);
+      const custom = customDataMap[m.id] ?? null;
+      
+      console.log("[Organisation API] Processing member:", {
+        id: m.id,
+        full_name: m.full_name,
+        custom: custom,
+        finalFullName: custom?.fullName ?? m.full_name
+      });
+      
       acc[roleId].push({
         id: m.id,
         userId: m.user_id ?? null,
-        fullName: m.full_name,
-        blockName: m.block_name ?? "",
-        whatsappNumber: m.whatsapp_number,
-        profilePictureUrl,
+        fullName: custom?.fullName ?? m.full_name,
+        blockName: custom?.blockName ?? (m.block_name ?? ""),
+        whatsappNumber: custom?.whatsappNumber ?? m.whatsapp_number,
+        profilePictureUrl: custom?.profilePictureUrl ?? profilePictureUrl,
         sortOrder: m.sort_order ?? 0,
+        custom: custom || null,
       });
       return acc;
     }, {});

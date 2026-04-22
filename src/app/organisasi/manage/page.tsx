@@ -14,6 +14,7 @@ import {
   UserGroupIcon,
   ExclamationTriangleIcon,
   BuildingOffice2Icon,
+  CameraIcon,
 } from "@heroicons/react/24/outline";
 import { useAuthStore } from "@/stores/auth-store";
 import { PageLoader, getInitials } from "@/components/ui";
@@ -55,6 +56,13 @@ type CommunityUser = {
   profilePictureUrl: string | null;
 };
 
+type CustomDataInput = {
+  fullName: string;
+  blockName: string;
+  whatsappNumber: string;
+  profilePictureUrl: string | null;
+};
+
 type DeleteTarget =
   | { kind: "role"; role: OrganisationRoleApi }
   | { kind: "member"; member: OrganisationMemberApi };
@@ -69,7 +77,7 @@ function MemberRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const isVacant = member.userId == null;
+  const isVacant = member.userId == null && !member.custom;
   const displayName = isVacant ? "Posisi Kosong" : member.fullName;
   const displaySub = isVacant
     ? "Belum ada penanggung jawab"
@@ -283,6 +291,16 @@ function OrganisationSheet({
   const [selectedUserId, setSelectedUserId] = useState<string>(
     member?.userId ?? "",
   );
+  const [useCustomData, setUseCustomData] = useState(false);
+  const [customData, setCustomData] = useState<CustomDataInput>({
+    fullName: "",
+    blockName: "",
+    whatsappNumber: "",
+    profilePictureUrl: null,
+  });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const isRole = kind === "add-role" || kind === "edit-role";
   const isMember = kind === "add-member" || kind === "edit-member";
@@ -307,7 +325,46 @@ function OrganisationSheet({
       )
       .catch(() => setCommunityUsers([]))
       .finally(() => setCommunityUsersLoading(false));
-  }, [isMember, member?.userId]);
+    
+    // Initialize custom data from existing member if editing
+    if (kind === "edit-member" && member) {
+      const hasCustom = member.custom != null;
+      setUseCustomData(hasCustom);
+      if (hasCustom && member.custom) {
+        setCustomData({
+          fullName: member.custom.fullName,
+          blockName: member.custom.blockName,
+          whatsappNumber: member.custom.whatsappNumber,
+          profilePictureUrl: member.custom.profilePictureUrl,
+        });
+        if (member.custom.profilePictureUrl) {
+          setAvatarPreview(member.custom.profilePictureUrl);
+        }
+      } else {
+        // Pre-fill with user's actual data
+        setCustomData({
+          fullName: member.fullName,
+          blockName: member.blockName,
+          whatsappNumber: member.whatsappNumber,
+          profilePictureUrl: member.profilePictureUrl,
+        });
+        if (member.profilePictureUrl) {
+          setAvatarPreview(member.profilePictureUrl);
+        }
+      }
+    } else {
+      setUseCustomData(false);
+      setCustomData({
+        fullName: "",
+        blockName: "",
+        whatsappNumber: "",
+        profilePictureUrl: null,
+      });
+      setAvatarPreview(null);
+    }
+    setAvatarFile(null);
+    setUploadingAvatar(false);
+  }, [isMember, member, kind]);
 
   const handleSubmitRole = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -341,34 +398,120 @@ function OrganisationSheet({
     }
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        setErr("File harus berupa gambar (JPG, PNG, dll)");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setErr("Ukuran file maksimal 5MB");
+        return;
+      }
+      setAvatarFile(file);
+      const previewUrl = URL.createObjectURL(file);
+      setAvatarPreview(previewUrl);
+    }
+  };
+
+  const uploadAvatar = async (file: File, memberId: string): Promise<string | null> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("memberId", memberId);
+    
+    const res = await apiFetch("/api/organisation/members/avatar", {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: "Upload failed" }));
+      throw new Error(error.message ?? "Gagal mengupload foto");
+    }
+    
+    const data = await res.json();
+    return data.avatarUrl;
+  };
+
   const handleSubmitMember = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(null);
     setSaving(true);
     const userId = selectedUserId.trim() ? selectedUserId.trim() : null;
+    
+    console.log("[Manage Page] Submitting member:", {
+      kind,
+      userId,
+      useCustomData,
+      customData,
+      roleId,
+      existingMemberId: member?.id
+    });
+    
     try {
+      let customPayload = useCustomData ? customData : undefined;
+      let memberId: string | null = null;
+      
+      console.log("[Manage Page] Sending customPayload:", customPayload);
+      
+      // First, create/update member
       if (kind === "add-member" && roleId) {
+        console.log("[Manage Page] POST to /api/organisation/roles/", roleId, "/members");
         const res = await apiFetch(
           `/api/organisation/roles/${roleId}/members`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
-            body: JSON.stringify({ userId }),
+            body: JSON.stringify({ userId, custom: customPayload }),
           },
         );
         const data = await res.json();
+        console.log("[Manage Page] POST response:", { status: res.status, data });
         if (!res.ok) throw new Error(data.message ?? "Gagal menambah anggota");
+        memberId = data.id;
       } else if (kind === "edit-member" && member) {
+        console.log("[Manage Page] PATCH to /api/organisation/members/", member.id);
         const res = await apiFetch(`/api/organisation/members/${member.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ userId }),
+          body: JSON.stringify({ userId, custom: customPayload }),
         });
         const data = await res.json();
+        console.log("[Manage Page] PATCH response:", { status: res.status, data });
         if (!res.ok) throw new Error(data.message ?? "Gagal mengubah anggota");
+        memberId = member.id;
       }
+      
+      // Upload avatar file if provided
+      if (avatarFile && memberId && useCustomData) {
+        try {
+          setUploadingAvatar(true);
+          const avatarUrl = await uploadAvatar(avatarFile, memberId);
+          if (avatarUrl) {
+            customPayload = {
+              ...(customPayload ?? customData),
+              profilePictureUrl: avatarUrl,
+            };
+            // Update the member with new avatar URL
+            await apiFetch(`/api/organisation/members/${memberId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ userId, custom: customPayload }),
+            });
+          }
+        } catch (uploadError) {
+          console.error("Avatar upload error:", uploadError);
+          // Continue anyway, don't block the save
+        } finally {
+          setUploadingAvatar(false);
+        }
+      }
+      
       onSaved();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Terjadi kesalahan");
@@ -613,6 +756,206 @@ function OrganisationSheet({
                   </p>
                 )}
               </div>
+
+              {/* Custom Data Toggle */}
+              <div className="rounded-2xl border border-app-input-border bg-app-surface-alt/40 p-3">
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useCustomData}
+                    onChange={(e) => setUseCustomData(e.target.checked)}
+                    className="h-4 w-4 rounded border-app-input-border text-primary focus:ring-primary"
+                  />
+                  <div>
+                    <span className="text-sm font-bold text-app-title">
+                      Gunakan Data Custom
+                    </span>
+                    <p className="text-[11px] text-app-body-muted">
+                      Override nama, foto, dan nomor WA dari data warga
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Custom Data Fields */}
+              {useCustomData && (
+                <div className="space-y-3 rounded-2xl border border-app-input-border bg-app-surface-alt/40 p-4">
+                  <div>
+                    <label
+                      htmlFor="custom-fullname"
+                      className="block text-[11px] font-bold uppercase tracking-widest text-app-body-muted mb-1.5"
+                    >
+                      Nama Lengkap
+                    </label>
+                    <input
+                      id="custom-fullname"
+                      type="text"
+                      value={customData.fullName}
+                      onChange={(e) =>
+                        setCustomData({ ...customData, fullName: e.target.value })
+                      }
+                      className="w-full rounded-2xl border px-4 py-2.5 text-sm font-semibold text-app-title focus:outline-none bg-white transition-all"
+                      style={{ borderColor: "var(--color-input-border)" }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "var(--color-primary)";
+                        e.currentTarget.style.boxShadow =
+                          "0 0 0 3px color-mix(in srgb, var(--color-primary) 16%, white 84%)";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "var(--color-input-border)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                      placeholder="Masukkan nama lengkap"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="custom-block"
+                      className="block text-[11px] font-bold uppercase tracking-widest text-app-body-muted mb-1.5"
+                    >
+                      Blok / Area
+                    </label>
+                    <input
+                      id="custom-block"
+                      type="text"
+                      value={customData.blockName}
+                      onChange={(e) =>
+                        setCustomData({ ...customData, blockName: e.target.value })
+                      }
+                      className="w-full rounded-2xl border px-4 py-2.5 text-sm font-semibold text-app-title focus:outline-none bg-white transition-all"
+                      style={{ borderColor: "var(--color-input-border)" }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "var(--color-primary)";
+                        e.currentTarget.style.boxShadow =
+                          "0 0 0 3px color-mix(in srgb, var(--color-primary) 16%, white 84%)";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "var(--color-input-border)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                      placeholder="Contoh: Blok A"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="custom-whatsapp"
+                      className="block text-[11px] font-bold uppercase tracking-widest text-app-body-muted mb-1.5"
+                    >
+                      Nomor WhatsApp
+                    </label>
+                    <input
+                      id="custom-whatsapp"
+                      type="tel"
+                      value={customData.whatsappNumber}
+                      onChange={(e) =>
+                        setCustomData({ ...customData, whatsappNumber: e.target.value })
+                      }
+                      className="w-full rounded-2xl border px-4 py-2.5 text-sm font-semibold text-app-title focus:outline-none bg-white transition-all"
+                      style={{ borderColor: "var(--color-input-border)" }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "var(--color-primary)";
+                        e.currentTarget.style.boxShadow =
+                          "0 0 0 3px color-mix(in srgb, var(--color-primary) 16%, white 84%)";
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "var(--color-input-border)";
+                        e.currentTarget.style.boxShadow = "none";
+                      }}
+                      placeholder="6281234567890"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="custom-avatar"
+                      className="block text-[11px] font-bold uppercase tracking-widest text-app-body-muted mb-2"
+                    >
+                      Foto Profil
+                    </label>
+                    <div className="flex items-start gap-4">
+                      {/* Avatar Preview */}
+                      <div className="relative shrink-0">
+                        <div
+                          className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl text-lg font-extrabold shadow-sm"
+                          style={{
+                            background: avatarPreview
+                              ? "transparent"
+                              : "var(--color-primary)",
+                            color: avatarPreview ? "transparent" : "white",
+                          }}
+                        >
+                          {avatarPreview ? (
+                            <Image
+                              src={avatarPreview}
+                              alt="Preview"
+                              width={80}
+                              height={80}
+                              className="h-full w-full object-cover"
+                              referrerPolicy="no-referrer"
+                              unoptimized
+                            />
+                          ) : (
+                            <span>?</span>
+                          )}
+                        </div>
+                        {uploadingAvatar && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50">
+                            <ArrowPathIcon className="h-6 w-6 animate-spin text-white" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Upload Button */}
+                      <div className="flex-1">
+                        <label
+                          htmlFor="custom-avatar-upload"
+                          className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border-2 border-dashed border-app-input-border px-4 py-3 text-sm font-semibold text-app-body-muted transition hover:border-primary hover:text-primary"
+                        >
+                          <CameraIcon className="h-5 w-5" />
+                          <span>{avatarFile ? "Ganti Foto" : "Upload Foto"}</span>
+                          <input
+                            id="custom-avatar-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarChange}
+                            className="hidden"
+                            disabled={uploadingAvatar}
+                          />
+                        </label>
+                        <p className="mt-2 text-[11px] text-app-body-muted">
+                          Format: JPG, PNG • Max: 5MB
+                        </p>
+                        {avatarFile && (
+                          <p className="mt-1 text-[11px] text-app-body-muted">
+                            File: {avatarFile.name} ({Math.round(avatarFile.size / 1024)} KB)
+                          </p>
+                        )}
+                        {avatarPreview && !avatarFile && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAvatarPreview(null);
+                              setAvatarFile(null);
+                              setCustomData({ ...customData, profilePictureUrl: null });
+                            }}
+                            className="mt-2 text-[11px] font-semibold text-red-500 hover:text-red-600"
+                          >
+                            Hapus foto
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-2 pt-1">
                 <button

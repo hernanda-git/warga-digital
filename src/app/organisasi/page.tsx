@@ -31,7 +31,7 @@ const keyframes = `
 
 /* ─── Member Card (portrait) ─────────────────────────────── */
 function MemberCard({ member }: { member: OrganisationMemberApi }) {
-  const isVacant = member.userId == null || !member.whatsappNumber?.trim();
+  const isVacant = member.userId == null && !member.custom;
   const displayName = isVacant ? "Posisi Kosong" : member.fullName;
   const [imgError, setImgError] = useState(false);
   const profilePictureUrl = member.profilePictureUrl?.trim() || null;
@@ -257,13 +257,30 @@ export default function OrganisasiPage() {
     else setRefreshing(true);
     setError(null);
     try {
+      console.log("[Organisasi Page] Fetching /api/organisation...");
       const res = await apiFetch("/api/organisation", {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Gagal memuat data organisasi");
       const data: OrganisationTreeApi = await res.json();
+      console.log("[Organisasi Page] Received organisation data:", data);
+      
+      // Log all members with custom data
+      data.roles.forEach(role => {
+        role.members.forEach(member => {
+          if (member.custom) {
+            console.log("[Organisasi Page] Member with custom data:", {
+              id: member.id,
+              fullName: member.fullName,
+              custom: member.custom
+            });
+          }
+        });
+      });
+      
       setTree(data);
     } catch (e) {
+      console.error("[Organisasi Page] Error loading tree:", e);
       setError(e instanceof Error ? e.message : "Gagal memuat data organisasi");
     } finally {
       setLoading(false);

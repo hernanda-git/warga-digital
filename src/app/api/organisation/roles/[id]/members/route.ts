@@ -2,10 +2,19 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
 import { requireCanManageOrganisation } from "../../../require-manage";
+import { getSessionFromCookie } from "@/lib/auth/session";
+import { notifyAllActiveUsers } from "@/lib/notifications";
 
 const VACANT_LABEL = "Vacant";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+interface CustomDataInput {
+  fullName: string;
+  blockName: string;
+  whatsappNumber: string;
+  profilePictureUrl?: string | null;
+}
 
 async function getUserDisplay(supabase: ReturnType<typeof createServerClient>, userId: string) {
   const { data: user, error: uErr } = await supabase
@@ -50,9 +59,10 @@ async function getUserDisplay(supabase: ReturnType<typeof createServerClient>, u
 
 /**
  * POST /api/organisation/roles/[id]/members
- * Body: { userId: string | null }
+ * Body: { userId: string | null, custom?: { fullName, blockName, whatsappNumber, profilePictureUrl } }
  * - userId null or "vacant" → create Vacant slot.
  * - userId = registered user id in this community → create member linked to that user.
+ * - custom data overrides the displayed information if provided
  */
 export async function POST(request: Request, context: RouteContext) {
   const forbidden = await requireCanManageOrganisation();
@@ -61,14 +71,23 @@ export async function POST(request: Request, context: RouteContext) {
   const { id: roleId } = await context.params;
   if (!roleId) return NextResponse.json({ message: "ID peran tidak valid." }, { status: 400 });
 
-  try {
-    const body = (await request.json()) as { userId?: string | null };
-    const rawUserId = body.userId;
-    const isVacant =
-      rawUserId === null ||
-      rawUserId === undefined ||
-      rawUserId === "" ||
-      String(rawUserId).toLowerCase() === "vacant";
+    try {
+      const body = (await request.json()) as { userId?: string | null; custom?: CustomDataInput };
+      const rawUserId = body.userId;
+      const customData = body.custom;
+      
+      console.log("[Organisation POST] Received request:", {
+        roleId,
+        userId: rawUserId,
+        hasCustom: !!customData,
+        customData: customData
+      });
+      
+      const isVacant =
+        rawUserId === null ||
+        rawUserId === undefined ||
+        rawUserId === "" ||
+        String(rawUserId).toLowerCase() === "vacant";
 
     const supabase = createServerClient();
 
@@ -95,10 +114,10 @@ export async function POST(request: Request, context: RouteContext) {
         .insert({
           organisation_role_id: roleId,
           user_id: null,
-          full_name: VACANT_LABEL,
-          block_name: "",
-          whatsapp_number: "",
-          profile_picture_url: null,
+          full_name: customData?.fullName ?? VACANT_LABEL,
+          block_name: customData?.blockName ?? "",
+          whatsapp_number: customData?.whatsappNumber ?? "",
+          profile_picture_url: customData?.profilePictureUrl ?? null,
           sort_order: sortOrder,
           updated_at: new Date().toISOString(),
         })
@@ -109,6 +128,30 @@ export async function POST(request: Request, context: RouteContext) {
         console.error("[Organisation] POST member (vacant) error:", error);
         return NextResponse.json({ message: "Gagal menambah slot Vacant." }, { status: 500 });
       }
+
+      // Insert custom data if provided
+      if (customData) {
+        console.log("[Organisation POST] Inserting custom data for member:", data.id, customData);
+        const { data: customInsertData, error: customError } = await supabase.from("organisation_member_customs").insert({
+          organisation_member_id: data.id,
+          custom_full_name: customData.fullName,
+          custom_block_name: customData.blockName,
+          custom_whatsapp_number: customData.whatsappNumber,
+          custom_profile_picture_url: customData.profilePictureUrl ?? null,
+        }).select();
+        
+        console.log("[Organisation POST] Custom insert result:", {
+          data: customInsertData,
+          error: customError
+        });
+        
+        if (customError) {
+          console.error("[Organisation] Failed to insert custom data:", customError);
+        } else {
+          console.log("[Organisation POST] ✅ Custom data inserted successfully");
+        }
+      }
+
       return NextResponse.json({
         id: data.id,
         userId: data.user_id ?? null,
@@ -148,10 +191,10 @@ export async function POST(request: Request, context: RouteContext) {
       .insert({
         organisation_role_id: roleId,
         user_id: display.user_id,
-        full_name: display.full_name,
-        block_name: display.block_name,
-        whatsapp_number: display.whatsapp_number,
-        profile_picture_url: display.profile_picture_url,
+        full_name: customData?.fullName ?? display.full_name,
+        block_name: customData?.blockName ?? display.block_name,
+        whatsapp_number: customData?.whatsappNumber ?? display.whatsapp_number,
+        profile_picture_url: customData?.profilePictureUrl ?? display.profile_picture_url,
         sort_order: sortOrder,
         updated_at: new Date().toISOString(),
       })
@@ -162,6 +205,50 @@ export async function POST(request: Request, context: RouteContext) {
       console.error("[Organisation] POST member error:", error);
       return NextResponse.json({ message: "Gagal menambah anggota." }, { status: 500 });
     }
+
+    // Insert custom data if provided
+    if (customData) {
+      console.log("[Organisation POST] Inserting custom data for member:", data.id, customData);
+      const { data: customInsertData, error: customError } = await supabase.from("organisation_member_customs").insert({
+        organisation_member_id: data.id,
+        custom_full_name: customData.fullName,
+        custom_block_name: customData.blockName,
+        custom_whatsapp_number: customData.whatsappNumber,
+        custom_profile_picture_url: customData.profilePictureUrl ?? null,
+      }).select();
+      
+      console.log("[Organisation POST] Custom insert result:", {
+        data: customInsertData,
+        error: customError
+      });
+      
+      if (customError) {
+        console.error("[Organisation] Failed to insert custom data:", customError);
+      } else {
+        console.log("[Organisation POST] ✅ Custom data inserted successfully");
+      }
+    }
+
+    // Send notification
+    const session = await getSessionFromCookie();
+    const displayName = customData?.fullName ?? display.full_name;
+    await notifyAllActiveUsers(
+      supabase,
+      {
+        tenant_id: DEFAULT_TENANT_ID,
+        actor_user_id: session?.userId ?? null,
+        type: "ORGANISASI",
+        priority: "NORMAL",
+        title: "Pengurus RT Diperbarui",
+        body: `${displayName} telah ditambahkan ke susunan pengurus RT.`,
+        action_url: "/organisasi",
+        entity_table: "organisation_members",
+        entity_id: data.id,
+        metadata: { assignedUserId: userId, fullName: displayName },
+        created_by: session?.userId ?? null,
+      },
+      session?.userId,
+    );
 
     return NextResponse.json({
       id: data.id,

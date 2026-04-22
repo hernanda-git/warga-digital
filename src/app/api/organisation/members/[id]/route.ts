@@ -9,6 +9,13 @@ const VACANT_LABEL = "Vacant";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
+interface CustomDataInput {
+  fullName: string;
+  blockName: string;
+  whatsappNumber: string;
+  profilePictureUrl?: string | null;
+}
+
 async function getUserDisplay(
   supabase: ReturnType<typeof createServerClient>,
   userId: string,
@@ -55,9 +62,10 @@ async function getUserDisplay(
 
 /**
  * PATCH /api/organisation/members/[id]
- * Body: { userId: string | null }
+ * Body: { userId: string | null, custom?: { fullName, blockName, whatsappNumber, profilePictureUrl } }
  * - userId null or "vacant" → set slot to Vacant.
  * - userId = registered user id → update member to that user (sync from users).
+ * - custom data overrides the displayed information if provided
  */
 export async function PATCH(request: Request, context: RouteContext) {
   const forbidden = await requireCanManageOrganisation();
@@ -70,14 +78,23 @@ export async function PATCH(request: Request, context: RouteContext) {
       { status: 400 },
     );
 
-  try {
-    const body = (await request.json()) as { userId?: string | null };
-    const rawUserId = body.userId;
-    const isVacant =
-      rawUserId === null ||
-      rawUserId === undefined ||
-      rawUserId === "" ||
-      String(rawUserId).toLowerCase() === "vacant";
+    try {
+      const body = (await request.json()) as { userId?: string | null; custom?: CustomDataInput };
+      const rawUserId = body.userId;
+      const customData = body.custom;
+      
+      console.log("[Organisation PATCH] Received request:", {
+        id,
+        userId: rawUserId,
+        hasCustom: !!customData,
+        customData: customData
+      });
+      
+      const isVacant =
+        rawUserId === null ||
+        rawUserId === undefined ||
+        rawUserId === "" ||
+        String(rawUserId).toLowerCase() === "vacant";
 
     const supabase = createServerClient();
 
@@ -86,10 +103,10 @@ export async function PATCH(request: Request, context: RouteContext) {
         .from("organisation_members")
         .update({
           user_id: null,
-          full_name: VACANT_LABEL,
-          block_name: "",
-          whatsapp_number: "",
-          profile_picture_url: null,
+          full_name: customData?.fullName ?? VACANT_LABEL,
+          block_name: customData?.blockName ?? "",
+          whatsapp_number: customData?.whatsappNumber ?? "",
+          profile_picture_url: customData?.profilePictureUrl ?? null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", id)
@@ -110,6 +127,46 @@ export async function PATCH(request: Request, context: RouteContext) {
           { message: "Anggota tidak ditemukan." },
           { status: 404 },
         );
+
+      // Upsert custom data if provided, otherwise delete existing custom
+      if (customData) {
+        console.log("[Organisation PATCH] Upserting custom data for member:", id, customData);
+        const { data: customUpsertData, error: customError } = await supabase.from("organisation_member_customs").upsert({
+          organisation_member_id: id,
+          custom_full_name: customData.fullName,
+          custom_block_name: customData.blockName,
+          custom_whatsapp_number: customData.whatsappNumber,
+          custom_profile_picture_url: customData.profilePictureUrl ?? null,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: "organisation_member_id",
+        }).select();
+        
+        console.log("[Organisation PATCH] Custom upsert result:", {
+          data: customUpsertData,
+          error: customError
+        });
+        
+        if (customError) {
+          console.error("[Organisation] Failed to upsert custom data:", customError);
+        } else {
+          console.log("[Organisation PATCH] ✅ Custom data upserted successfully");
+        }
+      } else {
+        console.log("[Organisation PATCH] Deleting custom data for member:", id);
+        const { data: deleteData, error: deleteError } = await supabase.from("organisation_member_customs").delete().eq("organisation_member_id", id).select();
+        
+        console.log("[Organisation PATCH] Custom delete result:", {
+          data: deleteData,
+          error: deleteError
+        });
+        
+        if (deleteError) {
+          console.error("[Organisation] Failed to delete custom data:", deleteError);
+        } else {
+          console.log("[Organisation PATCH] ✅ Custom data deleted successfully");
+        }
+      }
 
       // ── Notify all active users that the org structure changed ─────────────
       const session = await getSessionFromCookie();
@@ -171,10 +228,10 @@ export async function PATCH(request: Request, context: RouteContext) {
       .from("organisation_members")
       .update({
         user_id: display.user_id,
-        full_name: display.full_name,
-        block_name: display.block_name,
-        whatsapp_number: display.whatsapp_number,
-        profile_picture_url: display.profile_picture_url,
+        full_name: customData?.fullName ?? display.full_name,
+        block_name: customData?.blockName ?? display.block_name,
+        whatsapp_number: customData?.whatsappNumber ?? display.whatsapp_number,
+        profile_picture_url: customData?.profilePictureUrl ?? display.profile_picture_url,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -195,6 +252,22 @@ export async function PATCH(request: Request, context: RouteContext) {
         { message: "Anggota tidak ditemukan." },
         { status: 404 },
       );
+
+    // Upsert custom data if provided, otherwise delete existing custom
+    if (customData) {
+      await supabase.from("organisation_member_customs").upsert({
+        organisation_member_id: id,
+        custom_full_name: customData.fullName,
+        custom_block_name: customData.blockName,
+        custom_whatsapp_number: customData.whatsappNumber,
+        custom_profile_picture_url: customData.profilePictureUrl ?? null,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: "organisation_member_id",
+      });
+    } else {
+      await supabase.from("organisation_member_customs").delete().eq("organisation_member_id", id);
+    }
 
     // ── Notify all active users that the org structure changed ───────────────
     const session = await getSessionFromCookie();
