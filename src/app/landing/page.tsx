@@ -12,6 +12,7 @@ import { ResidentPostsSection } from "@/components/landing/ResidentPostsSection"
 import { LandingSection } from "@/components/landing/LandingSection";
 import { EmptyState } from "@/components/landing/empty-states/EmptyState";
 import { JasaCard } from "@/components/jasa/JasaCard";
+import { JasaDetailModal } from "@/components/jasa/JasaDetailModal";
 import {
   useProfileData,
   useMarketplaceData,
@@ -23,6 +24,7 @@ import {
   MARKETPLACE_SECTIONS,
   EMPTY_STATE_CONFIGS,
 } from "@/config/landing";
+import type { JasaServiceDetailWithMedia } from "@/types/database";
 
 /**
  * Landing Page
@@ -47,6 +49,10 @@ import {
 export default function LandingPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  // ── Modals ────────────────────────────────────────────────────────────────
+  const [viewingService, setViewingService] =
+    useState<JasaServiceDetailWithMedia | null>(null);
 
   // ── Data Hooks ─────────────────────────────────────────────────────────────
   const {
@@ -93,6 +99,23 @@ export default function LandingPage() {
     };
     fetchNotificationCount();
   }, []);
+
+  // ── Jasa Detail Handlers ──────────────────────────────────────────────────
+  const handleViewService = async (serviceId: string) => {
+    try {
+      const response = await apiFetch(`/api/jasa/${serviceId}`);
+      const data = await response.json();
+      if (data.success) {
+        setViewingService(data.data);
+      }
+    } catch (err) {
+      console.error("Failed to view service:", err);
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setViewingService(null);
+  };
 
   // ── Client-side Hydration Guard ───────────────────────────────────────────
   const [hasMounted, setHasMounted] = useState(false);
@@ -181,14 +204,18 @@ export default function LandingPage() {
 
         {/* JASA Section */}
         {isJasaServicesLoaded ? (
-          <LandingSection title="Jasa RT 03">
+          <LandingSection
+            title="Jasa RT 03"
+            viewAllText="Lihat semua"
+            viewAllHref="/jasa"
+          >
             {hasDirectJasaContent ? (
               <div className="grid grid-cols-1 gap-3">
                 {jasaServices.map((service) => (
                   <JasaCard
                     key={service.id}
                     service={service}
-                    onClick={() => router.push(`/jasa#${service.id}`)}
+                    onClick={() => handleViewService(service.id)}
                   />
                 ))}
               </div>
@@ -213,6 +240,18 @@ export default function LandingPage() {
         {/* Bottom Safe Area */}
         <div className="h-6" />
       </main>
+
+      {/* Jasa Detail Modal */}
+      <JasaDetailModal
+        isOpen={!!viewingService}
+        onClose={handleCloseDetail}
+        onEdit={() => {
+          if (viewingService) {
+            router.push(`/jasa#${viewingService.id}`);
+          }
+        }}
+        service={viewingService}
+      />
     </div>
   );
 }
