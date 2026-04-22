@@ -26,6 +26,11 @@ interface KasRtTransactionListProps {
   onTouchEnd: () => void;
 }
 
+// Touch action style to prevent browser default gestures
+const touchActionStyle: React.CSSProperties = {
+  touchAction: 'pan-y', // Allow vertical scrolling, handle horizontal in JS
+};
+
 /**
  * Transaction list with month separators and pull-to-refresh
  */
@@ -47,6 +52,7 @@ export function KasRtTransactionList({
   return (
     <div
       className="px-4 pb-8 pt-3"
+      style={touchActionStyle}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}

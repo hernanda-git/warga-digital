@@ -297,7 +297,10 @@ export default function KasRTPage() {
   return (
     <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
       {/* Scrollable container */}
-      <div className="flex-1 overflow-y-auto overscroll-contain">
+      <div 
+        className="flex-1 overflow-y-auto overscroll-contain"
+        style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
+      >
         {/* Hero section */}
 
         <KasRtHero
