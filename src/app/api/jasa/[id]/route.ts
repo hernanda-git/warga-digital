@@ -61,7 +61,6 @@ export async function GET(
   const { id } = await params;
 
   try {
-    console.log("[Jasa [id] GET] Fetching service with id:", id);
     const { data: service, error: serviceError } = await supabase
       .from("jasa_services")
       .select(
@@ -86,10 +85,6 @@ export async function GET(
       )
       .eq("id", id)
       .single();
-    console.log("[Jasa [id] GET] Service fetch result:", {
-      service,
-      serviceError,
-    });
 
     if (serviceError || !service) {
       return NextResponse.json(
@@ -107,45 +102,19 @@ export async function GET(
       );
     }
 
-    console.log(
-      "[Jasa [id] GET] Fetching category for category_id:",
-      service.category_id,
-    );
     // Fetch category info
-
     const { data: category } = await supabase
-
       .from("marketplace_categories")
-
       .select("id, name, icon")
-
       .eq("id", service.category_id)
-
       .single();
-    console.log("[Jasa [id] GET] Category fetch result:", { category });
 
-    console.log("[Jasa [id] GET] Fetching media for service_id:", id);
     // Fetch all media for this service
-
     const { data: media, error: mediaError } = await supabase
-
       .from("jasa_service_media")
-
       .select("id, url, alt_text, sort_order, is_primary")
-
       .eq("service_id", id)
-
       .order("sort_order", { ascending: true });
-
-    console.log("[Jasa [id] GET] Media fetch result:", {
-      mediaCount: media?.length,
-      media,
-      mediaError,
-    });
-
-    if (mediaError) {
-      console.error("Error fetching media:", mediaError);
-    }
 
     const response: JasaServiceDetailWithMedia = {
       ...service,
@@ -153,8 +122,6 @@ export async function GET(
       category_icon: category?.icon || null,
       media: media || [],
     };
-
-    console.log("[Jasa [id] GET] Final response:", response);
 
     return NextResponse.json({ success: true, data: response });
   } catch (error: any) {
@@ -182,30 +149,17 @@ export async function PUT(
   const supabase = createServerClient();
   const { id } = await params;
 
-  try {
-    const body: UpdateJasaRequest = await request.json();
+    try {
+      const body: UpdateJasaRequest = await request.json();
 
-    console.log("[Jasa [id] PUT] Update request body:", body);
+      // Check if service exists and user is owner
+      const { data: existingService, error: fetchError } = await supabase
+        .from("jasa_services")
+        .select("id, owner_user_id")
+        .eq("id", id)
+        .single();
 
-    // Check if service exists and user is owner
-
-    console.log("[Jasa [id] PUT] Fetching existing service with id:", id);
-
-    const { data: existingService, error: fetchError } = await supabase
-
-      .from("jasa_services")
-
-      .select("id, owner_user_id")
-
-      .eq("id", id)
-
-      .single();
-    console.log("[Jasa [id] PUT] Existing service fetch result:", {
-      existingService,
-      fetchError,
-    });
-
-    if (fetchError || !existingService) {
+      if (fetchError || !existingService) {
       return NextResponse.json(
         { success: false, error: "Layanan jasa tidak ditemukan" },
         { status: 404 },
@@ -299,24 +253,13 @@ export async function PUT(
       }
     }
 
-    console.log("[Jasa [id] PUT] Performing update with data:", updateData);
-
     // Perform update
     const { data: updatedService, error: updateError } = await supabase
-
       .from("jasa_services")
-
       .update(updateData)
-
       .eq("id", id)
-
       .select()
-
       .single();
-    console.log("[Jasa [id] PUT] Update result:", {
-      updatedService,
-      updateError,
-    });
 
     if (updateError) {
       console.error("Error updating jasa service:", updateError);
@@ -357,22 +300,12 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    console.log("[Jasa [id] DELETE] Checking service with id:", id);
     // Check if service exists and user is owner
-
     const { data: existingService, error: fetchError } = await supabase
-
       .from("jasa_services")
-
       .select("id, owner_user_id")
-
       .eq("id", id)
-
       .single();
-    console.log("[Jasa [id] DELETE] Existing service fetch result:", {
-      existingService,
-      fetchError,
-    });
 
     if (fetchError || !existingService) {
       return NextResponse.json(
@@ -388,20 +321,11 @@ export async function DELETE(
       );
     }
 
-    console.log("[Jasa [id] DELETE] Fetching media for service_id:", id);
     // Fetch all media URLs before deletion to clean up storage
-
     const { data: media } = await supabase
-
       .from("jasa_service_media")
-
       .select("id, url")
-
       .eq("service_id", id);
-    console.log("[Jasa [id] DELETE] Media fetch result:", {
-      mediaCount: media?.length,
-      media,
-    });
 
     // Delete media from storage bucket
     if (media && media.length > 0) {
@@ -422,17 +346,11 @@ export async function DELETE(
       }
     }
 
-    console.log("[Jasa [id] DELETE] Deleting service with id:", id);
     // Delete service (cascade will handle media table records)
-
     const { error: deleteError } = await supabase
-
       .from("jasa_services")
-
       .delete()
-
       .eq("id", id);
-    console.log("[Jasa [id] DELETE] Delete result:", { deleteError });
 
     if (deleteError) {
       console.error("Error deleting jasa service:", deleteError);

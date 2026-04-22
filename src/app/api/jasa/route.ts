@@ -73,21 +73,11 @@ export async function GET(request: Request) {
     const offset = (page - 1) * limit;
 
     // Get tenant ID for the current user
-
-    console.log("[Jasa GET] Fetching tenant_user for userId:", session.userId);
     const { data: tenantUser, error: tenantUserError } = await supabase
-
       .from("tenant_users")
-
       .select("tenant_id")
-
       .eq("user_id", session.userId)
-
       .single();
-    console.log("[Jasa GET] tenant_user result:", {
-      tenantUser,
-      tenantUserError,
-    });
 
     if (tenantUserError || !tenantUser) {
       return NextResponse.json(
@@ -99,22 +89,11 @@ export async function GET(request: Request) {
     let tenantId = tenantUser.tenant_id;
 
     if (searchParams.get("community_id")) {
-      console.log(
-        "[Jasa GET] Fetching community with id:",
-        searchParams.get("community_id"),
-      );
-
       const { data: community, error: commError } = await supabase
-
         .from("communities")
-
         .select("tenant_id")
-
         .eq("id", searchParams.get("community_id"))
-
         .single();
-
-      console.log("[Jasa GET] community result:", { community, commError });
 
       if (commError || !community) {
         return NextResponse.json(
@@ -176,30 +155,10 @@ export async function GET(request: Request) {
     }
 
     // Build count query with same filters
-
-    console.log("[Jasa GET] Building count query with filters:", {
-      category_id: query.category_id,
-
-      is_available: query.is_available,
-      min_price: query.min_price,
-
-      max_price: query.max_price,
-
-      q: query.q,
-
-      hari: query.hari,
-
-      tenantId,
-    });
-
     let countQuery = supabase
-
       .from("jasa_services")
-
       .select("*", { count: "exact", head: true })
-
       .or(`is_available.eq.true,owner_user_id.eq.${session.userId}`)
-
       .eq("tenant_id", tenantId);
 
     if (query.category_id) {
@@ -235,10 +194,7 @@ export async function GET(request: Request) {
       countQuery = countQuery.contains("hari_operasional", hariFilter);
     }
 
-    console.log("[Jasa GET] Executing count query");
     const { count: total, error: countError } = await countQuery;
-
-    console.log("[Jasa GET] Count query result:", { total, countError });
 
     if (countError) {
       throw countError;
@@ -254,21 +210,6 @@ export async function GET(request: Request) {
 
     const ownerIds = [...new Set(services.map((s) => s.owner_user_id))];
 
-    console.log("[Jasa GET] === OWNER DEBUG START ===");
-    console.log("[Jasa GET] Total services fetched:", services.length);
-    console.log("[Jasa GET] Unique owner IDs to fetch:", ownerIds);
-    
-    // Log each service's owner_user_id
-    services.forEach((s, idx) => {
-      console.log(`[Jasa GET] Service ${idx + 1}:`, {
-        id: s.id,
-        name: s.name,
-        owner_user_id: s.owner_user_id,
-        has_owner_id: !!s.owner_user_id,
-      });
-    });
-
-    console.log("[Jasa GET] Fetching owners with primary house...");
     const { data: owners, error: ownersError } = await supabase
       .from("users")
       .select(
@@ -284,17 +225,6 @@ export async function GET(request: Request) {
       )
       .in("id", ownerIds)
       .filter('user_houses.is_primary', 'eq', true);
-    
-    console.log("[Jasa GET] Owners query error:", ownersError);
-    console.log("[Jasa GET] Owners fetched count:", owners?.length || 0);
-    console.log("[Jasa GET] Owners data:", JSON.stringify(owners, null, 2));
-    
-    // Log which owners were found vs not found
-    const foundOwnerIds = new Set(owners?.map(o => o.id) || []);
-    const missingOwnerIds = ownerIds.filter(id => !foundOwnerIds.has(id));
-    console.log("[Jasa GET] Found owner IDs:", Array.from(foundOwnerIds));
-    console.log("[Jasa GET] Missing owner IDs (no primary house):", missingOwnerIds);
-    console.log("[Jasa GET] === OWNER DEBUG END ===");
 
     const ownerMap = new Map(
       (owners || []).map((u) => {
@@ -302,15 +232,6 @@ export async function GET(request: Request) {
         const houseData = userHousesArray[0]?.houses;
         const blokRumah = houseData?.blok_rumah ?? null;
         const fullName = u.full_name?.trim() || 'Unknown';
-        
-        console.log(`[Jasa GET] Building ownerMap for user ${u.id}:`, {
-          full_name: u.full_name,
-          trimmed_name: fullName,
-          has_user_houses: userHousesArray.length > 0,
-          house_data: houseData,
-          blok_rumah: blokRumah,
-          final_name: fullName,
-        });
         
         return [
           u.id,
@@ -321,9 +242,6 @@ export async function GET(request: Request) {
         ];
       }),
     );
-    
-    console.log("[Jasa GET] OwnerMap size:", ownerMap.size);
-    console.log("[Jasa GET] OwnerMap keys:", Array.from(ownerMap.keys()));
 
     const categoryIds = [...new Set(services.map((s) => s.category_id))];
     const { data: categories } = await supabase
@@ -339,41 +257,20 @@ export async function GET(request: Request) {
 
     const serviceIds = services.map((s) => s.id);
 
-    console.log("[Jasa GET] Fetching media for service ids:", serviceIds);
     const { data: media } = await supabase
-
       .from("jasa_service_media")
-
       .select("service_id, url, alt_text")
-
       .in("service_id", serviceIds)
-
       .eq("is_primary", true);
-
-    console.log("[Jasa GET] Media result:", {
-      mediaCount: media?.length,
-      media,
-    });
 
     const mediaMap = new Map((media || []).map((m) => [m.service_id, m.url]));
 
     const enrichedServices: JasaServiceWithMedia[] = services.map(
       (service) => {
         const owner = ownerMap.get(service.owner_user_id);
-        const hasOwnerInMap = ownerMap.has(service.owner_user_id);
         const finalName = (owner?.name && owner.name.trim()) 
           ? owner.name.trim() 
           : "Unknown";
-        
-        console.log(`[Jasa GET] Enriching service "${service.name}":`, {
-          service_id: service.id,
-          owner_user_id: service.owner_user_id,
-          has_owner_in_map: hasOwnerInMap,
-          owner_data: owner,
-          final_name: finalName,
-          final_blok: owner?.blok ?? null,
-          will_show_unknown: !hasOwnerInMap || !owner?.name || !owner.name.trim(),
-        });
         
         return {
           ...service,
@@ -384,18 +281,7 @@ export async function GET(request: Request) {
         };
       },
     );
-    
-    console.log("[Jasa GET] === ENRICHED SERVICES SAMPLE ===");
-    enrichedServices.slice(0, 3).forEach((s, i) => {
-      console.log(`[Jasa GET] Service ${i + 1}:`, {
-        id: s.id,
-        name: s.name,
-        owner_display_name: s.owner_display_name,
-        owner_blok_rumah: s.owner_blok_rumah,
-      });
-    });
 
-    console.log("[Jasa GET] Fetching JASA domain");
     const { data: jasaDomain, error: domainError } = await supabase
       .from("marketplace_domains")
       .select("id")
@@ -403,25 +289,18 @@ export async function GET(request: Request) {
       .single();
     
     if (domainError || !jasaDomain) {
-      console.error("[Jasa GET] Failed to fetch JASA domain:", domainError);
       return NextResponse.json(
         { success: false, error: "Domain JASA tidak ditemukan" },
         { status: 500 },
       );
     }
 
-    console.log("[Jasa GET] Fetching all categories for JASA domain");
     const { data: allCategories } = await supabase
       .from("marketplace_categories")
       .select("id, name, icon")
       .eq("domain_id", jasaDomain.id)
       .eq("is_active", true)
       .order("sort_order");
-    
-    console.log("[Jasa GET] All categories result:", {
-      allCategoriesCount: allCategories?.length,
-      allCategories,
-    });
 
     const response: JasaListResponse = {
       success: true,
@@ -482,8 +361,6 @@ export async function POST(request: Request) {
 
   try {
     const formData = await request.formData();
-
-    console.log("[Jasa POST] Form data keys:", [...formData.keys()]);
 
     const name = formData.get("name") as string;
 
@@ -558,16 +435,10 @@ export async function POST(request: Request) {
     const finalStatus = status || "AVAILABLE";
 
     const { data: user, error: userError } = await supabase
-
       .from("users")
-
       .select("full_name")
-
       .eq("id", session.userId)
-
       .single();
-
-    console.log("[Jasa POST] User fetch result:", { user, userError });
 
     if (userError || !user) {
       return NextResponse.json(
@@ -583,19 +454,10 @@ export async function POST(request: Request) {
       .substring(0, 220);
 
     const { data: category, error: categoryError } = await supabase
-
       .from("marketplace_categories")
-
       .select("id, domain_id")
-
       .eq("id", category_id)
-
       .single();
-
-    console.log("[Jasa POST] Category fetch result:", {
-      category,
-      categoryError,
-    });
 
     if (categoryError || !category) {
       return NextResponse.json(
@@ -605,16 +467,10 @@ export async function POST(request: Request) {
     }
 
     const { data: jasaDomain } = await supabase
-
       .from("marketplace_domains")
-
       .select("id")
-
       .eq("code", "JASA")
-
       .single();
-
-    console.log("[Jasa POST] JASA domain fetch result:", jasaDomain);
 
     if (!jasaDomain) {
       return NextResponse.json(
@@ -631,19 +487,10 @@ export async function POST(request: Request) {
     }
 
     const { data: tenantUser, error: tenantUserError } = await supabase
-
       .from("tenant_users")
-
       .select("tenant_id")
-
       .eq("user_id", session.userId)
-
       .single();
-
-    console.log("[Jasa POST] Tenant user fetch result:", {
-      tenantUser,
-      tenantUserError,
-    });
 
     if (tenantUserError || !tenantUser) {
       return NextResponse.json(
@@ -678,11 +525,6 @@ export async function POST(request: Request) {
       .select()
       .single();
 
-    console.log("[Jasa POST] Service insert result:", {
-      newService,
-      insertError,
-    });
-
     if (insertError) {
       console.error("Error inserting jasa service:", insertError);
       return NextResponse.json(
@@ -714,7 +556,6 @@ export async function POST(request: Request) {
             is_primary: true,
           });
 
-          console.log("[Jasa POST] Media insert result: success");
         }
       } catch (uploadError) {
         console.error("Error uploading primary image:", uploadError);
