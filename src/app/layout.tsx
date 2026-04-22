@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "./providers";
 import { AppShell } from "@/components/app-shell";
 import { Toaster } from "sonner";
@@ -19,6 +21,8 @@ export default function RootLayout({
       <body className="antialiased">
         <Providers>
           <AppShell>{children}</AppShell>
+          <Analytics />
+          <SpeedInsights />
           <Toaster
             position="bottom-center"
             offset={80}
