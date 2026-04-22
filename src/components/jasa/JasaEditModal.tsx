@@ -14,7 +14,6 @@ import type { JasaServiceDetailWithMedia } from "@/types/database";
 interface EditJasaData {
   name: string;
   description: string;
-  summary: string;
   estimated_price: number;
   category_id: string;
   hari_operasional: Record<string, boolean>;
@@ -67,7 +66,6 @@ export function JasaEditModal({
   const [formState, setFormState] = useState({
     name: "",
     description: "",
-    summary: "",
     estimated_price: "",
     category_id: "",
     hari_operasional: DEFAULT_DAYS,
@@ -112,7 +110,6 @@ export function JasaEditModal({
       setFormState({
         name: service.name,
         description: service.description || "",
-        summary: service.summary || "",
         estimated_price: service.estimated_price.toString(),
         category_id: service.category_id,
         hari_operasional: service.hari_operasional,
@@ -281,7 +278,6 @@ export function JasaEditModal({
       const data = {
         name: formState.name,
         description: formState.description,
-        summary: formState.summary,
         estimated_price: parseFloat(formState.estimated_price),
         category_id: formState.category_id,
         hari_operasional: formState.hari_operasional,
@@ -629,25 +625,6 @@ export function JasaEditModal({
                   rows={3}
                   placeholder="Jelaskan layanan yang Anda tawarkan..."
                   className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none resize-none"
-                  style={inputStyle()}
-                />
-              </div>
-
-              {/* Ringkasan */}
-              <div>
-                <label
-                  className="mb-1.5 block text-sm font-semibold"
-                  style={{ color: "var(--color-title)" }}
-                >
-                  Ringkasan (opsional)
-                </label>
-                <input
-                  type="text"
-                  name="summary"
-                  value={formState.summary}
-                  onChange={handleInputChange}
-                  placeholder="Satu baris promosi singkat"
-                  className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none"
                   style={inputStyle()}
                 />
               </div>
