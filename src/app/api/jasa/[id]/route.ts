@@ -182,7 +182,6 @@ export async function PUT(
     if (body.name !== undefined) updateData.name = body.name;
     if (body.description !== undefined)
       updateData.description = body.description;
-    if (body.summary !== undefined) updateData.summary = body.summary;
     if (body.estimated_price !== undefined)
       updateData.estimated_price = body.estimated_price;
     if (body.category_id !== undefined)

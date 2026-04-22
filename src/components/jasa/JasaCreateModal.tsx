@@ -51,7 +51,6 @@ export function JasaCreateModal({
   const [formState, setFormState] = useState({
     name: "",
     description: "",
-    summary: "",
     estimated_price: "",
     category_id: "",
     hari_operasional: DEFAULT_DAYS,
@@ -298,7 +297,6 @@ export function JasaCreateModal({
       const submitFormData = new FormData();
       submitFormData.append("name", formState.name);
       submitFormData.append("description", formState.description);
-      submitFormData.append("summary", formState.summary);
       submitFormData.append("estimated_price", formState.estimated_price);
       submitFormData.append("category_id", formState.category_id);
       submitFormData.append(
@@ -720,37 +718,6 @@ export function JasaCreateModal({
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="Jelaskan detail layanan yang Anda tawarkan..."
-                  className="w-full resize-none rounded-xl px-4 py-3 text-sm focus:outline-none"
-                  style={inputStyle()}
-                />
-              </div>
-
-              {/* Ringkasan */}
-              <div>
-                <label
-                  className="mb-1 block text-sm font-semibold"
-                  style={{ color: "var(--color-title)" }}
-                >
-                  Ringkasan{" "}
-                  <span
-                    className="font-normal text-xs"
-                    style={{ color: "var(--color-body-muted)" }}
-                  >
-                    (opsional)
-                  </span>
-                </label>
-                <p
-                  className="mb-1.5 text-xs"
-                  style={{ color: "var(--color-body-muted)" }}
-                >
-                  Teks pendek untuk preview card
-                </p>
-                <textarea
-                  name="summary"
-                  value={formState.summary}
-                  onChange={handleInputChange}
-                  rows={2}
-                  placeholder="Ringkasan singkat..."
                   className="w-full resize-none rounded-xl px-4 py-3 text-sm focus:outline-none"
                   style={inputStyle()}
                 />
