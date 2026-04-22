@@ -216,7 +216,7 @@ export async function GET(request: Request) {
         `
         id,
         full_name,
-        user_houses!left(
+        user_houses!user_houses_user_id_fkey(
           houses!inner(
             blok_rumah
           )
@@ -224,7 +224,7 @@ export async function GET(request: Request) {
       `
       )
       .in("id", ownerIds)
-      .filter('user_houses.is_primary', 'eq', true);
+      .eq('user_houses.is_primary', true);
 
     const ownerMap = new Map(
       (owners || []).map((u) => {
