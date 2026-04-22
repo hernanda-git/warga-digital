@@ -275,7 +275,7 @@ export async function GET(request: Request) {
         `
         id,
         full_name,
-        user_houses!left(
+        user_houses!user_houses_user_id_fkey!left(
           houses(
             blok_rumah
           )
