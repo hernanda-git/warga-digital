@@ -274,38 +274,6 @@ export function JasaDetailModal({
                 >
                   Estimasi harga layanan
                 </p>
-
-                {/* Rating */}
-                {service.rating_count > 0 && (
-                  <div className="mt-3 flex items-center gap-1.5">
-                    <div className="flex">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <StarSolidIcon
-                          key={i}
-                          className="h-4 w-4"
-                          style={{
-                            color:
-                              i < Math.round(service.rating_avg)
-                                ? "#facc15"
-                                : "#e5e7eb",
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <span
-                      className="text-sm font-semibold"
-                      style={{ color: "var(--color-body)" }}
-                    >
-                      {service.rating_avg.toFixed(1)}
-                    </span>
-                    <span
-                      className="text-xs"
-                      style={{ color: "var(--color-body-muted)" }}
-                    >
-                      ({service.rating_count} ulasan)
-                    </span>
-                  </div>
-                )}
               </div>
 
               {/* ── Description ───────────────────────────────────── */}
