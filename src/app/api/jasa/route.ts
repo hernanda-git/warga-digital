@@ -254,8 +254,22 @@ export async function GET(request: Request) {
 
     const ownerIds = [...new Set(services.map((s) => s.owner_user_id))];
 
-    console.log("[Jasa GET] Fetching owners with primary house for ids:", ownerIds);
-    const { data: owners } = await supabase
+    console.log("[Jasa GET] === OWNER DEBUG START ===");
+    console.log("[Jasa GET] Total services fetched:", services.length);
+    console.log("[Jasa GET] Unique owner IDs to fetch:", ownerIds);
+    
+    // Log each service's owner_user_id
+    services.forEach((s, idx) => {
+      console.log(`[Jasa GET] Service ${idx + 1}:`, {
+        id: s.id,
+        name: s.name,
+        owner_user_id: s.owner_user_id,
+        has_owner_id: !!s.owner_user_id,
+      });
+    });
+
+    console.log("[Jasa GET] Fetching owners with primary house...");
+    const { data: owners, error: ownersError } = await supabase
       .from("users")
       .select(
         `
@@ -271,20 +285,45 @@ export async function GET(request: Request) {
       .in("id", ownerIds)
       .filter('user_houses.is_primary', 'eq', true);
     
-    console.log("[Jasa GET] Owners result:", {
-      ownersCount: owners?.length,
-      owners,
-    });
+    console.log("[Jasa GET] Owners query error:", ownersError);
+    console.log("[Jasa GET] Owners fetched count:", owners?.length || 0);
+    console.log("[Jasa GET] Owners data:", JSON.stringify(owners, null, 2));
+    
+    // Log which owners were found vs not found
+    const foundOwnerIds = new Set(owners?.map(o => o.id) || []);
+    const missingOwnerIds = ownerIds.filter(id => !foundOwnerIds.has(id));
+    console.log("[Jasa GET] Found owner IDs:", Array.from(foundOwnerIds));
+    console.log("[Jasa GET] Missing owner IDs (no primary house):", missingOwnerIds);
+    console.log("[Jasa GET] === OWNER DEBUG END ===");
 
     const ownerMap = new Map(
-      (owners || []).map((u) => [
-        u.id,
-        { 
-          name: u.full_name?.trim() || 'Unknown', 
-          blok: (u.user_houses as any[])?.[0]?.houses?.blok_rumah ?? null 
-        },
-      ]),
+      (owners || []).map((u) => {
+        const userHousesArray = u.user_houses as any[] || [];
+        const houseData = userHousesArray[0]?.houses;
+        const blokRumah = houseData?.blok_rumah ?? null;
+        const fullName = u.full_name?.trim() || 'Unknown';
+        
+        console.log(`[Jasa GET] Building ownerMap for user ${u.id}:`, {
+          full_name: u.full_name,
+          trimmed_name: fullName,
+          has_user_houses: userHousesArray.length > 0,
+          house_data: houseData,
+          blok_rumah: blokRumah,
+          final_name: fullName,
+        });
+        
+        return [
+          u.id,
+          { 
+            name: fullName, 
+            blok: blokRumah
+          },
+        ];
+      }),
     );
+    
+    console.log("[Jasa GET] OwnerMap size:", ownerMap.size);
+    console.log("[Jasa GET] OwnerMap keys:", Array.from(ownerMap.keys()));
 
     const categoryIds = [...new Set(services.map((s) => s.category_id))];
     const { data: categories } = await supabase
@@ -321,17 +360,40 @@ export async function GET(request: Request) {
     const enrichedServices: JasaServiceWithMedia[] = services.map(
       (service) => {
         const owner = ownerMap.get(service.owner_user_id);
+        const hasOwnerInMap = ownerMap.has(service.owner_user_id);
+        const finalName = (owner?.name && owner.name.trim()) 
+          ? owner.name.trim() 
+          : "Unknown";
+        
+        console.log(`[Jasa GET] Enriching service "${service.name}":`, {
+          service_id: service.id,
+          owner_user_id: service.owner_user_id,
+          has_owner_in_map: hasOwnerInMap,
+          owner_data: owner,
+          final_name: finalName,
+          final_blok: owner?.blok ?? null,
+          will_show_unknown: !hasOwnerInMap || !owner?.name || !owner.name.trim(),
+        });
+        
         return {
           ...service,
-          owner_display_name: (owner?.name && owner.name.trim()) 
-            ? owner.name.trim() 
-            : "Unknown",
+          owner_display_name: finalName,
           owner_blok_rumah: owner?.blok ?? null,
           category_icon: categoryMap.get(service.category_id)?.icon || null,
           primary_image_url: mediaMap.get(service.id) || null,
         };
       },
     );
+    
+    console.log("[Jasa GET] === ENRICHED SERVICES SAMPLE ===");
+    enrichedServices.slice(0, 3).forEach((s, i) => {
+      console.log(`[Jasa GET] Service ${i + 1}:`, {
+        id: s.id,
+        name: s.name,
+        owner_display_name: s.owner_display_name,
+        owner_blok_rumah: s.owner_blok_rumah,
+      });
+    });
 
     console.log("[Jasa GET] Fetching JASA domain");
     const { data: jasaDomain, error: domainError } = await supabase
