@@ -92,7 +92,6 @@ export function JasaCreateModal({
         setFormState({
           name: "",
           description: "",
-          summary: "",
           estimated_price: "",
           category_id: "",
           hari_operasional: DEFAULT_DAYS,
