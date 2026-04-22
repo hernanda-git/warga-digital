@@ -86,21 +86,33 @@ export default function LandingPage() {
   const [notificationCount, setNotificationCount] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchNotificationCount = async () => {
       try {
         const res = await apiFetch("/api/notifications?count=true");
-        if (res.ok) {
-          const data = await res.json();
+        if (res.ok && !cancelled) {
+          const data = (await res.json()) as { unreadCount: number };
           setNotificationCount(data.unreadCount ?? 0);
         }
       } catch (e) {
-        // ignore
+        if (process.env.NODE_ENV === "development") {
+          console.warn("Notification count fetch failed:", e);
+        }
       }
     };
     fetchNotificationCount();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // ── Jasa Detail Handlers ──────────────────────────────────────────────────
+  /**
+   * Fetches and displays service detail modal
+   * @param serviceId - The ID of the service to view
+   */
   const handleViewService = async (serviceId: string) => {
     try {
       const response = await apiFetch(`/api/jasa/${serviceId}`);
@@ -108,8 +120,11 @@ export default function LandingPage() {
       if (data.success) {
         setViewingService(data.data);
       }
-    } catch (err) {
-      console.error("Failed to view service:", err);
+    } catch (error) {
+      console.error(
+        "Failed to view service:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
     }
   };
 

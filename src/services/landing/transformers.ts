@@ -49,6 +49,8 @@ export function buildBlokLabel(
   return UI_CONFIG.DEFAULT_BLOK_LABEL;
 }
 
+
+
 /**
  * Transforms API profile response into header profile UI model
  *
@@ -116,7 +118,7 @@ export function transformCategoryToCard(
   category: MarketplaceCategorySummary,
 ): HorizontalCardItem {
   const description =
-    category.cheapest != null
+    category.cheapest !== null && category.cheapest !== undefined
       ? `Mulai ${formatRupiah(category.cheapest)}`
       : (category.description ?? "");
 

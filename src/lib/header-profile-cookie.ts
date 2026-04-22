@@ -32,11 +32,7 @@ export function getHeaderProfileCookie(): HeaderProfileCookie | null {
       return {
         name: p.name,
         profilePictureUrl:
-          typeof p.profilePictureUrl === "string"
-            ? p.profilePictureUrl
-            : p.profilePictureUrl === null
-              ? null
-              : null,
+          typeof p.profilePictureUrl === "string" ? p.profilePictureUrl : null,
         blokRumah: typeof p.blokRumah === "string" ? p.blokRumah : "Blok —",
       };
     }
@@ -50,7 +46,7 @@ export function setHeaderProfileCookie(profile: HeaderProfileCookie): void {
   if (typeof document === "undefined") return;
   const value = encodeURIComponent(JSON.stringify(profile));
   const maxAge = MAX_AGE_DAYS * 24 * 60 * 60;
-  document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${maxAge}; samesite=lax`;
+  document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${maxAge}; samesite=lax; secure`;
 }
 
 export function clearHeaderProfileCookie(): void {

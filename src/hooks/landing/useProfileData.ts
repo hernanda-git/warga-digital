@@ -82,6 +82,19 @@ export function useProfileData(): UseProfileDataReturn {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ── Load Cached Profile on Mount ──────────────────────────────────────────
+  useEffect(() => {
+    if (!isAuthenticated || !FEATURE_FLAGS.ENABLE_PROFILE_CACHE) {
+      return;
+    }
+
+    const cachedProfile = getHeaderProfileCookie();
+    if (cachedProfile && isValidProfile(cachedProfile)) {
+      setHeaderProfile(cachedProfile);
+      setIsReady(true);
+    }
+  }, [isAuthenticated]);
+
   // ── Fetch Profile ─────────────────────────────────────────────────────────
   const loadProfile = useCallback(async () => {
     setIsLoading(true);
@@ -92,7 +105,6 @@ export function useProfileData(): UseProfileDataReturn {
     if (!result.success) {
       setError(result.error);
       setIsLoading(false);
-      // If we already have cached data, keep isReady true
       if (isValidProfile(headerProfile)) {
         setIsReady(true);
       }
@@ -101,26 +113,21 @@ export function useProfileData(): UseProfileDataReturn {
 
     const profile = result.data;
 
-    // Transform API response to UI model
     const transformedProfile = transformProfileToHeader(
       profile,
       user?.fullName,
     );
 
-    // Update state
     setHeaderProfile(transformedProfile);
     setIsReady(true);
 
-    // Cache header profile for faster subsequent loads
     if (FEATURE_FLAGS.ENABLE_PROFILE_CACHE) {
       setHeaderProfileCookie(transformedProfile);
     }
 
-    // Update wallet balance (always from fresh API response, never cached)
     const balance = extractWalletBalance(profile);
     setWalletBalance(balance);
 
-    // Handle community cookies
     if (FEATURE_FLAGS.ENABLE_COMMUNITY_COOKIES) {
       const communityInfo = extractCommunityInfo(profile);
       updateCommunityCookies(communityInfo);
@@ -129,24 +136,9 @@ export function useProfileData(): UseProfileDataReturn {
     setIsLoading(false);
   }, [headerProfile, user?.fullName]);
 
-  // ── Load Cached Profile on Mount ──────────────────────────────────────────
-  useEffect(() => {
-    if (!isAuthenticated || !FEATURE_FLAGS.ENABLE_PROFILE_CACHE) {
-      return;
-    }
-
-    // Try to load from cookie for instant display
-    const cachedProfile = getHeaderProfileCookie();
-    if (cachedProfile && isValidProfile(cachedProfile)) {
-      setHeaderProfile(cachedProfile);
-      setIsReady(true);
-    }
-  }, [isAuthenticated]);
-
-  // ── Fetch Fresh Profile ───────────────────────────────────────────────────
+  // ── Fetch Fresh Profile on Auth Change ────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {
-      // Reset state when not authenticated
       setHeaderProfile(null);
       setWalletBalance(UI_CONFIG.DEFAULT_WALLET_BALANCE);
       setIsReady(false);
@@ -169,13 +161,11 @@ export function useProfileData(): UseProfileDataReturn {
       if (!result.success) {
         setError(result.error);
         setIsLoading(false);
-        // Keep cached data if available
         return;
       }
 
       const profile = result.data;
 
-      // Transform and update state
       const transformedProfile = transformProfileToHeader(
         profile,
         user?.fullName,
@@ -184,16 +174,13 @@ export function useProfileData(): UseProfileDataReturn {
       setHeaderProfile(transformedProfile);
       setIsReady(true);
 
-      // Cache for next time
       if (FEATURE_FLAGS.ENABLE_PROFILE_CACHE) {
         setHeaderProfileCookie(transformedProfile);
       }
 
-      // Update wallet balance (not cached)
       const balance = extractWalletBalance(profile);
       setWalletBalance(balance);
 
-      // Update community cookies
       if (FEATURE_FLAGS.ENABLE_COMMUNITY_COOKIES) {
         const communityInfo = extractCommunityInfo(profile);
         updateCommunityCookies(communityInfo);
@@ -207,7 +194,7 @@ export function useProfileData(): UseProfileDataReturn {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, user?.fullName]);
+  }, [isAuthenticated, user?.fullName, loadProfile]);
 
   // ── Return Hook API ───────────────────────────────────────────────────────
   return {

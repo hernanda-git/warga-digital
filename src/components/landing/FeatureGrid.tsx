@@ -117,18 +117,19 @@ export function FeatureGrid({ title = "Fitur" }: FeatureGridProps) {
             ? { href: feature.href as string }
             : { href: feature.href };
           return (
-            <Wrapper
-              key={feature.id}
-              {...wrapperProps}
-              className="flex flex-col items-center gap-2 rounded-2xl bg-app-surface p-4 shadow-sm transition-shadow hover:shadow-md active:opacity-90"
-            >
-              <Icon className={`h-9 w-9 ${feature.color}`} aria-hidden />
-              <span
-                className={`text-center text-sm font-semibold ${feature.color}`}
-              >
-                {feature.label}
-              </span>
-            </Wrapper>
+          <Wrapper
+               key={feature.id}
+               {...wrapperProps}
+               aria-label={`${feature.label}: ${feature.description}`}
+               className="flex flex-col items-center gap-2 rounded-2xl bg-app-surface p-4 shadow-sm transition-shadow hover:shadow-md active:opacity-90"
+             >
+               <Icon className={`h-9 w-9 ${feature.color}`} aria-hidden />
+               <span
+                 className={`text-center text-sm font-semibold ${feature.color}`}
+               >
+                 {feature.label}
+               </span>
+             </Wrapper>
           );
         })}
       </div>

@@ -18,6 +18,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuthStore } from "@/stores/auth-store";
 import { apiFetch } from "@/lib/api-client";
+import { LANDING_API_ENDPOINTS } from "@/config/landing";
 import { formatRupiah } from "@/lib/constants/marketplace-catalog";
 import type { JasaServiceWithMedia } from "@/types/database";
 
@@ -85,7 +86,7 @@ export function useJasaServicesData(): UseJasaServicesDataReturn {
     setError(null);
 
     try {
-      const response = await apiFetch("/api/jasa?limit=10&is_available=true");
+      const response = await apiFetch(LANDING_API_ENDPOINTS.JASA_SERVICES);
       const data = await response.json();
 
       if (!response.ok || !data.success) {
@@ -106,10 +107,8 @@ export function useJasaServicesData(): UseJasaServicesDataReturn {
     }
   }, []);
 
-  // ── Auto-fetch on Authentication ──────────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {
-      // Reset state when not authenticated
       setJasaServices([]);
       setIsLoaded(false);
       setError(null);
@@ -122,7 +121,7 @@ export function useJasaServicesData(): UseJasaServicesDataReturn {
       setIsLoading(true);
       setError(null);
 
-      const response = await apiFetch("/api/jasa?limit=10&is_available=true");
+      const response = await apiFetch(LANDING_API_ENDPOINTS.JASA_SERVICES);
       const data = await response.json();
 
       if (cancelled) {
@@ -146,7 +145,7 @@ export function useJasaServicesData(): UseJasaServicesDataReturn {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loadJasaServices]);
 
   // ── Compute Derived State ─────────────────────────────────────────────────
   const hasJasaContent = jasaServices.length > 0;

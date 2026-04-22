@@ -56,7 +56,7 @@ function PostCard({ item, href }: { item: ResidentPostItem; href: string }) {
           {item.imageUrl ? (
             <Image
               src={item.imageUrl}
-              alt=""
+              alt={item.title}
               className="h-full w-full object-cover"
               unoptimized
               fill
