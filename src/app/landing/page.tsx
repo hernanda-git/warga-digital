@@ -7,24 +7,23 @@ import { apiFetch } from "@/lib/api-client";
 import { PageLoader } from "@/components/ui";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { FeatureGrid } from "@/components/landing/FeatureGrid";
-import { HorizontalCardStrip } from "@/components/landing/HorizontalCardStrip";
 import { ResidentPostsSection } from "@/components/landing/ResidentPostsSection";
 import { LandingSection } from "@/components/landing/LandingSection";
 import { EmptyState } from "@/components/landing/empty-states/EmptyState";
 import { JasaCard } from "@/components/jasa/JasaCard";
 import { JasaDetailModal } from "@/components/jasa/JasaDetailModal";
+import { JualanCard } from "@/components/jualan/JualanCard";
+import { JualanDetailModal } from "@/components/jualan/JualanDetailModal";
 import {
   useProfileData,
   useMarketplaceData,
   useArticlesData,
   useJasaServicesData,
+  useJualanGoodsData,
 } from "@/hooks/landing";
-import {
-  ROUTES,
-  MARKETPLACE_SECTIONS,
-  EMPTY_STATE_CONFIGS,
-} from "@/config/landing";
+import { ROUTES, EMPTY_STATE_CONFIGS } from "@/config/landing";
 import type { JasaServiceDetailWithMedia } from "@/types/database";
+import type { JualanGoodsDetail } from "@/types/jualan";
 
 /**
  * Landing Page
@@ -53,6 +52,9 @@ export default function LandingPage() {
   // ── Modals ────────────────────────────────────────────────────────────────
   const [viewingService, setViewingService] =
     useState<JasaServiceDetailWithMedia | null>(null);
+  const [viewingGoods, setViewingGoods] = useState<JualanGoodsDetail | null>(
+    null,
+  );
 
   // ── Data Hooks ─────────────────────────────────────────────────────────────
   const {
@@ -62,12 +64,16 @@ export default function LandingPage() {
   } = useProfileData();
 
   const {
-    umkmItems,
     jasaItems,
     isLoaded: isMarketplaceLoaded,
-    hasUmkmContent,
     hasJasaContent,
   } = useMarketplaceData();
+
+  const {
+    jualanGoods,
+    isLoaded: isJualanLoaded,
+    hasContent: hasJualanContent,
+  } = useJualanGoodsData();
 
   const {
     jasaServices,
@@ -130,6 +136,26 @@ export default function LandingPage() {
 
   const handleCloseDetail = () => {
     setViewingService(null);
+  };
+
+  // ── Jualan Detail Handlers ────────────────────────────────────────────────
+  const handleViewGoods = async (goodsId: string) => {
+    try {
+      const response = await apiFetch(`/api/jualan/${goodsId}`);
+      const data = await response.json();
+      if (data.success) {
+        setViewingGoods(data.data);
+      }
+    } catch (error) {
+      console.error(
+        "Failed to view goods:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+  };
+
+  const handleCloseGoodsDetail = () => {
+    setViewingGoods(null);
   };
 
   // ── Client-side Hydration Guard ───────────────────────────────────────────
@@ -198,15 +224,23 @@ export default function LandingPage() {
           </LandingSection>
         )}
 
-        {/* UMKM Section */}
-        {isMarketplaceLoaded && (
-          <LandingSection title="Umkm RT 03">
-            {hasUmkmContent ? (
-              <HorizontalCardStrip
-                title=""
-                items={umkmItems}
-                viewAllHref={ROUTES.JASA}
-              />
+        {/* UMKM / Jualan Section */}
+        {isJualanLoaded ? (
+          <LandingSection
+            title="Jual Beli RT 03"
+            viewAllText="Lihat semua"
+            viewAllHref={ROUTES.JUALAN}
+          >
+            {hasJualanContent ? (
+              <div className="grid grid-cols-2 gap-3">
+                {jualanGoods.map((goods) => (
+                  <JualanCard
+                    key={goods.id}
+                    goods={goods}
+                    onClick={() => handleViewGoods(goods.id)}
+                  />
+                ))}
+              </div>
             ) : (
               <EmptyState
                 title={EMPTY_STATE_CONFIGS.UMKM.title}
@@ -214,6 +248,14 @@ export default function LandingPage() {
                 variant={EMPTY_STATE_CONFIGS.UMKM.variant}
               />
             )}
+          </LandingSection>
+        ) : (
+          <LandingSection>
+            <div className="py-8 text-center">
+              <p className="animate-pulse text-sm font-medium text-app-body-muted">
+                Memuat produk UMKM...
+              </p>
+            </div>
           </LandingSection>
         )}
 
@@ -266,6 +308,21 @@ export default function LandingPage() {
           }
         }}
         service={viewingService}
+      />
+
+      {/* Jualan Detail Modal */}
+      <JualanDetailModal
+        isOpen={!!viewingGoods}
+        onClose={handleCloseGoodsDetail}
+        onEdit={() => {
+          if (viewingGoods) {
+            router.push(`/jualan#${viewingGoods.id}`);
+          }
+        }}
+        onDelete={async () => {
+          setViewingGoods(null);
+        }}
+        goods={viewingGoods}
       />
     </div>
   );

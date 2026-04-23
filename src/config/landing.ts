@@ -15,6 +15,7 @@ export const LANDING_API_ENDPOINTS = {
   ANNOUNCEMENTS: '/api/announcements',
   ARTICLES: '/api/artikel?page=1&limit=5',
   JASA_SERVICES: '/api/jasa?limit=10&is_available=true',
+  JUALAN_GOODS: '/api/jualan?limit=6&is_active=true',
 } as const;
 
 // ─── Cookie Configuration ─────────────────────────────────────────────────────
