@@ -83,6 +83,7 @@ export const ROUTES = {
   LOGIN: '/auth/login',
   NOTIFICATIONS: '/notifikasi',
   JASA: '/jasa',
+  JUALAN: '/jualan',
 } as const;
 
 // ─── Feature Flags ────────────────────────────────────────────────────────────

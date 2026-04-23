@@ -42,7 +42,7 @@ export const LANDING_FEATURES = [
     id: "jual-beli",
     label: "Jual Beli",
     description: "Marketplace warga",
-    href: "#jual-beli",
+    href: "/jualan",
     icon: ShoppingCartIcon,
     color: "text-orange-600 dark:text-orange-400",
   },

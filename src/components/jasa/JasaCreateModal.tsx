@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
-  XMarkIcon,
+
   ArrowLeftIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
@@ -404,6 +404,7 @@ export function JasaCreateModal({
       <div
         className="fixed bottom-0 left-1/2 z-50 flex w-full max-w-[430px] -translate-x-1/2 flex-col rounded-t-3xl bg-app-surface"
         style={{
+          height: "92dvh",
           maxHeight: "92dvh",
           boxShadow: "0 -8px 40px -8px rgba(0,0,0,0.22)",
           animation: closing
@@ -469,21 +470,8 @@ export function JasaCreateModal({
               </h2>
             </div>
 
-            {/* Right: close button */}
-            <div className="flex shrink-0">
-              <button
-                onClick={handleClose}
-                disabled={isSubmitting || isLoading}
-                className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity disabled:cursor-not-allowed disabled:opacity-40 active:opacity-70"
-                style={{ background: "var(--color-surface-alt)" }}
-                aria-label="Tutup"
-              >
-                <XMarkIcon
-                  className="h-4 w-4"
-                  style={{ color: "var(--color-body-muted)" }}
-                />
-              </button>
-            </div>
+            {/* Right: spacer to balance layout */}
+            <div className="h-8 w-8 shrink-0" />
           </div>
 
           {/* Progress bar */}
@@ -553,7 +541,7 @@ export function JasaCreateModal({
         </div>
 
         {/* ── Scrollable content ─────────────────────────────────────────── */}
-        <div className="relative flex-1 overflow-y-auto overscroll-contain px-4 py-5">
+        <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5">
           {/* Loading overlay */}
           {(isSubmitting || isLoading) && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-app-surface/60 backdrop-blur-[2px]">
