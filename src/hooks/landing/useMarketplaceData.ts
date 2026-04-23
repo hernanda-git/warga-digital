@@ -85,11 +85,15 @@ export function useMarketplaceData(): UseMarketplaceDataReturn {
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch Marketplace Data ────────────────────────────────────────────────
-  const loadMarketplace = useCallback(async () => {
+  const loadMarketplace = useCallback(async (getCancelled?: () => boolean) => {
     setIsLoading(true);
     setError(null);
 
     const result = await fetchMarketplaceSummary();
+
+    if (getCancelled?.()) {
+      return;
+    }
 
     if (!result.success) {
       setError(result.error);
@@ -119,33 +123,7 @@ export function useMarketplaceData(): UseMarketplaceDataReturn {
 
     let cancelled = false;
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      const result = await fetchMarketplaceSummary();
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!result.success) {
-        setError(result.error);
-        setIsLoading(false);
-        setIsLoaded(true);
-        return;
-      }
-
-      const umkm = transformCategoriesToCards(result.data.data.UMKM ?? []);
-      const jasa = transformCategoriesToCards(result.data.data.JASA ?? []);
-
-      setUmkmItems(umkm);
-      setJasaItems(jasa);
-      setIsLoading(false);
-      setIsLoaded(true);
-    };
-
-    fetchData();
+    loadMarketplace(() => cancelled);
 
     return () => {
       cancelled = true;

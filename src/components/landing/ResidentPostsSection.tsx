@@ -54,14 +54,13 @@ function PostCard({ item, href }: { item: ResidentPostItem; href: string }) {
       <article className="flex flex-col">
         <div className="relative h-32 w-full shrink-0 overflow-hidden">
           {item.imageUrl ? (
-            <Image
-              src={item.imageUrl}
-              alt={item.title}
-              className="h-full w-full object-cover"
-              unoptimized
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-            />
+          <Image
+            src={item.imageUrl}
+            alt={item.title}
+            className="h-full w-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+          />
           ) : (
             <PostPlaceholder />
           )}
@@ -89,7 +88,6 @@ function PostCard({ item, href }: { item: ResidentPostItem; href: string }) {
                 className="w-5 h-5 rounded-full object-cover shrink-0"
                 width={20}
                 height={20}
-                unoptimized
               />
             ) : (
               <UserCircleIcon className="w-5 h-5 text-app-body-muted shrink-0" />

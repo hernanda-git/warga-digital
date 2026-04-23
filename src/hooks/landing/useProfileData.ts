@@ -96,11 +96,15 @@ export function useProfileData(): UseProfileDataReturn {
   }, [isAuthenticated]);
 
   // ── Fetch Profile ─────────────────────────────────────────────────────────
-  const loadProfile = useCallback(async () => {
+  const loadProfile = useCallback(async (getCancelled?: () => boolean) => {
     setIsLoading(true);
     setError(null);
 
     const result = await fetchProfile();
+
+    if (getCancelled?.()) {
+      return;
+    }
 
     if (!result.success) {
       setError(result.error);
@@ -148,48 +152,7 @@ export function useProfileData(): UseProfileDataReturn {
 
     let cancelled = false;
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      const result = await fetchProfile();
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!result.success) {
-        setError(result.error);
-        setIsLoading(false);
-        return;
-      }
-
-      const profile = result.data;
-
-      const transformedProfile = transformProfileToHeader(
-        profile,
-        user?.fullName,
-      );
-
-      setHeaderProfile(transformedProfile);
-      setIsReady(true);
-
-      if (FEATURE_FLAGS.ENABLE_PROFILE_CACHE) {
-        setHeaderProfileCookie(transformedProfile);
-      }
-
-      const balance = extractWalletBalance(profile);
-      setWalletBalance(balance);
-
-      if (FEATURE_FLAGS.ENABLE_COMMUNITY_COOKIES) {
-        const communityInfo = extractCommunityInfo(profile);
-        updateCommunityCookies(communityInfo);
-      }
-
-      setIsLoading(false);
-    };
-
-    fetchData();
+    loadProfile(() => cancelled);
 
     return () => {
       cancelled = true;

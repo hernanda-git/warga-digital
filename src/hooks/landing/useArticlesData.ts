@@ -128,12 +128,16 @@ export function useArticlesData(): UseArticlesDataReturn {
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch Articles Data ────────────────────────────────────────────────────
-  const loadArticles = useCallback(async () => {
+  const loadArticles = useCallback(async (getCancelled?: () => boolean) => {
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await apiFetch(LANDING_API_ENDPOINTS.ARTICLES);
+
+      if (getCancelled?.()) {
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(
@@ -146,6 +150,9 @@ export function useArticlesData(): UseArticlesDataReturn {
 
       setItems(posts);
     } catch (err) {
+      if (getCancelled?.()) {
+        return;
+      }
       setError(err instanceof Error ? err.message : "Gagal memuat artikel");
       setItems([]);
     } finally {
@@ -164,40 +171,7 @@ export function useArticlesData(): UseArticlesDataReturn {
 
     let cancelled = false;
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await apiFetch(LANDING_API_ENDPOINTS.ARTICLES);
-
-        if (cancelled) {
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch articles: ${response.status} ${response.statusText}`,
-          );
-        }
-
-        const data: ArticlesApiResponse = await response.json();
-        const posts = data.articles.map(transformArticleToPost);
-
-        setItems(posts);
-      } catch (err) {
-        if (cancelled) {
-          return;
-        }
-        setError(err instanceof Error ? err.message : "Gagal memuat artikel");
-        setItems([]);
-      } finally {
-        setIsLoading(false);
-        setIsLoaded(true);
-      }
-    };
-
-    fetchData();
+    loadArticles(() => cancelled);
 
     return () => {
       cancelled = true;

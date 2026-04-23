@@ -62,7 +62,6 @@ function Card({ item }: { item: HorizontalCardItem }) {
             src={item.imageUrl}
             alt={item.title}
             className="h-full w-full object-cover"
-            unoptimized
             fill
             sizes="160px"
           />

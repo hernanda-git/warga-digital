@@ -1,329 +1,38 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/stores/auth-store";
-import { apiFetch } from "@/lib/api-client";
-import { PageLoader } from "@/components/ui";
-import { LandingHeader } from "@/components/landing/LandingHeader";
-import { FeatureGrid } from "@/components/landing/FeatureGrid";
-import { ResidentPostsSection } from "@/components/landing/ResidentPostsSection";
-import { LandingSection } from "@/components/landing/LandingSection";
-import { EmptyState } from "@/components/landing/empty-states/EmptyState";
-import { JasaCard } from "@/components/jasa/JasaCard";
-import { JasaDetailModal } from "@/components/jasa/JasaDetailModal";
-import { JualanCard } from "@/components/jualan/JualanCard";
-import { JualanDetailModal } from "@/components/jualan/JualanDetailModal";
-import {
-  useProfileData,
-  useMarketplaceData,
-  useArticlesData,
-  useJasaServicesData,
-  useJualanGoodsData,
-} from "@/hooks/landing";
-import { ROUTES, EMPTY_STATE_CONFIGS } from "@/config/landing";
-import type { JasaServiceDetailWithMedia } from "@/types/database";
-import type { JualanGoodsDetail } from "@/types/jualan";
-
 /**
- * Landing Page
+ * Landing Page (Server Component)
  *
- * Main landing page for authenticated users showing:
- * - User profile header with wallet balance
- * - Feature grid for quick access to app features
- * - Community announcements (Info Warga)
- * - Marketplace sections (UMKM and JASA)
- *
- * Following SOLID principles:
- * - Single Responsibility: Only handles page composition and routing
- * - Open-Closed: New sections can be added without modifying existing code
- * - Dependency Inversion: Depends on custom hooks, not direct API calls
- *
- * Architecture:
- * - Custom hooks handle all data fetching and state management
- * - Presentational components handle rendering
- * - Services layer handles API calls
- * - Transformers handle data transformation
+ * Fetches all landing page data server-side and delegates
+ * interactivity to the client component.
  */
-export default function LandingPage() {
-  const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
-  // ── Modals ────────────────────────────────────────────────────────────────
-  const [viewingService, setViewingService] =
-    useState<JasaServiceDetailWithMedia | null>(null);
-  const [viewingGoods, setViewingGoods] = useState<JualanGoodsDetail | null>(
-    null,
-  );
+import {
+  requireAuth,
+  fetchLandingProfile,
+  fetchLandingArticles,
+  fetchLandingJualan,
+  fetchLandingJasa,
+} from "./data";
+import LandingPageClient from "./LandingPageClient";
 
-  // ── Data Hooks ─────────────────────────────────────────────────────────────
-  const {
-    headerProfile,
-    walletBalance,
-    isReady: isProfileReady,
-  } = useProfileData();
+export default async function LandingPage() {
+  const session = await requireAuth();
 
-  const {
-    jasaItems,
-    isLoaded: isMarketplaceLoaded,
-    hasJasaContent,
-  } = useMarketplaceData();
+  const [{ headerProfile, walletBalance }, { articles, error: articlesError }, jualanGoods, jasaServices] =
+    await Promise.all([
+      fetchLandingProfile(session.userId),
+      fetchLandingArticles(),
+      fetchLandingJualan(session.userId),
+      fetchLandingJasa(session.userId),
+    ]);
 
-  const {
-    jualanGoods,
-    isLoaded: isJualanLoaded,
-    hasContent: hasJualanContent,
-  } = useJualanGoodsData();
-
-  const {
-    jasaServices,
-    isLoaded: isJasaServicesLoaded,
-    hasJasaContent: hasDirectJasaContent,
-  } = useJasaServicesData();
-
-  const {
-    items: articles,
-    isLoaded: isArticlesLoaded,
-    hasContent: hasArticlesContent,
-    error: articlesError,
-  } = useArticlesData();
-
-  // ── Notification Count ─────────────────────────────────────────────────────
-  const [notificationCount, setNotificationCount] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchNotificationCount = async () => {
-      try {
-        const res = await apiFetch("/api/notifications?count=true");
-        if (res.ok && !cancelled) {
-          const data = (await res.json()) as { unreadCount: number };
-          setNotificationCount(data.unreadCount ?? 0);
-        }
-      } catch (e) {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("Notification count fetch failed:", e);
-        }
-      }
-    };
-    fetchNotificationCount();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // ── Jasa Detail Handlers ──────────────────────────────────────────────────
-  /**
-   * Fetches and displays service detail modal
-   * @param serviceId - The ID of the service to view
-   */
-  const handleViewService = async (serviceId: string) => {
-    try {
-      const response = await apiFetch(`/api/jasa/${serviceId}`);
-      const data = await response.json();
-      if (data.success) {
-        setViewingService(data.data);
-      }
-    } catch (error) {
-      console.error(
-        "Failed to view service:",
-        error instanceof Error ? error.message : "Unknown error",
-      );
-    }
-  };
-
-  const handleCloseDetail = () => {
-    setViewingService(null);
-  };
-
-  // ── Jualan Detail Handlers ────────────────────────────────────────────────
-  const handleViewGoods = async (goodsId: string) => {
-    try {
-      const response = await apiFetch(`/api/jualan/${goodsId}`);
-      const data = await response.json();
-      if (data.success) {
-        setViewingGoods(data.data);
-      }
-    } catch (error) {
-      console.error(
-        "Failed to view goods:",
-        error instanceof Error ? error.message : "Unknown error",
-      );
-    }
-  };
-
-  const handleCloseGoodsDetail = () => {
-    setViewingGoods(null);
-  };
-
-  // ── Client-side Hydration Guard ───────────────────────────────────────────
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  // ── Authentication Guard ──────────────────────────────────────────────────
-  useEffect(() => {
-    if (!hasMounted) return;
-
-    if (!isAuthenticated) {
-      router.replace(ROUTES.LOGIN);
-    }
-  }, [hasMounted, isAuthenticated, router]);
-
-  // ── Loading State ─────────────────────────────────────────────────────────
-  if (!hasMounted || !isAuthenticated || !isProfileReady || !headerProfile) {
-    return <PageLoader message="Memuat..." />;
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-100 min-h-0 flex-col bg-app-surface-alt">
-      {/* Header */}
-      <LandingHeader
-        name={headerProfile.name}
-        profilePictureUrl={headerProfile.profilePictureUrl}
-        blokRumah={headerProfile.blokRumah}
-        saldo={walletBalance}
-        notificationCount={notificationCount}
-        onNotificationPress={() => router.push(ROUTES.NOTIFICATIONS)}
-      />
-
-      {/* Main Content */}
-      <main className="flex-1">
-        {/* Feature Grid */}
-        <FeatureGrid />
-
-        {/* Articles Section */}
-        {isArticlesLoaded && (
-          <LandingSection
-            title="Info Warga"
-            viewAllText="Lihat semua"
-            viewAllHref="/artikel"
-          >
-            {hasArticlesContent ? (
-              <ResidentPostsSection
-                title=""
-                items={articles}
-                detailHref={(slug) => `/artikel/${slug}`}
-              />
-            ) : (
-              <EmptyState
-                title={articlesError ? "Gagal memuat artikel" : "Belum ada artikel"}
-                description={
-                  articlesError
-                    ? "Periksa koneksi internet Anda dan coba lagi"
-                    : "Artikel akan muncul setelah admin memposting konten baru"
-                }
-                variant="info"
-              />
-            )}
-          </LandingSection>
-        )}
-
-        {/* UMKM / Jualan Section */}
-        {isJualanLoaded ? (
-          <LandingSection
-            title="Jual Beli RT 03"
-            viewAllText="Lihat semua"
-            viewAllHref={ROUTES.JUALAN}
-          >
-            {hasJualanContent ? (
-              <div className="grid grid-cols-2 gap-3">
-                {jualanGoods.map((goods) => (
-                  <JualanCard
-                    key={goods.id}
-                    goods={goods}
-                    onClick={() => handleViewGoods(goods.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title={EMPTY_STATE_CONFIGS.UMKM.title}
-                description={EMPTY_STATE_CONFIGS.UMKM.description}
-                variant={EMPTY_STATE_CONFIGS.UMKM.variant}
-              />
-            )}
-          </LandingSection>
-        ) : (
-          <LandingSection>
-            <div className="py-8 text-center">
-              <p className="animate-pulse text-sm font-medium text-app-body-muted">
-                Memuat produk UMKM...
-              </p>
-            </div>
-          </LandingSection>
-        )}
-
-        {/* JASA Section */}
-        {isJasaServicesLoaded ? (
-          <LandingSection
-            title="Jasa RT 03"
-            viewAllText="Lihat semua"
-            viewAllHref="/jasa"
-          >
-            {hasDirectJasaContent ? (
-              <div className="grid grid-cols-1 gap-3">
-                {jasaServices.map((service) => (
-                  <JasaCard
-                    key={service.id}
-                    service={service}
-                    onClick={() => handleViewService(service.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title={EMPTY_STATE_CONFIGS.JASA.title}
-                description={EMPTY_STATE_CONFIGS.JASA.description}
-                variant={EMPTY_STATE_CONFIGS.JASA.variant}
-              />
-            )}
-          </LandingSection>
-        ) : (
-          <LandingSection>
-            <div className="py-8 text-center">
-              <p className="text-sm font-medium text-app-body-muted animate-pulse">
-                Memuat layanan jasa...
-              </p>
-            </div>
-          </LandingSection>
-        )}
-
-        {/* Bottom Safe Area */}
-        <div className="h-6" />
-      </main>
-
-      {/* Jasa Detail Modal */}
-      <JasaDetailModal
-        isOpen={!!viewingService}
-        onClose={handleCloseDetail}
-        onEdit={() => {
-          if (viewingService) {
-            router.push(`/jasa#${viewingService.id}`);
-          }
-        }}
-        service={viewingService}
-      />
-
-      {/* Jualan Detail Modal */}
-      <JualanDetailModal
-        isOpen={!!viewingGoods}
-        onClose={handleCloseGoodsDetail}
-        onEdit={() => {
-          if (viewingGoods) {
-            router.push(`/jualan#${viewingGoods.id}`);
-          }
-        }}
-        onDelete={async () => {
-          setViewingGoods(null);
-        }}
-        goods={viewingGoods}
-      />
-    </div>
+    <LandingPageClient
+      headerProfile={headerProfile}
+      walletBalance={walletBalance}
+      articles={articles}
+      articlesError={articlesError}
+      jualanGoods={jualanGoods}
+      jasaServices={jasaServices}
+    />
   );
 }

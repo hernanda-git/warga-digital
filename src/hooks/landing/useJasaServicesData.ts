@@ -81,13 +81,17 @@ export function useJasaServicesData(): UseJasaServicesDataReturn {
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch JASA Services Data ────────────────────────────────────────────────
-  const loadJasaServices = useCallback(async () => {
+  const loadJasaServices = useCallback(async (getCancelled?: () => boolean) => {
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await apiFetch(LANDING_API_ENDPOINTS.JASA_SERVICES);
       const data = await response.json();
+
+      if (getCancelled?.()) {
+        return;
+      }
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || "Gagal memuat layanan");
@@ -97,6 +101,9 @@ export function useJasaServicesData(): UseJasaServicesDataReturn {
       setIsLoading(false);
       setIsLoaded(true);
     } catch (err: unknown) {
+      if (getCancelled?.()) {
+        return;
+      }
       const message =
         err instanceof Error ? err.message : "Gagal memuat layanan";
 
@@ -117,30 +124,7 @@ export function useJasaServicesData(): UseJasaServicesDataReturn {
 
     let cancelled = false;
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await apiFetch(LANDING_API_ENDPOINTS.JASA_SERVICES);
-      const data = await response.json();
-
-      if (cancelled) {
-        return;
-      }
-
-      if (!response.ok || !data.success) {
-        setError(data.error || "Gagal memuat layanan");
-        setIsLoading(false);
-        setIsLoaded(true);
-        return;
-      }
-
-      setJasaServices(data.data.services);
-      setIsLoading(false);
-      setIsLoaded(true);
-    };
-
-    fetchData();
+    loadJasaServices(() => cancelled);
 
     return () => {
       cancelled = true;

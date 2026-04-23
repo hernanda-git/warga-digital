@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
     const max_price = searchParams.get("max_price");
     const is_featured = searchParams.get("is_featured");
     const sort = searchParams.get("sort") || "newest";
+    const include_filters = searchParams.get("include_filters") !== "false";
 
     const offset = (page - 1) * limit;
 
@@ -164,9 +165,11 @@ export async function GET(request: NextRequest) {
         total: count || 0,
         total_pages: totalPages,
       },
-      filters: {
-        categories: await getCategories(supabase, tenantUser.tenant_id),
-      },
+      filters: include_filters
+        ? {
+            categories: await getCategories(supabase, tenantUser.tenant_id),
+          }
+        : undefined,
     });
   } catch (error) {
     console.error("Error in GET /api/jualan:", error);

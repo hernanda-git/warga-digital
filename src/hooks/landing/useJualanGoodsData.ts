@@ -40,13 +40,17 @@ export function useJualanGoodsData(): UseJualanGoodsDataReturn {
   const [error, setError] = useState<string | null>(null);
 
   // ── Fetch Data ─────────────────────────────────────────────────────────────
-  const loadJualanGoods = useCallback(async () => {
+  const loadJualanGoods = useCallback(async (getCancelled?: () => boolean) => {
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await apiFetch(LANDING_API_ENDPOINTS.JUALAN_GOODS);
       const data = await response.json();
+
+      if (getCancelled?.()) {
+        return;
+      }
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || "Gagal memuat barang");
@@ -56,6 +60,9 @@ export function useJualanGoodsData(): UseJualanGoodsDataReturn {
       setIsLoading(false);
       setIsLoaded(true);
     } catch (err: unknown) {
+      if (getCancelled?.()) {
+        return;
+      }
       const message = err instanceof Error ? err.message : "Gagal memuat barang";
       console.error("[Jualan Goods] loadJualanGoods error:", err);
       setError(message);
@@ -74,28 +81,7 @@ export function useJualanGoodsData(): UseJualanGoodsDataReturn {
 
     let cancelled = false;
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await apiFetch(LANDING_API_ENDPOINTS.JUALAN_GOODS);
-      const data = await response.json();
-
-      if (cancelled) return;
-
-      if (!response.ok || !data.success) {
-        setError(data.error || "Gagal memuat barang");
-        setIsLoading(false);
-        setIsLoaded(true);
-        return;
-      }
-
-      setJualanGoods(data.data.goods ?? []);
-      setIsLoading(false);
-      setIsLoaded(true);
-    };
-
-    fetchData();
+    loadJualanGoods(() => cancelled);
 
     return () => {
       cancelled = true;

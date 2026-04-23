@@ -14,8 +14,8 @@ export const LANDING_API_ENDPOINTS = {
   MARKETPLACE_SUMMARY: '/api/marketplace/summary',
   ANNOUNCEMENTS: '/api/announcements',
   ARTICLES: '/api/artikel?page=1&limit=5',
-  JASA_SERVICES: '/api/jasa?limit=10&is_available=true',
-  JUALAN_GOODS: '/api/jualan?limit=6&is_active=true',
+  JASA_SERVICES: '/api/jasa?limit=10&is_available=true&include_filters=false',
+  JUALAN_GOODS: '/api/jualan?limit=6&is_active=true&include_filters=false',
 } as const;
 
 // ─── Cookie Configuration ─────────────────────────────────────────────────────

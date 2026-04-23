@@ -72,6 +72,8 @@ export async function GET(request: Request) {
 
     const offset = (page - 1) * limit;
 
+    const include_filters = searchParams.get("include_filters") !== "false";
+
     // Get tenant ID for the current user
     const { data: tenantUser, error: tenantUserError } = await supabase
       .from("tenant_users")
@@ -282,25 +284,31 @@ export async function GET(request: Request) {
       },
     );
 
-    const { data: jasaDomain, error: domainError } = await supabase
-      .from("marketplace_domains")
-      .select("id")
-      .eq("code", "JASA")
-      .single();
-    
-    if (domainError || !jasaDomain) {
-      return NextResponse.json(
-        { success: false, error: "Domain JASA tidak ditemukan" },
-        { status: 500 },
-      );
-    }
+    let allCategories: Array<{ id: string; name: string; icon: string | null }> | null = null;
 
-    const { data: allCategories } = await supabase
-      .from("marketplace_categories")
-      .select("id, name, icon")
-      .eq("domain_id", jasaDomain.id)
-      .eq("is_active", true)
-      .order("sort_order");
+    if (include_filters) {
+      const { data: jasaDomain, error: domainError } = await supabase
+        .from("marketplace_domains")
+        .select("id")
+        .eq("code", "JASA")
+        .single();
+
+      if (domainError || !jasaDomain) {
+        return NextResponse.json(
+          { success: false, error: "Domain JASA tidak ditemukan" },
+          { status: 500 },
+        );
+      }
+
+      const { data: categoryRows } = await supabase
+        .from("marketplace_categories")
+        .select("id, name, icon")
+        .eq("domain_id", jasaDomain.id)
+        .eq("is_active", true)
+        .order("sort_order");
+
+      allCategories = categoryRows;
+    }
 
     const response: JasaListResponse = {
       success: true,
