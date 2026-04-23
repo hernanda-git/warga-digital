@@ -89,13 +89,19 @@ export async function GET(request: Request) {
 
     const supabase = createServerClient();
 
-    // ── Fetch all transactions for analysis ─────────────────────────────────
+    // ── Fetch transactions for the last 13 months (trend window) ────────────
+    // This bounds the query instead of loading entire transaction history
+    const trendStart = new Date(targetYear, targetMonth - 12, 1);
+    const trendStartStr = toDateInputValue(trendStart);
+
     const { data: allTx, error: txError } = await supabase
       .from("kas_rt_transactions")
       .select("type, amount, date, category, reference")
       .eq("tenant_id", tenantId)
       .eq("community_id", communityId)
-      .is("deleted_at", null);
+      .is("deleted_at", null)
+      .gte("date", trendStartStr)
+      .lte("date", selectedMonthEndStr);
 
     if (txError) {
       console.error("[Kas RT] Summary fetch error:", txError);

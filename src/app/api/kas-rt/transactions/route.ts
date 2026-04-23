@@ -374,10 +374,16 @@ export async function POST(request: Request) {
       const bucketId =
         process.env.SUPABASE_BUCKET_KAS_RT ?? "kas-rt-attachments";
       const signedUrlExpiresIn = 3600;
-      for (const att of attachmentsToInsert) {
-        const { data: signed } = await supabase.storage
-          .from(bucketId)
-          .createSignedUrl(att.storage_path, signedUrlExpiresIn);
+      const signedResults = await Promise.all(
+        attachmentsToInsert.map((att) =>
+          supabase.storage
+            .from(bucketId)
+            .createSignedUrl(att.storage_path, signedUrlExpiresIn),
+        ),
+      );
+      for (let i = 0; i < attachmentsToInsert.length; i++) {
+        const att = attachmentsToInsert[i];
+        const signed = signedResults[i].data;
         attachmentPayload.push({
           file_name: att.file_name,
           url: signed?.signedUrl ?? "",
@@ -552,54 +558,77 @@ export async function GET(request: Request) {
       );
     }
 
-    // ── Process attachments: generate signed URLs ─────────────────────────
+    // ── Process attachments: generate signed URLs in parallel ─────────────
     const bucketId = process.env.SUPABASE_BUCKET_KAS_RT ?? "kas-rt-attachments";
     const signedUrlExpiresIn = 3600;
 
-    const processedTransactions = await Promise.all(
-      (transactions ?? []).map(async (tx) => {
-        const attachments = tx.kas_rt_attachments ?? [];
-        const attachmentPayload: {
-          id: string;
-          file_name: string;
-          url: string;
-          mime_type: string | null;
-        }[] = [];
+    // Collect all attachments across all transactions for parallel signing
+    const allAttachmentRefs: {
+      txId: string;
+      attId: string;
+      file_name: string;
+      storage_path: string;
+      mime_type: string | null;
+    }[] = [];
+    for (const tx of transactions ?? []) {
+      for (const att of tx.kas_rt_attachments ?? []) {
+        allAttachmentRefs.push({
+          txId: tx.id,
+          attId: att.id,
+          file_name: att.file_name,
+          storage_path: att.storage_path,
+          mime_type: att.mime_type,
+        });
+      }
+    }
 
-        for (const att of attachments) {
-          const { data: signed } = await supabase.storage
-            .from(bucketId)
-            .createSignedUrl(att.storage_path, signedUrlExpiresIn);
-          attachmentPayload.push({
-            id: att.id,
-            file_name: att.file_name,
-            url: signed?.signedUrl ?? "",
-            mime_type: att.mime_type,
-          });
-        }
-
-        // Handle created_by_user - Supabase returns it as array for FK joins
-        const createdByUser = Array.isArray(tx.created_by_user)
-          ? tx.created_by_user[0]
-          : tx.created_by_user;
-
-        return {
-          id: tx.id,
-          title: tx.title,
-          amount: Number(tx.amount),
-          type: tx.type,
-          date: tx.date,
-          created_at: tx.created_at,
-          created_by: tx.created_by,
-          reference: tx.reference ?? "",
-          details: tx.details ?? "",
-          category: tx.category ?? null,
-          created_by_full_name: createdByUser?.full_name ?? null,
-          attachments: attachmentPayload,
-          transaction_details: tx.kas_rt_transaction_details ?? [],
-        };
-      }),
+    // Fetch all signed URLs in one parallel batch
+    const signedResults = await Promise.all(
+      allAttachmentRefs.map((ref) =>
+        supabase.storage
+          .from(bucketId)
+          .createSignedUrl(ref.storage_path, signedUrlExpiresIn),
+      ),
     );
+
+    // Map signed URLs back by attachment ID
+    const signedUrlByAttId = new Map<string, string>();
+    for (let i = 0; i < allAttachmentRefs.length; i++) {
+      signedUrlByAttId.set(
+        allAttachmentRefs[i].attId,
+        signedResults[i].data?.signedUrl ?? "",
+      );
+    }
+
+    const processedTransactions = (transactions ?? []).map((tx) => {
+      const attachmentPayload = (tx.kas_rt_attachments ?? []).map((att) => ({
+        id: att.id,
+        file_name: att.file_name,
+        url: signedUrlByAttId.get(att.id) ?? "",
+        mime_type: att.mime_type,
+      }));
+
+      // Handle created_by_user - Supabase returns it as array for FK joins
+      const createdByUser = Array.isArray(tx.created_by_user)
+        ? tx.created_by_user[0]
+        : tx.created_by_user;
+
+      return {
+        id: tx.id,
+        title: tx.title,
+        amount: Number(tx.amount),
+        type: tx.type,
+        date: tx.date,
+        created_at: tx.created_at,
+        created_by: tx.created_by,
+        reference: tx.reference ?? "",
+        details: tx.details ?? "",
+        category: tx.category ?? null,
+        created_by_full_name: createdByUser?.full_name ?? null,
+        attachments: attachmentPayload,
+        transaction_details: tx.kas_rt_transaction_details ?? [],
+      };
+    });
 
     // ── Return paginated response with metadata ───────────────────────────
     const totalPages = Math.ceil((totalCount ?? 0) / limit);

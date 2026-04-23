@@ -27,6 +27,12 @@ import type {
 
 interface UseKasRtTransactionsOptions {
   now: Date;
+  initialData?: {
+    transactions?: TransactionItem[];
+    categories?: KasRtCategory[];
+    canSubmitTransaction?: boolean;
+    summary?: KasRtTotals | null;
+  };
 }
 
 interface UseKasRtTransactionsReturn {
@@ -70,20 +76,33 @@ interface UseKasRtTransactionsReturn {
  */
 export function useKasRtTransactions({
   now,
+  initialData,
 }: UseKasRtTransactionsOptions): UseKasRtTransactionsReturn {
+  const hasInitialData = !!initialData;
+
   // ── State ─────────────────────────────────────────────────────────────
-  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
-  const [categories, setCategories] = useState<KasRtCategory[]>([]);
+  const [transactions, setTransactions] = useState<TransactionItem[]>(
+    initialData?.transactions ?? [],
+  );
+  const [categories, setCategories] = useState<KasRtCategory[]>(
+    initialData?.categories ?? [],
+  );
   const [communityName, setCommunityName] = useState(
     getCommunityNameFromCookie(),
   );
-  const [canSubmitTransaction, setCanSubmitTransaction] = useState(false);
-  const [isPageLoading, setIsPageLoading] = useState(true);
-  const [isTransactionsLoading, setIsTransactionsLoading] = useState(true);
+  const [canSubmitTransaction, setCanSubmitTransaction] = useState(
+    initialData?.canSubmitTransaction ?? false,
+  );
+  const [isPageLoading, setIsPageLoading] = useState(!hasInitialData);
+  const [isTransactionsLoading, setIsTransactionsLoading] = useState(
+    !hasInitialData,
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshedAt, setRefreshedAt] = useState(now);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [summary, setSummary] = useState<KasRtTotals | null>(null);
+  const [summary, setSummary] = useState<KasRtTotals | null>(
+    initialData?.summary ?? null,
+  );
 
   // Filter state
   const defaultDates = getDefaultFilterDates(now);
@@ -174,6 +193,13 @@ export function useKasRtTransactions({
 
   // ── Initial data loading ───────────────────────────────────────────────
   useEffect(() => {
+    if (hasInitialData) {
+      // SSR provided initial data; skip client-side initial fetch
+      setIsPageLoading(false);
+      setIsTransactionsLoading(false);
+      return;
+    }
+
     async function init() {
       // Phase 1: Load essential data (blocking - permissions, info, categories)
       try {

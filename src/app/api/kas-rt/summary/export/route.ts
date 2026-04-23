@@ -69,13 +69,18 @@ export async function POST(request: Request) {
 
     const supabase = createServerClient();
 
-    // ── Fetch all transactions for the selected month ───────────────────────
-    const { data: allTx, error: txError } = await supabase
+    // ── Fetch transactions for the selected month only ──────────────────────
+    const selectedMonthStartStr = toDateInputValue(selectedMonthStart);
+    const selectedMonthEndStr = toDateInputValue(selectedMonthEnd);
+
+    const { data: selectedMonthTx, error: txError } = await supabase
       .from("kas_rt_transactions")
       .select("type, amount, date, category, reference, title")
       .eq("tenant_id", tenantId)
       .eq("community_id", communityId)
-      .is("deleted_at", null);
+      .is("deleted_at", null)
+      .gte("date", selectedMonthStartStr)
+      .lte("date", selectedMonthEndStr);
 
     if (txError) {
       console.error("[Kas RT] Export fetch error:", txError);
@@ -85,13 +90,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const transactions = allTx ?? [];
-
-    // ── Calculate summary data ───────────────────────────────────────────────
-    const selectedMonthTx = transactions.filter((tx) => {
-      const txDate = new Date(tx.date);
-      return txDate >= selectedMonthStart && txDate <= selectedMonthEnd;
-    });
+    const transactions = selectedMonthTx ?? [];
 
     let income = 0;
     let expense = 0;
@@ -207,25 +206,20 @@ export async function POST(request: Request) {
         rowIndex++;
       }
 
-      // Generate Excel file
+      // Generate Excel file and return as downloadable response
       const buffer = await workbook.xlsx.writeBuffer();
-
-      const blob = new Blob([buffer], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `laporan-kas-rt-${selectedMonthLabel
+      const filename = `laporan-kas-rt-${selectedMonthLabel
         .toLowerCase()
         .replace(/\s/g, "-")}.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
 
-      return NextResponse.json({ success: true });
+      return new NextResponse(buffer, {
+        status: 200,
+        headers: {
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+        },
+      });
     }
 
     if (format === "pdf") {
@@ -316,26 +310,17 @@ export async function POST(request: Request) {
       }
 
       const pdfBytes = await pdfDoc.save();
-
-      // pdf-lib returns Uint8Array which is compatible with Blob
-
-      // TypeScript workaround: cast to unknown then to ArrayBuffer
-      const blob = new Blob([pdfBytes as unknown as ArrayBuffer], {
-        type: "application/pdf",
-      });
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `laporan-kas-rt-${selectedMonthLabel
+      const filename = `laporan-kas-rt-${selectedMonthLabel
         .toLowerCase()
         .replace(/\s/g, "-")}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
 
-      return NextResponse.json({ success: true });
+      return new NextResponse(Buffer.from(pdfBytes), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+        },
+      });
     }
 
     return NextResponse.json(

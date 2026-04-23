@@ -202,13 +202,18 @@ export async function POST(
     }
   }
 
-  // Generate signed URLs for the uploaded attachments
+  // Generate signed URLs for the uploaded attachments in parallel
   const signedUrlExpiresIn = 3600;
-  for (const att of attachmentsToInsert) {
-    const { data: signed } = await supabase.storage
-      .from(bucketId)
-      .createSignedUrl(att.storage_path, signedUrlExpiresIn);
-    
+  const signedResults = await Promise.all(
+    attachmentsToInsert.map((att) =>
+      supabase.storage
+        .from(bucketId)
+        .createSignedUrl(att.storage_path, signedUrlExpiresIn),
+    ),
+  );
+  for (let i = 0; i < attachmentsToInsert.length; i++) {
+    const att = attachmentsToInsert[i];
+    const signed = signedResults[i].data;
     uploadedAttachments.push({
       file_name: att.file_name,
       url: signed?.signedUrl ?? "",
