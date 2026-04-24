@@ -5,9 +5,15 @@ import { useRouter } from "next/navigation";
 import { formatRupiah, getMonthYearKey, getMonthYearSeparator } from "@/lib/kas-rt-utils";
 import type { TransactionItem } from "@/types/kas-rt";
 
+interface MonthStatus {
+  name: string;
+  status: "full" | "partial" | "unpaid";
+  remainder?: number;
+}
+
 interface IplPageClientProps {
   blokRumah: string;
-  months: { name: string; paid: boolean }[];
+  months: MonthStatus[];
   transactions: TransactionItem[];
 }
 
@@ -19,7 +25,7 @@ export default function IplPageClient({
   const router = useRouter();
 
   const totalPaid = transactions.reduce((sum, tx) => sum + tx.amount, 0);
-  const paidCount = months.filter((m) => m.paid).length;
+  const paidCount = months.filter((m) => m.status === "full").length;
   const targetAmount = 120000 * 12;
   const percentage = Math.min(100, (totalPaid / targetAmount) * 100);
 
@@ -123,16 +129,31 @@ export default function IplPageClient({
         </h2>
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
           {months.map((month, index) => {
-            const isPaid = month.paid;
+            const getBadgeClass = () => {
+              if (month.status === "full") {
+                return "bg-app-primary text-white border-2 border-app-primary";
+              }
+              if (month.status === "partial") {
+                return "bg-app-primary-muted text-app-title border-2 border-app-primary-muted";
+              }
+              return "bg-white border-2 border-gray-200 text-gray-400";
+            };
+
+            const getBadgeTitle = () => {
+              if (month.status === "full") {
+                return `${month.name}: Lunas`;
+              }
+              if (month.status === "partial" && month.remainder) {
+                return `${month.name}: Sebagian (${formatRupiah(month.remainder)})`;
+              }
+              return `${month.name}: Belum bayar`;
+            };
+
             return (
               <div
                 key={index}
-                className={`flex items-center justify-center rounded-xl px-2 py-3 text-xs font-bold transition-colors ${
-                  isPaid
-                    ? "bg-app-primary text-white"
-                    : "bg-white border-2 border-gray-200 text-gray-400"
-                }`}
-                title={`${month.name}: ${isPaid ? "Lunas" : "Belum bayar"}`}
+                className={`flex items-center justify-center rounded-xl px-2 py-3 text-xs font-bold transition-colors ${getBadgeClass()}`}
+                title={getBadgeTitle()}
               >
                 {month.name.slice(0, 3).toUpperCase()}
               </div>

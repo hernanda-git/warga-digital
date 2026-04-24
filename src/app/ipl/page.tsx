@@ -39,11 +39,17 @@ export default async function IplPage() {
   const totalPaid = transactions.reduce((sum, tx) => sum + tx.amount, 0);
   const monthlyAmount = 120000;
   const completeMonths = Math.floor(totalPaid / monthlyAmount);
+  const remainder = totalPaid % monthlyAmount;
 
-  const months = MONTH_NAMES.map((name, index) => ({
-    name,
-    paid: index < completeMonths,
-  }));
+  const months = MONTH_NAMES.map((name, index) => {
+    if (index < completeMonths) {
+      return { name, status: "full" as const };
+    } else if (index === completeMonths && remainder > 0) {
+      return { name, status: "partial" as const, remainder };
+    } else {
+      return { name, status: "unpaid" as const };
+    }
+  });
 
   return (
     <IplPageClient
