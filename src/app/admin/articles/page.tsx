@@ -277,8 +277,7 @@ function ArticleImageUploader({
             );
           }
         });
-        xhr.addEventListener("load", () => {}`,
-          );
+        xhr.addEventListener("load", () => {
           if (xhr.status >= 200 && xhr.status < 300) resolve();
           else reject(new Error(`Upload gagal: ${xhr.status}`));
         });

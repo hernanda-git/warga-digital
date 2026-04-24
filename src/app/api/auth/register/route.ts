@@ -354,11 +354,11 @@ export async function POST(request: NextRequest) {
       const { error: _b1 } = await supabase
         .from("user_badges")
         .insert({ user_id: userId, badge_id: 1 });
-      if (_b1 && _b1.code !== "23505")
+      if (_b1 && _b1.code !== "23505") throw _b1;
       const { error: _b2 } = await supabase
         .from("user_badges")
         .insert({ user_id: userId, badge_id: 2 });
-      if (_b2 && _b2.code !== "23505")
+      if (_b2 && _b2.code !== "23505") throw _b2;
 
       const { data: user } = await supabase
         .from("users")
@@ -502,7 +502,7 @@ export async function POST(request: NextRequest) {
       const { error: _b1 } = await supabase
         .from("user_badges")
         .insert({ user_id: userId, badge_id: 1 });
-      if (_b1 && _b1.code !== "23505")
+      if (_b1 && _b1.code !== "23505") throw _b1;
       const { data: user } = await supabase
         .from("users")
         .select("id, full_name")
@@ -567,11 +567,11 @@ export async function POST(request: NextRequest) {
     const { error: _b1 } = await supabase
       .from("user_badges")
       .insert({ user_id: userId, badge_id: 1 });
-    if (_b1 && _b1.code !== "23505")
+    if (_b1 && _b1.code !== "23505") throw _b1;
     const { error: _b2 } = await supabase
       .from("user_badges")
       .insert({ user_id: userId, badge_id: 2 });
-    if (_b2 && _b2.code !== "23505")
+    if (_b2 && _b2.code !== "23505") throw _b2;
     const { data: user } = await supabase
       .from("users")
       .select("id, full_name")

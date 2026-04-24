@@ -79,18 +79,32 @@ export async function GET(request: Request) {
       year: "numeric",
     });
 
-    // Last 12 months for trend (starting from selected month, going back 11 months)
-    const trendMonths: { year: number; month: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date(targetYear, targetMonth - i, 1);
-      trendMonths.push({ year: date.getFullYear(), month: date.getMonth() });
+    // Year-to-date trend (Jan to current month for current year, full year for past years)
+    const isCurrentYear = targetYear === now.getFullYear();
+    const isFutureYear = targetYear > now.getFullYear();
+
+    let trendMonths: { year: number; month: number }[] = [];
+
+    if (isFutureYear) {
+      trendMonths = [];
+    } else if (isCurrentYear) {
+      const currentMonth = now.getMonth();
+      for (let month = 0; month <= currentMonth; month++) {
+        trendMonths.push({ year: targetYear, month });
+      }
+    } else {
+      for (let month = 0; month < 12; month++) {
+        trendMonths.push({ year: targetYear, month });
+      }
     }
 
     const supabase = createServerClient();
 
-    // ── Fetch transactions for the last 13 months (trend window) ────────────
-    // This bounds the query instead of loading entire transaction history
-    const trendStart = new Date(targetYear, targetMonth - 12, 1);
+    // ── Fetch transactions for the trend window ────────────
+    // Only fetch from Jan 1 of selected year (or no data for future years)
+    const trendStart = isFutureYear
+      ? selectedMonthEnd
+      : new Date(targetYear, 0, 1);
     const trendStartStr = toDateInputValue(trendStart);
 
     const { data: allTx, error: txError } = await supabase
@@ -340,8 +354,7 @@ export async function GET(request: Request) {
       yearlyTrend,
       iplCollection,
       stats,
-    };.substring(0, 200),
-    );
+    };
     return NextResponse.json(response);
   } catch (err) {
     return NextResponse.json(

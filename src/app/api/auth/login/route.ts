@@ -24,8 +24,7 @@ function getRateLimitKey(login: string): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { login, pin } = body;.length,
-    );
+    const { login, pin } = body;
 
     if (!login || typeof login !== "string" || !login.trim()) {
       return NextResponse.json(
