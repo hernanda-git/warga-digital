@@ -11,7 +11,7 @@ interface KasRtQuickStatsProps {
 
 /**
  * Quick statistics cards component
- * Shows average per day, best/worst days, and highest category
+ * Redesigned to match kas-rt-summary-redesigned.html specifications
  */
 export function KasRtQuickStats({ stats, isLoading = false }: KasRtQuickStatsProps) {
   const { avgPerDay, bestDay, worstDay, highestCategory } = stats;
@@ -32,7 +32,7 @@ export function KasRtQuickStats({ stats, isLoading = false }: KasRtQuickStatsPro
 
   if (isLoading) {
     return (
-      <div className="rounded-xl bg-white p-4 shadow-sm">
+      <div className="mx-4 rounded-xl bg-white p-4 shadow-sm">
         <div className="animate-pulse">
           <div className="flex items-center justify-between">
             <div className="h-4 w-24 rounded bg-gray-200"></div>
@@ -53,7 +53,7 @@ export function KasRtQuickStats({ stats, isLoading = false }: KasRtQuickStatsPro
   }
 
   return (
-    <div className="rounded-xl bg-white p-4 shadow-sm" aria-label="Statistik Cepat">
+    <div className="mx-4 rounded-xl bg-white p-4 shadow-sm" aria-label="Statistik Cepat">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-gray-900">Statistik Cepat</h3>
@@ -62,7 +62,7 @@ export function KasRtQuickStats({ stats, isLoading = false }: KasRtQuickStatsPro
       {/* Stats grid */}
       <div className="mt-4 grid grid-cols-2 gap-3">
         {/* Average per day */}
-        <div className="rounded-lg bg-gray-50 p-3">
+        <div className="rounded-lg bg-gray-50 p-3 transition hover:bg-gray-100">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
             Rata-rata/Hari
           </p>
@@ -72,7 +72,7 @@ export function KasRtQuickStats({ stats, isLoading = false }: KasRtQuickStatsPro
         </div>
 
         {/* Highest category */}
-        <div className="rounded-lg bg-gray-50 p-3">
+        <div className="rounded-lg bg-gray-50 p-3 transition hover:bg-gray-100">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
             Kategori Tertinggi
           </p>
@@ -85,7 +85,7 @@ export function KasRtQuickStats({ stats, isLoading = false }: KasRtQuickStatsPro
         </div>
 
         {/* Best day */}
-        <div className="rounded-lg bg-green-50 p-3">
+        <div className="rounded-lg bg-green-50 p-3 transition hover:bg-green-100">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-green-600">
             Hari Terbaik
           </p>
@@ -96,7 +96,7 @@ export function KasRtQuickStats({ stats, isLoading = false }: KasRtQuickStatsPro
         </div>
 
         {/* Worst day */}
-        <div className="rounded-lg bg-red-50 p-3">
+        <div className="rounded-lg bg-red-50 p-3 transition hover:bg-red-100">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-red-600">
             Hari Terburuk
           </p>

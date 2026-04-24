@@ -53,6 +53,7 @@ type ExportFormat = "pdf" | "excel" | "image";
 
 /**
  * Export button with dropdown for PDF, Excel, and Image export
+ * Redesigned as a pill button with icon + text
  */
 export function KasRtExportButton({
   summary,
@@ -66,7 +67,6 @@ export function KasRtExportButton({
     setIsExporting(true);
 
     try {
-      // Call export API with JSON body
       const response = await fetch(`/api/kas-rt/summary/export`, {
         method: "POST",
         headers: {
@@ -104,7 +104,6 @@ export function KasRtExportButton({
     setIsExporting(true);
 
     try {
-      // Call export API with JSON body
       const response = await fetch(`/api/kas-rt/summary/export`, {
         method: "POST",
         headers: {
@@ -143,10 +142,9 @@ export function KasRtExportButton({
 
     setIsExporting(true);
     try {
-      // Capture the summary section as an image
       const element = exportRef.current;
       const canvas = await html2canvas(element, {
-        scale: 2, // Higher resolution
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: "#ffffff",
@@ -189,7 +187,6 @@ export function KasRtExportButton({
     [exportToPDF, exportToExcel, exportToImage],
   );
 
-  // Hide dropdown when clicking outside
   const handleToggleDropdown = useCallback(() => {
     setShowDropdown((prev) => !prev);
   }, []);
@@ -200,17 +197,18 @@ export function KasRtExportButton({
 
   return (
     <div className="relative" ref={exportRef}>
-      {/* Export button */}
+      {/* Export button - pill style with icon + text */}
       <button
         type="button"
         onClick={handleToggleDropdown}
         disabled={isLoading || isExporting}
-        className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-xl bg-primary-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-primary-700 active:scale-95 disabled:opacity-50"
         aria-label="Ekspor laporan"
         aria-haspopup="true"
         aria-expanded={showDropdown}
       >
-        <ArrowDownTrayIcon className="h-4 w-4 text-white" />
+        <ArrowDownTrayIcon className="h-4 w-4" />
+        <span>Ekspor</span>
       </button>
 
       {/* Dropdown menu */}

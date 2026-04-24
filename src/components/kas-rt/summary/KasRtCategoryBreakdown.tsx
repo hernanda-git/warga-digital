@@ -13,7 +13,7 @@ interface KasRtCategoryBreakdownProps {
 
 /**
  * Category breakdown component with horizontal bars
- * Shows top categories with their contribution percentage
+ * Redesigned to match kas-rt-summary-redesigned.html specifications
  */
 export function KasRtCategoryBreakdown({
   byCategory,
@@ -24,7 +24,7 @@ export function KasRtCategoryBreakdown({
 
   // Sort by amount descending and take top categories
   const topCategories = useMemo(() => {
-    return byCategory.slice(0, 10); // Show max 10 categories
+    return byCategory.slice(0, 10);
   }, [byCategory]);
 
   // Calculate max amount for bar scaling
@@ -35,7 +35,7 @@ export function KasRtCategoryBreakdown({
 
   if (isLoading) {
     return (
-      <div className="rounded-xl bg-white p-4 shadow-sm">
+      <div className="mx-4 rounded-xl bg-white p-4 shadow-sm">
         <div className="animate-pulse">
           <div className="flex items-center justify-between">
             <div className="h-4 w-32 rounded bg-gray-200"></div>
@@ -59,14 +59,14 @@ export function KasRtCategoryBreakdown({
 
   if (topCategories.length === 0) {
     return (
-      <div className="rounded-xl bg-white p-6 shadow-sm text-center">
+      <div className="mx-4 rounded-xl bg-white p-6 text-center shadow-sm">
         <p className="text-sm text-gray-500">Tidak ada data kategori</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl bg-white p-4 shadow-sm" aria-label="Breakdown Kategori">
+    <div className="mx-4 rounded-xl bg-white p-4 shadow-sm" aria-label="Breakdown Kategori">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-bold text-gray-900">Kategori</h3>
@@ -83,8 +83,8 @@ export function KasRtCategoryBreakdown({
                           cat.category === "IPL" ||
                           cat.category === "Iuran Bulanan";
 
-          // Color based on category type
-          const barColor = cat.category === "IPL"
+          // Determine bar color class based on category type
+          const barColorClass = cat.category === "IPL"
             ? "from-primary-500 to-primary-600"
             : isIncome
             ? "from-green-500 to-green-600"
@@ -115,7 +115,7 @@ export function KasRtCategoryBreakdown({
               {/* Progress bar */}
               <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
                 <div
-                  className={`h-full rounded-full bg-gradient-to-r ${barColor} transition-all duration-300 ease-out`}
+                  className={`h-full rounded-full bg-gradient-to-r ${barColorClass} transition-all duration-300 ease-out`}
                   style={{ width: `${barWidth}%` }}
                   role="progressbar"
                   aria-valuenow={cat.percentage}

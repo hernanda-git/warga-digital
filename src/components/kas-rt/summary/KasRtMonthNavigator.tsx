@@ -13,6 +13,7 @@ interface KasRtMonthNavigatorProps {
 
 /**
  * Month navigator with prev/next buttons for the summary page
+ * Redesigned to match kas-rt-summary-redesigned.html specifications
  */
 export function KasRtMonthNavigator({
   year,

@@ -1,11 +1,13 @@
 /**
- * Kas RT Summary Page V2 (Server Component)
- * Redesigned to match production UI specifications
+ * Kas RT Summary Page (Server Component)
+ *
+ * Fetches summary analytics server-side based on URL query params.
+ * Month navigation updates URL, triggering server re-render.
  */
 
 import { redirect } from "next/navigation";
 import { requireAuth, fetchKasRtSummary } from "../data";
-import KasRtSummaryV2Client from "./KasRtSummaryV2Client";
+import KasRtSummaryClient from "./KasRtSummaryClient";
 
 interface SummaryPageProps {
   searchParams: Promise<{ year?: string; month?: string }>;
@@ -47,7 +49,7 @@ export default async function KasRtSummaryPage({ searchParams }: SummaryPageProp
   }
 
   return (
-    <KasRtSummaryV2Client
+    <KasRtSummaryClient
       summary={summary}
       year={year}
       month={month}

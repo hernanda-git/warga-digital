@@ -1,0 +1,1481 @@
+<!doctype html>
+<html lang="id">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+        />
+        <title>Kas RT — April 2026</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            :root {
+                --bg: #0f1117;
+                --bg-card: #181c27;
+                --bg-card-alt: #1e2333;
+                --border: rgba(255, 255, 255, 0.07);
+                --border-bright: rgba(255, 255, 255, 0.13);
+                --text-primary: #eef0f5;
+                --text-secondary: #8b90a0;
+                --text-muted: #545870;
+                --accent-green: #2ecc84;
+                --accent-green-dim: rgba(46, 204, 132, 0.12);
+                --accent-green-glow: rgba(46, 204, 132, 0.25);
+                --accent-red: #ff5c73;
+                --accent-red-dim: rgba(255, 92, 115, 0.12);
+                --accent-blue: #5b7fff;
+                --accent-blue-dim: rgba(91, 127, 255, 0.12);
+                --accent-amber: #f9a825;
+                --accent-amber-dim: rgba(249, 168, 37, 0.12);
+                --font-main: "DM Sans", sans-serif;
+                --font-mono: "DM Mono", monospace;
+                --radius-sm: 10px;
+                --radius-md: 16px;
+                --radius-lg: 22px;
+                --shadow-card: 0 2px 20px rgba(0, 0, 0, 0.35);
+            }
+
+            html,
+            body {
+                height: 100%;
+                background: var(--bg);
+                color: var(--text-primary);
+                font-family: var(--font-main);
+                -webkit-font-smoothing: antialiased;
+            }
+
+            body {
+                overflow-x: hidden;
+            }
+
+            /* Scrollbar */
+            ::-webkit-scrollbar {
+                width: 4px;
+            }
+            ::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            ::-webkit-scrollbar-thumb {
+                background: var(--border-bright);
+                border-radius: 4px;
+            }
+
+            /* Layout */
+            .app-shell {
+                max-width: 430px;
+                margin: 0 auto;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            }
+
+            /* ===== HEADER ===== */
+            .header {
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                padding: 16px 20px 12px;
+                background: var(--bg);
+                border-bottom: 1px solid var(--border);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+            }
+
+            .header-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .btn-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                color: var(--text-secondary);
+                flex-shrink: 0;
+            }
+
+            .btn-icon:hover {
+                background: var(--bg-card-alt);
+                border-color: var(--border-bright);
+                color: var(--text-primary);
+            }
+            .btn-icon:active {
+                transform: scale(0.94);
+            }
+
+            .header-title-area {
+                flex: 1;
+            }
+            .header-eyebrow {
+                font-size: 10px;
+                font-weight: 600;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--text-muted);
+            }
+            .header-title {
+                font-size: 17px;
+                font-weight: 700;
+                color: var(--text-primary);
+                line-height: 1.2;
+            }
+
+            .btn-export {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 0 12px;
+                height: 36px;
+                border-radius: 10px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-bright);
+                color: var(--text-secondary);
+                font-family: var(--font-main);
+                font-size: 12px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                white-space: nowrap;
+            }
+            .btn-export:hover {
+                color: var(--text-primary);
+                background: var(--bg-card-alt);
+            }
+            .btn-export:active {
+                transform: scale(0.96);
+            }
+
+            /* Month Nav */
+            .month-nav {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-top: 12px;
+                background: var(--bg-card);
+                border-radius: var(--radius-sm);
+                border: 1px solid var(--border);
+                padding: 8px 4px;
+            }
+
+            .month-nav-btn {
+                width: 32px;
+                height: 32px;
+                border-radius: 8px;
+                background: transparent;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                color: var(--text-muted);
+                transition: all 0.15s;
+            }
+            .month-nav-btn:hover {
+                color: var(--text-primary);
+                background: var(--border);
+            }
+
+            .month-label {
+                font-size: 13px;
+                font-weight: 700;
+                color: var(--text-primary);
+                letter-spacing: 0.01em;
+            }
+            .month-sublabel {
+                font-size: 10px;
+                color: var(--text-muted);
+                text-align: center;
+                margin-top: 1px;
+            }
+
+            /* ===== CONTENT ===== */
+            .content {
+                flex: 1;
+                padding: 20px 16px 32px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                overflow-y: auto;
+            }
+
+            /* ===== HERO BALANCE ===== */
+            .hero-card {
+                border-radius: var(--radius-lg);
+                background: linear-gradient(
+                    135deg,
+                    #1a2540 0%,
+                    #0f1828 50%,
+                    #111a2e 100%
+                );
+                border: 1px solid rgba(91, 127, 255, 0.2);
+                padding: 24px 22px 20px;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .hero-card::before {
+                content: "";
+                position: absolute;
+                top: -60px;
+                right: -60px;
+                width: 200px;
+                height: 200px;
+                border-radius: 50%;
+                background: radial-gradient(
+                    circle,
+                    rgba(91, 127, 255, 0.18) 0%,
+                    transparent 70%
+                );
+                pointer-events: none;
+            }
+
+            .hero-card::after {
+                content: "";
+                position: absolute;
+                bottom: -40px;
+                left: -40px;
+                width: 160px;
+                height: 160px;
+                border-radius: 50%;
+                background: radial-gradient(
+                    circle,
+                    rgba(46, 204, 132, 0.12) 0%,
+                    transparent 70%
+                );
+                pointer-events: none;
+            }
+
+            .hero-top-row {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                position: relative;
+                z-index: 1;
+            }
+
+            .hero-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                padding: 3px 10px;
+                border-radius: 20px;
+                background: var(--accent-blue-dim);
+                border: 1px solid rgba(91, 127, 255, 0.25);
+                font-size: 10px;
+                font-weight: 600;
+                color: var(--accent-blue);
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+            }
+
+            .hero-tx-count {
+                text-align: right;
+            }
+            .hero-tx-count .number {
+                font-size: 20px;
+                font-weight: 700;
+                color: var(--text-primary);
+                font-family: var(--font-mono);
+                line-height: 1;
+            }
+            .hero-tx-count .label {
+                font-size: 10px;
+                color: var(--text-muted);
+                margin-top: 2px;
+            }
+
+            .hero-net {
+                position: relative;
+                z-index: 1;
+                margin-top: 20px;
+            }
+            .hero-net-label {
+                font-size: 10px;
+                font-weight: 600;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: rgba(255, 255, 255, 0.4);
+            }
+            .hero-net-amount {
+                font-size: 34px;
+                font-weight: 700;
+                color: #fff;
+                font-family: var(--font-mono);
+                letter-spacing: -0.02em;
+                line-height: 1.1;
+                margin-top: 4px;
+            }
+            .hero-net-sub {
+                font-size: 11px;
+                color: rgba(255, 255, 255, 0.35);
+                margin-top: 3px;
+            }
+
+            .hero-stats-row {
+                position: relative;
+                z-index: 1;
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 8px;
+                margin-top: 20px;
+            }
+
+            .hero-stat {
+                background: rgba(255, 255, 255, 0.06);
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                padding: 10px 10px 9px;
+                text-align: center;
+                transition: background 0.2s;
+            }
+            .hero-stat:hover {
+                background: rgba(255, 255, 255, 0.09);
+            }
+
+            .hero-stat-label {
+                font-size: 9px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.09em;
+                color: rgba(255, 255, 255, 0.4);
+                line-height: 1;
+            }
+            .hero-stat-amount {
+                font-size: 14px;
+                font-weight: 700;
+                color: #fff;
+                font-family: var(--font-mono);
+                line-height: 1;
+                margin-top: 5px;
+            }
+            .hero-stat-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 2px;
+                font-size: 9px;
+                font-weight: 700;
+                border-radius: 10px;
+                padding: 1px 5px;
+                margin-top: 4px;
+            }
+            .badge-up {
+                background: rgba(46, 204, 132, 0.2);
+                color: var(--accent-green);
+            }
+            .badge-down {
+                background: rgba(255, 92, 115, 0.2);
+                color: var(--accent-red);
+            }
+
+            /* ===== SECTION CARDS ===== */
+            .card {
+                background: var(--bg-card);
+                border-radius: var(--radius-md);
+                border: 1px solid var(--border);
+                overflow: hidden;
+            }
+
+            .card-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 16px 18px 12px;
+            }
+
+            .card-title {
+                font-size: 13px;
+                font-weight: 700;
+                color: var(--text-primary);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .card-title-icon {
+                width: 26px;
+                height: 26px;
+                border-radius: 7px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 13px;
+            }
+
+            .card-subtitle {
+                font-size: 11px;
+                color: var(--text-muted);
+            }
+
+            .card-body {
+                padding: 0 18px 18px;
+            }
+
+            /* ===== IPL PROGRESS ===== */
+            .ipl-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 14px;
+            }
+
+            .ipl-percent {
+                font-size: 32px;
+                font-weight: 700;
+                font-family: var(--font-mono);
+                color: var(--accent-green);
+                line-height: 1;
+            }
+
+            .ipl-meta {
+                font-size: 11px;
+                color: var(--text-muted);
+                margin-top: 2px;
+            }
+
+            .progress-track {
+                height: 8px;
+                background: rgba(255, 255, 255, 0.06);
+                border-radius: 99px;
+                overflow: hidden;
+                position: relative;
+            }
+
+            .progress-fill {
+                height: 100%;
+                border-radius: 99px;
+                background: linear-gradient(
+                    90deg,
+                    var(--accent-green) 0%,
+                    #5ef6b5 100%
+                );
+                position: relative;
+                transition: width 1s cubic-bezier(0.25, 1, 0.5, 1);
+            }
+
+            .progress-fill::after {
+                content: "";
+                position: absolute;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                width: 20px;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.4)
+                );
+                border-radius: 99px;
+            }
+
+            .ipl-pills {
+                display: flex;
+                gap: 8px;
+                margin-top: 12px;
+            }
+
+            .ipl-pill {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                gap: 7px;
+                background: var(--bg-card-alt);
+                border-radius: 10px;
+                padding: 8px 10px;
+                border: 1px solid var(--border);
+            }
+
+            .ipl-pill-dot {
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+
+            .ipl-pill-number {
+                font-size: 15px;
+                font-weight: 700;
+                font-family: var(--font-mono);
+                color: var(--text-primary);
+            }
+
+            .ipl-pill-label {
+                font-size: 10px;
+                color: var(--text-muted);
+                margin-top: 1px;
+            }
+
+            /* ===== TREND CHART ===== */
+            .chart-wrapper {
+                padding: 0 18px 18px;
+            }
+
+            .chart-canvas-wrap {
+                position: relative;
+                height: 160px;
+            }
+
+            .chart-legend {
+                display: flex;
+                gap: 16px;
+                justify-content: center;
+                margin-top: 10px;
+            }
+
+            .legend-item {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 11px;
+                color: var(--text-secondary);
+            }
+
+            .legend-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 2px;
+            }
+
+            /* ===== CATEGORY BREAKDOWN ===== */
+            .cat-list {
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .cat-item {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 11px 18px;
+                border-bottom: 1px solid var(--border);
+                transition: background 0.15s;
+                cursor: default;
+            }
+
+            .cat-item:last-child {
+                border-bottom: none;
+            }
+            .cat-item:hover {
+                background: rgba(255, 255, 255, 0.025);
+            }
+
+            .cat-rank {
+                width: 20px;
+                font-size: 10px;
+                font-weight: 700;
+                font-family: var(--font-mono);
+                color: var(--text-muted);
+                flex-shrink: 0;
+                text-align: right;
+            }
+
+            .cat-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+
+            .cat-info {
+                flex: 1;
+                min-width: 0;
+            }
+            .cat-name {
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--text-primary);
+                truncate: ellipsis;
+                overflow: hidden;
+                white-space: nowrap;
+            }
+            .cat-count {
+                font-size: 10px;
+                color: var(--text-muted);
+                margin-top: 1px;
+            }
+
+            .cat-right {
+                text-align: right;
+                flex-shrink: 0;
+            }
+            .cat-amount {
+                font-size: 13px;
+                font-weight: 700;
+                font-family: var(--font-mono);
+                color: var(--text-primary);
+            }
+            .cat-pct {
+                font-size: 10px;
+                color: var(--text-muted);
+                margin-top: 1px;
+            }
+
+            .cat-bar-row {
+                padding: 0 18px 4px;
+            }
+            .cat-bar-bg {
+                height: 3px;
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 3px;
+                overflow: hidden;
+                margin-bottom: 2px;
+            }
+            .cat-bar-fill {
+                height: 100%;
+                border-radius: 3px;
+                transition: width 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            }
+
+            /* ===== QUICK STATS ===== */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                padding: 0 16px 16px;
+            }
+
+            .stat-tile {
+                background: var(--bg-card-alt);
+                border-radius: var(--radius-sm);
+                border: 1px solid var(--border);
+                padding: 14px;
+                transition: all 0.15s;
+            }
+            .stat-tile:hover {
+                border-color: var(--border-bright);
+            }
+
+            .stat-tile-icon {
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 15px;
+                margin-bottom: 10px;
+            }
+
+            .stat-tile-label {
+                font-size: 9px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: var(--text-muted);
+                margin-bottom: 4px;
+            }
+
+            .stat-tile-value {
+                font-size: 16px;
+                font-weight: 700;
+                font-family: var(--font-mono);
+                color: var(--text-primary);
+                line-height: 1.1;
+            }
+
+            .stat-tile-sub {
+                font-size: 10px;
+                color: var(--text-muted);
+                margin-top: 3px;
+            }
+
+            /* ===== YTD SUMMARY STRIP ===== */
+            .ytd-strip {
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                padding: 14px 18px;
+            }
+
+            .ytd-title {
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: var(--text-muted);
+                margin-bottom: 12px;
+            }
+
+            .ytd-row {
+                display: flex;
+                gap: 8px;
+            }
+
+            .ytd-item {
+                flex: 1;
+                background: var(--bg-card-alt);
+                border-radius: 10px;
+                border: 1px solid var(--border);
+                padding: 12px;
+                text-align: center;
+            }
+
+            .ytd-item-label {
+                font-size: 9px;
+                font-weight: 600;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--text-muted);
+                margin-bottom: 5px;
+            }
+            .ytd-item-value {
+                font-size: 14px;
+                font-weight: 700;
+                font-family: var(--font-mono);
+                line-height: 1;
+            }
+
+            /* ===== DIVIDER LABEL ===== */
+            .section-label {
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+                color: var(--text-muted);
+                padding: 0 2px;
+                margin-bottom: -4px;
+            }
+
+            /* ===== ANIMATIONS ===== */
+            @keyframes fadeUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(12px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .animate-in {
+                animation: fadeUp 0.4s ease both;
+            }
+
+            .delay-1 {
+                animation-delay: 0.05s;
+            }
+            .delay-2 {
+                animation-delay: 0.1s;
+            }
+            .delay-3 {
+                animation-delay: 0.15s;
+            }
+            .delay-4 {
+                animation-delay: 0.2s;
+            }
+            .delay-5 {
+                animation-delay: 0.25s;
+            }
+            .delay-6 {
+                animation-delay: 0.3s;
+            }
+
+            /* ===== CANVAS CHART ===== */
+            canvas {
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app-shell">
+            <!-- HEADER -->
+            <header class="header">
+                <div class="header-row">
+                    <button class="btn-icon" aria-label="Kembali">
+                        <svg
+                            width="16"
+                            height="16"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            viewBox="0 0 24 24"
+                        >
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                    </button>
+
+                    <div class="header-title-area">
+                        <div class="header-eyebrow">Keuangan RT</div>
+                        <div class="header-title">Ringkasan Kas</div>
+                    </div>
+
+                    <button class="btn-export" aria-label="Ekspor laporan">
+                        <svg
+                            width="13"
+                            height="13"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M12 12v8M8 16l4 4 4-4"
+                            />
+                        </svg>
+                        Ekspor
+                    </button>
+                </div>
+
+                <!-- Month Navigator -->
+                <div class="month-nav">
+                    <button class="month-nav-btn" aria-label="Bulan sebelumnya">
+                        <svg
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            viewBox="0 0 24 24"
+                        >
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                    </button>
+                    <div>
+                        <div class="month-label">April 2026</div>
+                        <div class="month-sublabel">
+                            1 – 30 Apr &nbsp;·&nbsp; 47 transaksi
+                        </div>
+                    </div>
+                    <button class="month-nav-btn" aria-label="Bulan berikutnya">
+                        <svg
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            viewBox="0 0 24 24"
+                        >
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- CONTENT -->
+            <main class="content">
+                <!-- HERO BALANCE CARD -->
+                <div class="hero-card animate-in">
+                    <div class="hero-top-row">
+                        <div class="hero-badge">
+                            <svg width="8" height="8" viewBox="0 0 8 8">
+                                <circle
+                                    cx="4"
+                                    cy="4"
+                                    r="3"
+                                    fill="currentColor"
+                                />
+                            </svg>
+                            April 2026
+                        </div>
+                        <div class="hero-tx-count">
+                            <div class="number">47</div>
+                            <div class="label">transaksi</div>
+                        </div>
+                    </div>
+
+                    <div class="hero-net">
+                        <div class="hero-net-label">Saldo Bersih Bulan Ini</div>
+                        <div class="hero-net-amount" id="heroNetAmount">
+                            Rp 3.750.000
+                        </div>
+                        <div class="hero-net-sub">+78,6% dari Maret 2026</div>
+                    </div>
+
+                    <div class="hero-stats-row">
+                        <div class="hero-stat">
+                            <div class="hero-stat-label">Pemasukan</div>
+                            <div class="hero-stat-amount">12,5M</div>
+                            <div>
+                                <span class="hero-stat-badge badge-up"
+                                    >↑ 11,6%</span
+                                >
+                            </div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-label">Pengeluaran</div>
+                            <div class="hero-stat-amount">8,75M</div>
+                            <div>
+                                <span class="hero-stat-badge badge-down"
+                                    >↓ 3,8%</span
+                                >
+                            </div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-label">Laba/Rugi</div>
+                            <div class="hero-stat-amount">3,75M</div>
+                            <div>
+                                <span class="hero-stat-badge badge-up"
+                                    >↑ 78,6%</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IPL COLLECTION -->
+                <div class="section-label animate-in delay-1">
+                    Koleksi Iuran
+                </div>
+
+                <div class="card animate-in delay-1">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div
+                                class="card-title-icon"
+                                style="background: var(--accent-green-dim)"
+                            >
+                                🏠
+                            </div>
+                            Koleksi IPL
+                        </div>
+                        <div class="card-subtitle">April 2026</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="ipl-header">
+                            <div>
+                                <div class="ipl-percent">80%</div>
+                                <div class="ipl-meta">
+                                    68 dari 85 rumah telah bayar
+                                </div>
+                            </div>
+                            <div style="text-align: right">
+                                <div
+                                    style="
+                                        font-size: 11px;
+                                        color: var(--accent-amber);
+                                        font-weight: 600;
+                                        background: var(--accent-amber-dim);
+                                        border-radius: 8px;
+                                        padding: 4px 10px;
+                                        border: 1px solid
+                                            rgba(249, 168, 37, 0.2);
+                                    "
+                                >
+                                    ⚠ 17 belum bayar
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="progress-track">
+                            <div class="progress-fill" style="width: 80%"></div>
+                        </div>
+
+                        <div class="ipl-pills">
+                            <div class="ipl-pill">
+                                <div
+                                    class="ipl-pill-dot"
+                                    style="background: var(--accent-green)"
+                                ></div>
+                                <div>
+                                    <div class="ipl-pill-number">68</div>
+                                    <div class="ipl-pill-label">
+                                        Sudah Bayar
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ipl-pill">
+                                <div
+                                    class="ipl-pill-dot"
+                                    style="background: var(--accent-red)"
+                                ></div>
+                                <div>
+                                    <div class="ipl-pill-number">17</div>
+                                    <div class="ipl-pill-label">
+                                        Belum Bayar
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ipl-pill">
+                                <div
+                                    class="ipl-pill-dot"
+                                    style="background: var(--accent-blue)"
+                                ></div>
+                                <div>
+                                    <div class="ipl-pill-number">85</div>
+                                    <div class="ipl-pill-label">
+                                        Total Rumah
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- YTD SUMMARY -->
+                <div class="ytd-strip animate-in delay-2">
+                    <div class="ytd-title">📊 Year to Date 2026 (Jan–Apr)</div>
+                    <div class="ytd-row">
+                        <div class="ytd-item">
+                            <div class="ytd-item-label">Total Masuk</div>
+                            <div
+                                class="ytd-item-value"
+                                style="color: var(--accent-green)"
+                            >
+                                44,0M
+                            </div>
+                        </div>
+                        <div class="ytd-item">
+                            <div class="ytd-item-label">Total Keluar</div>
+                            <div
+                                class="ytd-item-value"
+                                style="color: var(--accent-red)"
+                            >
+                                33,2M
+                            </div>
+                        </div>
+                        <div class="ytd-item">
+                            <div class="ytd-item-label">Net YTD</div>
+                            <div
+                                class="ytd-item-value"
+                                style="color: var(--accent-blue)"
+                            >
+                                10,8M
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TREND CHART -->
+                <div class="section-label animate-in delay-2">
+                    Tren Keuangan
+                </div>
+
+                <div class="card animate-in delay-2">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div
+                                class="card-title-icon"
+                                style="background: var(--accent-blue-dim)"
+                            >
+                                📈
+                            </div>
+                            Tren Tahun Ini
+                        </div>
+                        <div class="card-subtitle">Jan – Apr 2026</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <div class="chart-canvas-wrap">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <div
+                                    class="legend-dot"
+                                    style="background: var(--accent-green)"
+                                ></div>
+                                Pemasukan
+                            </div>
+                            <div class="legend-item">
+                                <div
+                                    class="legend-dot"
+                                    style="background: var(--accent-red)"
+                                ></div>
+                                Pengeluaran
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CATEGORY BREAKDOWN -->
+                <div class="section-label animate-in delay-3">
+                    Rincian Kategori
+                </div>
+
+                <div class="card animate-in delay-3">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div
+                                class="card-title-icon"
+                                style="background: rgba(249, 168, 37, 0.12)"
+                            >
+                                🗂️
+                            </div>
+                            Breakdown Kategori
+                        </div>
+                        <div class="card-subtitle">6 kategori</div>
+                    </div>
+                    <div class="cat-list" id="catList"></div>
+                </div>
+
+                <!-- QUICK STATS -->
+                <div class="section-label animate-in delay-4">Statistik</div>
+
+                <div
+                    class="card animate-in delay-4"
+                    style="
+                        overflow: visible;
+                        background: transparent;
+                        border: none;
+                        box-shadow: none;
+                    "
+                >
+                    <div class="stats-grid" style="padding: 0">
+                        <div class="stat-tile">
+                            <div
+                                class="stat-tile-icon"
+                                style="background: var(--accent-blue-dim)"
+                            >
+                                ⚡
+                            </div>
+                            <div class="stat-tile-label">Rata-rata/Hari</div>
+                            <div
+                                class="stat-tile-value"
+                                style="color: var(--accent-blue)"
+                            >
+                                708K
+                            </div>
+                            <div class="stat-tile-sub">per hari aktif</div>
+                        </div>
+                        <div class="stat-tile">
+                            <div
+                                class="stat-tile-icon"
+                                style="background: rgba(249, 168, 37, 0.12)"
+                            >
+                                🏆
+                            </div>
+                            <div class="stat-tile-label">Kategori Terbesar</div>
+                            <div
+                                class="stat-tile-value"
+                                style="
+                                    font-size: 13px;
+                                    color: var(--accent-amber);
+                                "
+                            >
+                                IPL
+                            </div>
+                            <div class="stat-tile-sub">Rp 8.500.000</div>
+                        </div>
+                        <div class="stat-tile">
+                            <div
+                                class="stat-tile-icon"
+                                style="background: var(--accent-green-dim)"
+                            >
+                                📅
+                            </div>
+                            <div class="stat-tile-label">Hari Terbaik</div>
+                            <div
+                                class="stat-tile-value"
+                                style="color: var(--accent-green)"
+                            >
+                                2,5M
+                            </div>
+                            <div class="stat-tile-sub">15 Apr 2026</div>
+                        </div>
+                        <div class="stat-tile">
+                            <div
+                                class="stat-tile-icon"
+                                style="background: var(--accent-red-dim)"
+                            >
+                                📉
+                            </div>
+                            <div class="stat-tile-label">Pengeluaran Besar</div>
+                            <div
+                                class="stat-tile-value"
+                                style="color: var(--accent-red)"
+                            >
+                                1,2M
+                            </div>
+                            <div class="stat-tile-sub">8 Apr 2026</div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <script>
+            // ===== DATA =====
+            const data = {
+                yearlyTrend: [
+                    { label: "Jan", income: 9800000, expense: 7200000 },
+                    { label: "Feb", income: 10500000, expense: 8100000 },
+                    { label: "Mar", income: 11200000, expense: 9100000 },
+                    { label: "Apr", income: 12500000, expense: 8750000 },
+                ],
+                categories: [
+                    { name: "IPL", amount: 8500000, count: 28, pct: 50.3 },
+                    {
+                        name: "Iuran Sampah",
+                        amount: 2100000,
+                        count: 12,
+                        pct: 12.4,
+                    },
+                    {
+                        name: "Kegiatan RT",
+                        amount: 1850000,
+                        count: 5,
+                        pct: 10.9,
+                    },
+                    {
+                        name: "Perbaikan Fasilitas",
+                        amount: 1200000,
+                        count: 3,
+                        pct: 7.1,
+                    },
+                    { name: "Keamanan", amount: 950000, count: 8, pct: 5.6 },
+                    { name: "Lainnya", amount: 6250000, count: 11, pct: 36.8 },
+                ],
+            };
+
+            const CAT_COLORS = [
+                "#5b7fff",
+                "#2ecc84",
+                "#f9a825",
+                "#ff5c73",
+                "#a78bfa",
+                "#22d3ee",
+            ];
+
+            function fmt(n) {
+                if (n >= 1000000) return "Rp " + (n / 1000000).toFixed(1) + "M";
+                if (n >= 1000) return "Rp " + Math.round(n / 1000) + "K";
+                return "Rp " + n;
+            }
+
+            // ===== RENDER CATEGORIES =====
+            const catList = document.getElementById("catList");
+            const maxAmt = Math.max(...data.categories.map((c) => c.amount));
+
+            data.categories.forEach((cat, i) => {
+                const barW = ((cat.amount / maxAmt) * 100).toFixed(1);
+                catList.innerHTML += `
+      <div>
+        <div class="cat-item">
+          <div class="cat-rank">${i + 1}</div>
+          <div class="cat-dot" style="background: ${CAT_COLORS[i]};"></div>
+          <div class="cat-info">
+            <div class="cat-name">${cat.name}</div>
+            <div class="cat-count">${cat.count} transaksi</div>
+          </div>
+          <div class="cat-right">
+            <div class="cat-amount">${fmt(cat.amount)}</div>
+            <div class="cat-pct">${cat.pct.toFixed(1)}%</div>
+          </div>
+        </div>
+        <div class="cat-bar-row">
+          <div class="cat-bar-bg">
+            <div class="cat-bar-fill" style="width:${barW}%; background:${CAT_COLORS[i]};"></div>
+          </div>
+        </div>
+      </div>
+    `;
+            });
+
+            // ===== TREND CHART (Canvas) =====
+            (function () {
+                const canvas = document.getElementById("trendChart");
+                const wrap = canvas.parentElement;
+                const dpr = window.devicePixelRatio || 1;
+                const W = wrap.offsetWidth;
+                const H = 160;
+
+                canvas.width = W * dpr;
+                canvas.height = H * dpr;
+                canvas.style.width = W + "px";
+                canvas.style.height = H + "px";
+
+                const ctx = canvas.getContext("2d");
+                ctx.scale(dpr, dpr);
+
+                const trend = data.yearlyTrend;
+                const allValues = trend.flatMap((d) => [d.income, d.expense]);
+                const maxV = Math.max(...allValues) * 1.15;
+                const minV = 0;
+
+                const padL = 52,
+                    padR = 16,
+                    padT = 12,
+                    padB = 30;
+                const chartW = W - padL - padR;
+                const chartH = H - padT - padB;
+                const n = trend.length;
+                const step = chartW / (n - 1);
+
+                function xOf(i) {
+                    return padL + i * step;
+                }
+                function yOf(val) {
+                    return padT + chartH * (1 - (val - minV) / (maxV - minV));
+                }
+
+                // Grid lines
+                const gridCount = 4;
+                ctx.strokeStyle = "rgba(255,255,255,0.05)";
+                ctx.lineWidth = 1;
+                for (let g = 0; g <= gridCount; g++) {
+                    const y = padT + (chartH / gridCount) * g;
+                    ctx.beginPath();
+                    ctx.moveTo(padL, y);
+                    ctx.lineTo(padL + chartW, y);
+                    ctx.stroke();
+
+                    // Y axis labels
+                    const val = maxV - (maxV / gridCount) * g;
+                    ctx.fillStyle = "rgba(139,144,160,0.8)";
+                    ctx.font = "9px DM Mono, monospace";
+                    ctx.textAlign = "right";
+                    const label =
+                        val >= 1000000
+                            ? (val / 1000000).toFixed(1) + "M"
+                            : Math.round(val / 1000) + "K";
+                    ctx.fillText(label, padL - 6, y + 3.5);
+                }
+
+                // Draw area + line helper
+                function drawLine(key, color, gradColor) {
+                    const pts = trend.map((d, i) => [xOf(i), yOf(d[key])]);
+
+                    // Area fill
+                    const grad = ctx.createLinearGradient(
+                        0,
+                        padT,
+                        0,
+                        padT + chartH,
+                    );
+                    grad.addColorStop(0, gradColor);
+                    grad.addColorStop(1, "transparent");
+                    ctx.beginPath();
+                    ctx.moveTo(pts[0][0], pts[0][1]);
+                    for (let i = 1; i < pts.length; i++) {
+                        const [cx, cy] = [
+                            (pts[i - 1][0] + pts[i][0]) / 2,
+                            (pts[i - 1][1] + pts[i][1]) / 2,
+                        ];
+                        ctx.quadraticCurveTo(
+                            pts[i - 1][0],
+                            pts[i - 1][1],
+                            cx,
+                            cy,
+                        );
+                    }
+                    ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+                    ctx.lineTo(pts[pts.length - 1][0], padT + chartH);
+                    ctx.lineTo(pts[0][0], padT + chartH);
+                    ctx.closePath();
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+
+                    // Line
+                    ctx.beginPath();
+                    ctx.moveTo(pts[0][0], pts[0][1]);
+                    for (let i = 1; i < pts.length; i++) {
+                        const [cx, cy] = [
+                            (pts[i - 1][0] + pts[i][0]) / 2,
+                            (pts[i - 1][1] + pts[i][1]) / 2,
+                        ];
+                        ctx.quadraticCurveTo(
+                            pts[i - 1][0],
+                            pts[i - 1][1],
+                            cx,
+                            cy,
+                        );
+                    }
+                    ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2.5;
+                    ctx.lineJoin = "round";
+                    ctx.stroke();
+
+                    // Dots
+                    pts.forEach(([px, py], i) => {
+                        ctx.beginPath();
+                        ctx.arc(px, py, 4, 0, Math.PI * 2);
+                        ctx.fillStyle = i === n - 1 ? color : "var(--bg-card)";
+                        ctx.fill();
+                        ctx.strokeStyle = color;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    });
+                }
+
+                drawLine("expense", "#ff5c73", "rgba(255,92,115,0.15)");
+                drawLine("income", "#2ecc84", "rgba(46,204,132,0.18)");
+
+                // X labels
+                trend.forEach((d, i) => {
+                    const x = xOf(i);
+                    const isLast = i === n - 1;
+                    ctx.fillStyle = isLast
+                        ? "rgba(255,255,255,0.8)"
+                        : "rgba(139,144,160,0.7)";
+                    ctx.font =
+                        (isLast ? "700 " : "500 ") + "10px DM Sans, sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.fillText(d.label, x, padT + chartH + 18);
+                });
+
+                // Current month value callout
+                const lastIncome = yOf(trend[n - 1].income);
+                const lastExpense = yOf(trend[n - 1].expense);
+                const lastX = xOf(n - 1);
+
+                function drawCallout(y, val, color, offset) {
+                    const label = fmt(val);
+                    ctx.font = "700 9.5px DM Mono, monospace";
+                    const tw = ctx.measureText(label).width;
+                    const bx = lastX - tw / 2 - 6 + offset;
+                    const by = y - 24;
+                    const bw = tw + 12;
+                    const bh = 16;
+
+                    ctx.fillStyle = color + "22";
+                    ctx.strokeStyle = color + "55";
+                    ctx.lineWidth = 1;
+                    roundRect(ctx, bx, by, bw, bh, 4);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = color;
+                    ctx.textAlign = "center";
+                    ctx.fillText(label, lastX + offset, by + 11);
+                }
+
+                function roundRect(ctx, x, y, w, h, r) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + r, y);
+                    ctx.lineTo(x + w - r, y);
+                    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                    ctx.lineTo(x + w, y + h - r);
+                    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                    ctx.lineTo(x + r, y + h);
+                    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                    ctx.lineTo(x, y + r);
+                    ctx.quadraticCurveTo(x, y, x + r, y);
+                    ctx.closePath();
+                }
+
+                drawCallout(lastIncome, trend[n - 1].income, "#2ecc84", -30);
+                drawCallout(lastExpense, trend[n - 1].expense, "#ff5c73", 30);
+            })();
+        </script>
+    </body>
+</html>

@@ -54,7 +54,7 @@ function CustomTooltip({
 }
 
 /**
- * Monthly trend bar chart showing income vs expense for the last 12 months
+ * Monthly trend bar chart showing income vs expense for year-to-date
  * Horizontally scrollable on mobile devices
  */
 export function KasRtMonthlyChart({
@@ -111,7 +111,8 @@ export function KasRtMonthlyChart({
             <BarChart
               data={chartData}
               margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-              barCategoryGap={4}
+              barCategoryGap="20%"
+              barGap={4}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis

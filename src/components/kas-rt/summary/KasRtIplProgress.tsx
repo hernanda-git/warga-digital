@@ -12,6 +12,7 @@ interface KasRtIplProgressProps {
 
 /**
  * IPL Collection Progress component with visual progress bar
+ * Redesigned to match kas-rt-summary-redesigned.html specifications
  */
 export function KasRtIplProgress({
   totalHouses,
@@ -26,7 +27,7 @@ export function KasRtIplProgress({
 
   if (isLoading) {
     return (
-      <div className="rounded-xl bg-white p-4 shadow-sm">
+      <div className="mx-4 rounded-xl bg-white p-4 shadow-sm">
         <div className="animate-pulse">
           <div className="flex items-center justify-between">
             <div className="h-4 w-24 rounded bg-gray-200"></div>
@@ -43,7 +44,7 @@ export function KasRtIplProgress({
   }
 
   return (
-    <div className="rounded-xl bg-white p-4 shadow-sm" aria-label="Koleksi IPL">
+    <div className="mx-4 rounded-xl bg-white p-4 shadow-sm" aria-label="Koleksi IPL">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

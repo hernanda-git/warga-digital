@@ -3,6 +3,7 @@ export { KasRtMonthNavigator } from "./KasRtMonthNavigator";
 export { KasRtSummaryHero } from "./KasRtSummaryHero";
 export { KasRtIplProgress } from "./KasRtIplProgress";
 export { KasRtMonthlyChart } from "./KasRtMonthlyChart";
+export { KasRtMonthlyChartV2 } from "./KasRtMonthlyChartV2";
 export { KasRtCategoryBreakdown } from "./KasRtCategoryBreakdown";
 export { KasRtQuickStats } from "./KasRtQuickStats";
 export { KasRtExportButton } from "./KasRtExportButton";

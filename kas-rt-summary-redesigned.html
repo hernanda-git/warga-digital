@@ -1,0 +1,2152 @@
+<!doctype html>
+<html lang="id" data-theme="green">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+        />
+        <title>Kas RT — Ringkasan Keuangan</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            /* ===== THEME VARIABLES (matches src/lib/themes.ts) ===== */
+            [data-theme="green"] {
+                --color-primary: #43a047;
+                --color-primary-hover: #2e7d32;
+                --color-primary-muted: #d5ead7;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #7bc67f;
+                --color-surface-gradient-mid: #a2d8a5;
+                --color-surface-gradient-end: #d5ead7;
+                --color-title: #1f5d24;
+                --color-body: #3f4b42;
+                --color-body-muted: #6f7d72;
+                --color-indicator-active: #43a047;
+                --color-indicator-inactive: #d5ead7;
+                --color-bg-gradient-start: #f8fdf9;
+                --color-bg-gradient-end: #f3faf5;
+                --color-input-border: #e5efe7;
+                --color-primary-shadow: rgba(67, 160, 71, 0.75);
+            }
+
+            [data-theme="blue"] {
+                --color-primary: #1976d2;
+                --color-primary-hover: #1565c0;
+                --color-primary-muted: #bbdefb;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f9fc;
+                --color-surface-gradient-start: #64b5f6;
+                --color-surface-gradient-mid: #90caf9;
+                --color-surface-gradient-end: #bbdefb;
+                --color-title: #0d47a1;
+                --color-body: #37474f;
+                --color-body-muted: #607d8b;
+                --color-indicator-active: #1976d2;
+                --color-indicator-inactive: #bbdefb;
+                --color-bg-gradient-start: #f8fbfd;
+                --color-bg-gradient-end: #f0f5fa;
+                --color-input-border: #e3eef7;
+                --color-primary-shadow: rgba(25, 118, 210, 0.75);
+            }
+
+            [data-theme="purple"] {
+                --color-primary: #7b1fa2;
+                --color-primary-hover: #6a1b9a;
+                --color-primary-muted: #e1bee7;
+                --color-surface: #ffffff;
+                --color-surface-alt: #faf5fc;
+                --color-surface-gradient-start: #ba68c8;
+                --color-surface-gradient-mid: #ce93d8;
+                --color-surface-gradient-end: #e1bee7;
+                --color-title: #4a148c;
+                --color-body: #4a3f4d;
+                --color-body-muted: #7b6d7f;
+                --color-indicator-active: #7b1fa2;
+                --color-indicator-inactive: #e1bee7;
+                --color-bg-gradient-start: #faf8fb;
+                --color-bg-gradient-end: #f5f0f8;
+                --color-input-border: #eedef2;
+                --color-primary-shadow: rgba(123, 31, 162, 0.75);
+            }
+
+            [data-theme="orange"] {
+                --color-primary: #e65100;
+                --color-primary-hover: #bf360c;
+                --color-primary-muted: #ffe0b2;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #ff9800;
+                --color-surface-gradient-mid: #ffb74d;
+                --color-surface-gradient-end: #ffe0b2;
+                --color-title: #e65100;
+                --color-body: #4e4039;
+                --color-body-muted: #7d6e65;
+                --color-indicator-active: #e65100;
+                --color-indicator-inactive: #ffe0b2;
+                --color-bg-gradient-start: #fffaf5;
+                --color-bg-gradient-end: #fff3eb;
+                --color-input-border: #f5e6dc;
+                --color-primary-shadow: rgba(230, 81, 0, 0.75);
+            }
+
+            [data-theme="teal"] {
+                --color-primary: #00897b;
+                --color-primary-hover: #00695c;
+                --color-primary-muted: #b2dfdb;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #26a69a;
+                --color-surface-gradient-mid: #4db6ac;
+                --color-surface-gradient-end: #b2dfdb;
+                --color-title: #004d40;
+                --color-body: #3d4f4c;
+                --color-body-muted: #6d7e7b;
+                --color-indicator-active: #00897b;
+                --color-indicator-inactive: #b2dfdb;
+                --color-bg-gradient-start: #f5fbfa;
+                --color-bg-gradient-end: #eef8f6;
+                --color-input-border: #dcece9;
+                --color-primary-shadow: rgba(0, 137, 123, 0.75);
+            }
+
+            [data-theme="rose"] {
+                --color-primary: #c2185b;
+                --color-primary-hover: #ad1457;
+                --color-primary-muted: #f8bbd9;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #ec407a;
+                --color-surface-gradient-mid: #f06292;
+                --color-surface-gradient-end: #f8bbd9;
+                --color-title: #880e4f;
+                --color-body: #4a3d42;
+                --color-body-muted: #7d6d72;
+                --color-indicator-active: #c2185b;
+                --color-indicator-inactive: #f8bbd9;
+                --color-bg-gradient-start: #fef8fa;
+                --color-bg-gradient-end: #fdf0f5;
+                --color-input-border: #f5dce6;
+                --color-primary-shadow: rgba(194, 24, 91, 0.75);
+            }
+
+            [data-theme="hitam"] {
+                --color-primary: #1c1c1e;
+                --color-primary-hover: #3a3a3c;
+                --color-primary-muted: #f0f0f2;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #4a4a4c;
+                --color-surface-gradient-mid: #2e2e30;
+                --color-surface-gradient-end: #f0f0f2;
+                --color-title: #2c2c2e;
+                --color-body: #5a5a5c;
+                --color-body-muted: #8e8e93;
+                --color-indicator-active: #1c1c1e;
+                --color-indicator-inactive: #e5e5e7;
+                --color-bg-gradient-start: #fafafa;
+                --color-bg-gradient-end: #f5f5f5;
+                --color-input-border: #e0e0e2;
+                --color-primary-shadow: rgba(28, 28, 30, 0.35);
+            }
+
+            [data-theme="red"] {
+                --color-primary: #d32f2f;
+                --color-primary-hover: #b71c1c;
+                --color-primary-muted: #ffcdd2;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #ef5350;
+                --color-surface-gradient-mid: #f44336;
+                --color-surface-gradient-end: #ffcdd2;
+                --color-title: #b71c1c;
+                --color-body: #4a2c2c;
+                --color-body-muted: #7d5c5c;
+                --color-indicator-active: #d32f2f;
+                --color-indicator-inactive: #ffcdd2;
+                --color-bg-gradient-start: #fffbfb;
+                --color-bg-gradient-end: #fff5f5;
+                --color-input-border: #f5d9da;
+                --color-primary-shadow: rgba(211, 47, 47, 0.75);
+            }
+
+            [data-theme="amber"] {
+                --color-primary: #f57f17;
+                --color-primary-hover: #e65100;
+                --color-primary-muted: #ffe082;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #fbc02d;
+                --color-surface-gradient-mid: #fdd835;
+                --color-surface-gradient-end: #ffe082;
+                --color-title: #f57f17;
+                --color-body: #4d4319;
+                --color-body-muted: #7d7243;
+                --color-indicator-active: #f57f17;
+                --color-indicator-inactive: #ffe082;
+                --color-bg-gradient-start: #fffef5;
+                --color-bg-gradient-end: #fffbf0;
+                --color-input-border: #f5e8d5;
+                --color-primary-shadow: rgba(245, 127, 23, 0.75);
+            }
+
+            [data-theme="cyan"] {
+                --color-primary: #0097a7;
+                --color-primary-hover: #006064;
+                --color-primary-muted: #b3e5fc;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #26c6da;
+                --color-surface-gradient-mid: #4dd0e1;
+                --color-surface-gradient-end: #b3e5fc;
+                --color-title: #00546b;
+                --color-body: #36525b;
+                --color-body-muted: #667d86;
+                --color-indicator-active: #0097a7;
+                --color-indicator-inactive: #b3e5fc;
+                --color-bg-gradient-start: #f5fbfd;
+                --color-bg-gradient-end: #eef6f9;
+                --color-input-border: #d9eef3;
+                --color-primary-shadow: rgba(0, 151, 167, 0.75);
+            }
+
+            [data-theme="indigo"] {
+                --color-primary: #303f9f;
+                --color-primary-hover: #1a237e;
+                --color-primary-muted: #c5cae9;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f3f5fb;
+                --color-surface-gradient-start: #5c6bc0;
+                --color-surface-gradient-mid: #7986cb;
+                --color-surface-gradient-end: #c5cae9;
+                --color-title: #1a237e;
+                --color-body: #3f3d4f;
+                --color-body-muted: #6b6d7f;
+                --color-indicator-active: #303f9f;
+                --color-indicator-inactive: #c5cae9;
+                --color-bg-gradient-start: #f7f8fc;
+                --color-bg-gradient-end: #f1f2f9;
+                --color-input-border: #dfe1ed;
+                --color-primary-shadow: rgba(48, 63, 159, 0.75);
+            }
+
+            [data-theme="lime"] {
+                --color-primary: #9ccc65;
+                --color-primary-hover: #7cb342;
+                --color-primary-muted: #dcedc8;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #aed581;
+                --color-surface-gradient-mid: #c5e1a5;
+                --color-surface-gradient-end: #dcedc8;
+                --color-title: #558b2f;
+                --color-body: #444933;
+                --color-body-muted: #6d7962;
+                --color-indicator-active: #9ccc65;
+                --color-indicator-inactive: #dcedc8;
+                --color-bg-gradient-start: #fcfdf8;
+                --color-bg-gradient-end: #faf9f3;
+                --color-input-border: #f0f2e4;
+                --color-primary-shadow: rgba(156, 204, 101, 0.75);
+            }
+
+            [data-theme="brown"] {
+                --color-primary: #6d4c41;
+                --color-primary-hover: #4e342e;
+                --color-primary-muted: #d7ccc8;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #8d6e63;
+                --color-surface-gradient-mid: #a1887f;
+                --color-surface-gradient-end: #d7ccc8;
+                --color-title: #3e2723;
+                --color-body: #4a3f38;
+                --color-body-muted: #76695e;
+                --color-indicator-active: #6d4c41;
+                --color-indicator-inactive: #d7ccc8;
+                --color-bg-gradient-start: #fcfbf9;
+                --color-bg-gradient-end: #faf7f5;
+                --color-input-border: #f0ebe5;
+                --color-primary-shadow: rgba(109, 76, 65, 0.75);
+            }
+
+            [data-theme="deep-green"] {
+                --color-primary: #1b5e20;
+                --color-primary-hover: #0d3817;
+                --color-primary-muted: #c8e6c9;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #388e3c;
+                --color-surface-gradient-mid: #66bb6a;
+                --color-surface-gradient-end: #c8e6c9;
+                --color-title: #0d3817;
+                --color-body: #354e3f;
+                --color-body-muted: #657975;
+                --color-indicator-active: #1b5e20;
+                --color-indicator-inactive: #c8e6c9;
+                --color-bg-gradient-start: #f6faf8;
+                --color-bg-gradient-end: #f0f5f2;
+                --color-input-border: #e0ede9;
+                --color-primary-shadow: rgba(27, 94, 32, 0.75);
+            }
+
+            [data-theme="coral"] {
+                --color-primary: #ff6f60;
+                --color-primary-hover: #ff5252;
+                --color-primary-muted: #ffcccc;
+                --color-surface: #ffffff;
+                --color-surface-alt: #f5f5f5;
+                --color-surface-gradient-start: #ff8a80;
+                --color-surface-gradient-mid: #ff9e80;
+                --color-surface-gradient-end: #ffcccc;
+                --color-title: #d32f2f;
+                --color-body: #4a3734;
+                --color-body-muted: #7d6962;
+                --color-indicator-active: #ff6f60;
+                --color-indicator-inactive: #ffcccc;
+                --color-bg-gradient-start: #fffcfb;
+                --color-bg-gradient-end: #fff7f5;
+                --color-input-border: #f5dcd9;
+                --color-primary-shadow: rgba(255, 111, 96, 0.75);
+            }
+
+            /* ===== BASE STYLES (matches globals.css) ===== */
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            html {
+                height: 100%;
+                -webkit-text-size-adjust: 100%;
+            }
+
+            body {
+                height: 100%;
+                overflow: auto;
+                overscroll-behavior: none;
+                background: linear-gradient(
+                    180deg,
+                    var(--color-bg-gradient-start) 0%,
+                    var(--color-bg-gradient-end) 100%
+                );
+                color: var(--color-body);
+                font-family: "Inter", -apple-system, BlinkMacSystemFont,
+                    "Segoe UI", Roboto, sans-serif;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                text-rendering: optimizeLegibility;
+            }
+
+            /* ===== LAYOUT (matches app-shell.tsx) ===== */
+            .app-shell {
+                display: flex;
+                height: 100dvh;
+                width: 100%;
+                max-width: var(--app-max-width, 430px);
+                margin: 0 auto;
+                flex-direction: column;
+                overflow: hidden;
+                border-left: 1px solid var(--color-input-border);
+                border-right: 1px solid var(--color-input-border);
+            }
+
+            .scroll-container {
+                flex: 1;
+                min-height: 0;
+                overflow-y: auto;
+                overflow-x: hidden;
+                overscroll-behavior: contain;
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+
+            /* ===== TYPOGRAPHY (matches components) ===== */
+            .font-headline {
+                font-family: "Manrope", -apple-system, BlinkMacSystemFont,
+                    "Segoe UI", Roboto, sans-serif;
+            }
+
+            .text-xs {
+                font-size: 12px;
+                line-height: 16px;
+            }
+
+            .text-sm {
+                font-size: 14px;
+                line-height: 20px;
+            }
+
+            .text-base {
+                font-size: 16px;
+                line-height: 24px;
+            }
+
+            .text-lg {
+                font-size: 18px;
+                line-height: 28px;
+            }
+
+            .text-\[10px\] {
+                font-size: 10px;
+                line-height: 14px;
+            }
+
+            .text-\[28px\] {
+                font-size: 28px;
+                line-height: 1.2;
+            }
+
+            .text-\[9px\] {
+                font-size: 9px;
+                line-height: 12px;
+            }
+
+            .text-\[8px\] {
+                font-size: 8px;
+                line-height: 11px;
+            }
+
+            .font-medium {
+                font-weight: 500;
+            }
+
+            .font-semibold {
+                font-weight: 600;
+            }
+
+            .font-bold {
+                font-weight: 700;
+            }
+
+            .font-extrabold {
+                font-weight: 800;
+            }
+
+            .uppercase {
+                text-transform: uppercase;
+            }
+
+            .tracking-wider {
+                letter-spacing: 0.025em;
+            }
+
+            .tracking-widest {
+                letter-spacing: 0.1em;
+            }
+
+            .truncate {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .leading-tight {
+                line-height: 1.25;
+            }
+
+            /* ===== UTILITIES ===== */
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                padding: 0;
+                margin: -1px;
+                overflow: hidden;
+                clip: rect(0, 0, 0, 0);
+                white-space: nowrap;
+                border-width: 0;
+            }
+
+            .shrink-0 {
+                flex-shrink: 0;
+            }
+
+            .flex-1 {
+                flex: 1 1 0%;
+            }
+
+            .min-w-0 {
+                min-width: 0;
+            }
+
+            /* ===== HEADER ===== */
+            .header {
+                position: sticky;
+                top: 0;
+                z-index: 50;
+                background: var(--color-surface);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            }
+
+            .header-top {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 16px;
+            }
+
+            .header-title-area {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .header-eyebrow {
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: var(--color-body-muted);
+            }
+
+            .header-title {
+                font-size: 16px;
+                font-weight: 800;
+                color: var(--color-title);
+                margin-top: 2px;
+            }
+
+            .btn-icon {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+                background: #f3f4f6;
+                border: none;
+                cursor: pointer;
+                transition: all 0.18s ease;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .btn-icon:hover {
+                background: #e5e7eb;
+            }
+
+            .btn-icon:active {
+                transform: scale(0.95);
+            }
+
+            .btn-icon svg {
+                width: 20px;
+                height: 20px;
+                color: #374151;
+            }
+
+            .btn-export {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 8px 14px;
+                border-radius: 10px;
+                background: var(--color-primary);
+                color: white;
+                font-size: 13px;
+                font-weight: 600;
+                border: none;
+                cursor: pointer;
+                transition: all 0.18s ease;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .btn-export:hover {
+                background: var(--color-primary-hover);
+            }
+
+            .btn-export:active {
+                transform: scale(0.95);
+            }
+
+            .btn-export svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            /* ===== MONTH NAVIGATOR ===== */
+            .month-nav {
+                padding: 0 16px 12px;
+            }
+
+            .month-nav-inner {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                background: var(--color-surface);
+                border-radius: 16px;
+                padding: 12px 16px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            }
+
+            .month-nav-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+                background: #f3f4f6;
+                border: none;
+                cursor: pointer;
+                transition: all 0.18s ease;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .month-nav-btn:hover {
+                background: #e5e7eb;
+            }
+
+            .month-nav-btn:active {
+                transform: scale(0.95);
+            }
+
+            .month-nav-btn svg {
+                width: 20px;
+                height: 20px;
+                color: #374151;
+            }
+
+            .month-label {
+                font-size: 14px;
+                font-weight: 700;
+                color: var(--color-title);
+                text-align: center;
+            }
+
+            /* ===== HERO CARD ===== */
+            .hero-section {
+                margin: 16px;
+                border-radius: 22px;
+                background: linear-gradient(
+                    135deg,
+                    var(--color-primary) 0%,
+                    var(--color-primary-hover) 100%
+                );
+                padding: 20px;
+                color: white;
+                position: relative;
+                overflow: hidden;
+                box-shadow: 0 4px 12px var(--color-primary-shadow);
+            }
+
+            .hero-section::before {
+                content: "";
+                position: absolute;
+                top: -40px;
+                right: -40px;
+                width: 120px;
+                height: 120px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .hero-section::after {
+                content: "";
+                position: absolute;
+                bottom: -30px;
+                left: -30px;
+                width: 90px;
+                height: 90px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .hero-content {
+                position: relative;
+                z-index: 1;
+            }
+
+            .hero-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                margin-bottom: 16px;
+            }
+
+            .hero-title-group {
+                min-width: 0;
+            }
+
+            .hero-label {
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: rgba(255, 255, 255, 0.7);
+            }
+
+            .hero-title {
+                font-size: 18px;
+                font-weight: 800;
+                color: white;
+                margin-top: 4px;
+            }
+
+            .hero-tx-count {
+                text-align: right;
+            }
+
+            .hero-tx-label {
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: rgba(255, 255, 255, 0.6);
+            }
+
+            .hero-tx-number {
+                font-size: 14px;
+                font-weight: 700;
+                color: white;
+                margin-top: 2px;
+            }
+
+            .hero-balance {
+                margin-bottom: 20px;
+            }
+
+            .hero-balance-label {
+                font-size: 9px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                color: rgba(255, 255, 255, 0.6);
+            }
+
+            .hero-balance-amount {
+                font-size: 28px;
+                font-weight: 800;
+                color: white;
+                margin-top: 4px;
+                line-height: 1.2;
+            }
+
+            .hero-stats {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .hero-stat {
+                background: rgba(255, 255, 255, 0.15);
+                border-radius: 16px;
+                padding: 10px;
+                text-align: center;
+                backdrop-filter: blur(8px);
+                transition: background 0.18s ease;
+            }
+
+            .hero-stat:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+
+            .hero-stat-label {
+                font-size: 9px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: rgba(255, 255, 255, 0.6);
+                line-height: 1.2;
+            }
+
+            .hero-stat-amount {
+                font-size: 14px;
+                font-weight: 800;
+                color: white;
+                margin-top: 4px;
+                line-height: 1.2;
+            }
+
+            .hero-stat-change {
+                display: inline-flex;
+                align-items: center;
+                gap: 2px;
+                margin-top: 4px;
+                padding: 2px 6px;
+                border-radius: 9999px;
+                font-size: 10px;
+                font-weight: 700;
+            }
+
+            .hero-stat-change.up {
+                background: rgba(34, 197, 94, 0.2);
+                color: #86efac;
+            }
+
+            .hero-stat-change.down {
+                background: rgba(239, 68, 68, 0.2);
+                color: #fca5a5;
+            }
+
+            .hero-stat-change svg {
+                width: 12px;
+                height: 12px;
+            }
+
+            .hero-stat-sub {
+                font-size: 8px;
+                color: rgba(255, 255, 255, 0.5);
+                margin-top: 4px;
+                line-height: 1.2;
+            }
+
+            /* ===== CARDS ===== */
+            .card {
+                margin: 0 16px 16px;
+                background: var(--color-surface);
+                border-radius: 16px;
+                padding: 16px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            }
+
+            .card-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 16px;
+            }
+
+            .card-title {
+                font-size: 14px;
+                font-weight: 700;
+                color: var(--color-title);
+            }
+
+            .card-subtitle {
+                font-size: 12px;
+                color: var(--color-body-muted);
+            }
+
+            /* ===== IPL PROGRESS ===== */
+            .ipl-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 12px;
+            }
+
+            .ipl-title-group {
+                min-width: 0;
+            }
+
+            .ipl-title {
+                font-size: 14px;
+                font-weight: 700;
+                color: var(--color-title);
+            }
+
+            .ipl-subtitle {
+                font-size: 12px;
+                color: var(--color-body-muted);
+                margin-top: 2px;
+            }
+
+            .ipl-percent {
+                font-size: 24px;
+                font-weight: 800;
+                color: var(--color-primary);
+            }
+
+            .progress-track {
+                height: 12px;
+                background: #e5e7eb;
+                border-radius: 9999px;
+                overflow: hidden;
+            }
+
+            .progress-fill {
+                height: 100%;
+                background: linear-gradient(
+                    90deg,
+                    var(--color-primary) 0%,
+                    var(--color-primary-hover) 100%
+                );
+                border-radius: 9999px;
+                transition: width 0.5s ease-out;
+            }
+
+            .ipl-footer {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-top: 8px;
+                font-size: 12px;
+            }
+
+            .ipl-footer-left {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                color: var(--color-body-muted);
+            }
+
+            .ipl-footer-left svg {
+                width: 16px;
+                height: 16px;
+                color: #22c55e;
+            }
+
+            .ipl-footer-right {
+                color: var(--color-body-muted);
+            }
+
+            /* ===== CHART ===== */
+            .chart-wrapper {
+                overflow-x: auto;
+                overflow-y: hidden;
+                margin: 0 -16px;
+                padding: 0 16px;
+            }
+
+            .chart-wrapper::-webkit-scrollbar {
+                display: none;
+            }
+
+            .chart-container {
+                min-width: 600px;
+                height: 220px;
+            }
+
+            /* ===== CATEGORY BREAKDOWN ===== */
+            .category-list {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .category-item {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .category-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+            }
+
+            .category-info {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .category-name {
+                font-size: 12px;
+                font-weight: 600;
+                color: var(--color-title);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .category-count {
+                font-size: 10px;
+                color: var(--color-body-muted);
+                margin-top: 2px;
+            }
+
+            .category-values {
+                text-align: right;
+                flex-shrink: 0;
+            }
+
+            .category-amount {
+                font-size: 12px;
+                font-weight: 700;
+                color: var(--color-title);
+            }
+
+            .category-percent {
+                font-size: 10px;
+                color: var(--color-body-muted);
+                margin-top: 2px;
+            }
+
+            .category-bar-track {
+                height: 8px;
+                background: #f3f4f6;
+                border-radius: 9999px;
+                overflow: hidden;
+            }
+
+            .category-bar-fill {
+                height: 100%;
+                border-radius: 9999px;
+                transition: width 0.3s ease-out;
+            }
+
+            .category-bar-fill.ipl {
+                background: linear-gradient(
+                    90deg,
+                    var(--color-primary) 0%,
+                    var(--color-primary-hover) 100%
+                );
+            }
+
+            .category-bar-fill.income {
+                background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+            }
+
+            .category-bar-fill.expense {
+                background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+            }
+
+            /* ===== QUICK STATS ===== */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .stat-tile {
+                background: #f9fafb;
+                border-radius: 12px;
+                padding: 12px;
+                transition: background 0.18s ease;
+            }
+
+            .stat-tile:hover {
+                background: #f3f4f6;
+            }
+
+            .stat-tile-label {
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: var(--color-body-muted);
+            }
+
+            .stat-tile-value {
+                font-size: 14px;
+                font-weight: 800;
+                color: var(--color-title);
+                margin-top: 6px;
+                line-height: 1.2;
+            }
+
+            .stat-tile-sub {
+                font-size: 12px;
+                color: var(--color-body-muted);
+                margin-top: 4px;
+            }
+
+            .stat-tile.best {
+                background: #f0fdf4;
+            }
+
+            .stat-tile.best .stat-tile-label,
+            .stat-tile.best .stat-tile-value,
+            .stat-tile.best .stat-tile-sub {
+                color: #166534;
+            }
+
+            .stat-tile.worst {
+                background: #fef2f2;
+            }
+
+            .stat-tile.worst .stat-tile-label,
+            .stat-tile.worst .stat-tile-value,
+            .stat-tile.worst .stat-tile-sub {
+                color: #991b1b;
+            }
+
+            /* ===== ANIMATIONS ===== */
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(12px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .animate-in {
+                animation: fadeInUp 0.4s ease-out forwards;
+            }
+
+            .delay-1 {
+                animation-delay: 0.05s;
+            }
+
+            .delay-2 {
+                animation-delay: 0.1s;
+            }
+
+            .delay-3 {
+                animation-delay: 0.15s;
+            }
+
+            .delay-4 {
+                animation-delay: 0.2s;
+            }
+
+            /* ===== SKELETON LOADING ===== */
+            .skeleton {
+                background: linear-gradient(
+                    90deg,
+                    #f0f0f0 25%,
+                    #e0e0e0 50%,
+                    #f0f0f0 75%
+                );
+                background-size: 200% 100%;
+                animation: skeleton-loading 1.5s infinite;
+                border-radius: 8px;
+            }
+
+            @keyframes skeleton-loading {
+                0% {
+                    background-position: 200% 0;
+                }
+                100% {
+                    background-position: -200% 0;
+                }
+            }
+
+            /* ===== THEME PICKER (for demo) ===== */
+            .theme-picker {
+                position: fixed;
+                bottom: 16px;
+                right: 16px;
+                z-index: 100;
+            }
+
+            .theme-picker-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                background: var(--color-surface);
+                border: 1px solid var(--color-input-border);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                cursor: pointer;
+                transition: all 0.18s ease;
+            }
+
+            .theme-picker-btn:hover {
+                transform: scale(1.05);
+            }
+
+            .theme-picker-panel {
+                position: absolute;
+                bottom: 60px;
+                right: 0;
+                background: var(--color-surface);
+                border-radius: 16px;
+                padding: 12px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+                display: none;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+            }
+
+            .theme-picker-panel.open {
+                display: grid;
+            }
+
+            .theme-swatch {
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+                border: 2px solid transparent;
+                cursor: pointer;
+                transition: all 0.18s ease;
+            }
+
+            .theme-swatch:hover {
+                transform: scale(1.1);
+            }
+
+            .theme-swatch.active {
+                border-color: var(--color-primary);
+            }
+
+            /* ===== RESPONSIVE ===== */
+            @media (max-width: 430px) {
+                .app-shell {
+                    max-width: 100%;
+                    border-left: none;
+                    border-right: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app-shell">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-top">
+                    <button
+                        type="button"
+                        class="btn-icon"
+                        aria-label="Kembali"
+                        onclick="history.back()"
+                    >
+                        <svg
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M15 19l-7-7 7-7"
+                            />
+                        </svg>
+                    </button>
+
+                    <div class="header-title-area">
+                        <p class="header-eyebrow">Keuangan RT</p>
+                        <h1 class="header-title">Ringkasan</h1>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="btn-export"
+                        aria-label="Ekspor"
+                        onclick="alert('Fitur ekspor akan datang!')"
+                    >
+                        <svg
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                            />
+                        </svg>
+                        <span>Ekspor</span>
+                    </button>
+                </div>
+
+                <div class="month-nav">
+                    <div class="month-nav-inner">
+                        <button
+                            type="button"
+                            class="month-nav-btn"
+                            aria-label="Bulan sebelumnya"
+                            onclick="navigateMonth(-1)"
+                        >
+                            <svg
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M15 19l-7-7 7-7"
+                                />
+                            </svg>
+                        </button>
+
+                        <p
+                            class="month-label"
+                            id="monthLabel"
+                            aria-live="polite"
+                        >
+                            April 2026
+                        </p>
+
+                        <button
+                            type="button"
+                            class="month-nav-btn"
+                            aria-label="Bulan berikutnya"
+                            onclick="navigateMonth(1)"
+                        >
+                            <svg
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 5l7 7-7 7"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Scrollable Content -->
+            <main class="scroll-container">
+                <!-- Hero Card -->
+                <section
+                    class="hero-section animate-in"
+                    aria-label="Ringkasan Keuangan"
+                >
+                    <div class="hero-content">
+                        <div class="hero-header">
+                            <div class="hero-title-group">
+                                <p class="hero-label" id="heroLabel">
+                                    April 2026
+                                </p>
+                                <h2 class="hero-title">Ringkasan</h2>
+                            </div>
+
+                            <div class="hero-tx-count">
+                                <p class="hero-tx-label">Transaksi</p>
+                                <p class="hero-tx-number" id="txCount">67</p>
+                            </div>
+                        </div>
+
+                        <div class="hero-balance">
+                            <p class="hero-balance-label">Saldo Bersih</p>
+                            <p class="hero-balance-amount" id="heroBalance">
+                                Rp 3,75jt
+                            </p>
+                        </div>
+
+                        <div class="hero-stats">
+                            <div class="hero-stat">
+                                <p class="hero-stat-label">Pemasukan</p>
+                                <p
+                                    class="hero-stat-amount"
+                                    id="heroIncome"
+                                >
+                                    Rp 12,5jt
+                                </p>
+                                <div
+                                    class="hero-stat-change up"
+                                    id="incomeChange"
+                                >
+                                    <svg
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M5 10l7-7m0 0l7 7m-7-7v18"
+                                        />
+                                    </svg>
+                                    <span>11.6%</span>
+                                </div>
+                                <p class="hero-stat-sub">vs bulan lalu</p>
+                            </div>
+
+                            <div class="hero-stat">
+                                <p class="hero-stat-label">Pengeluaran</p>
+                                <p
+                                    class="hero-stat-amount"
+                                    id="heroExpense"
+                                >
+                                    Rp 8,75jt
+                                </p>
+                                <div
+                                    class="hero-stat-change down"
+                                    id="expenseChange"
+                                >
+                                    <svg
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                                        />
+                                    </svg>
+                                    <span>3.8%</span>
+                                </div>
+                                <p class="hero-stat-sub">vs bulan lalu</p>
+                            </div>
+
+                            <div class="hero-stat">
+                                <p class="hero-stat-label">Laba/Rugi</p>
+                                <p class="hero-stat-amount" id="heroNet">
+                                    Rp 3,75jt
+                                </p>
+                                <div
+                                    class="hero-stat-change up"
+                                    id="netChange"
+                                >
+                                    <svg
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M5 10l7-7m0 0l7 7m-7-7v18"
+                                        />
+                                    </svg>
+                                    <span>22.3%</span>
+                                </div>
+                                <p class="hero-stat-sub">vs Maret 2026</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- IPL Progress -->
+                <div class="card animate-in delay-1" aria-label="Koleksi IPL">
+                    <div class="ipl-header">
+                        <div class="ipl-title-group">
+                            <p class="ipl-title">Koleksi IPL</p>
+                            <p class="ipl-subtitle" id="iplSubtitle">
+                                28 dari 35 rumah
+                            </p>
+                        </div>
+                        <p class="ipl-percent" id="iplPercent">80%</p>
+                    </div>
+
+                    <div class="progress-track">
+                        <div
+                            class="progress-fill"
+                            id="iplProgress"
+                            style="width: 80%"
+                            role="progressbar"
+                            aria-valuenow="80"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                        ></div>
+                    </div>
+
+                    <div class="ipl-footer">
+                        <div class="ipl-footer-left">
+                            <svg
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                            </svg>
+                            <span id="iplPaid">28 rumah sudah bayar</span>
+                        </div>
+                        <div class="ipl-footer-right" id="iplUnpaid">
+                            7 rumah belum
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monthly Trend Chart -->
+                <div class="card animate-in delay-2" aria-label="Tren 12 bulan">
+                    <div class="card-header">
+                        <h3 class="card-title">Tren 12 Bulan</h3>
+                        <span class="card-subtitle">dalam Rupiah</span>
+                    </div>
+
+                    <div class="chart-wrapper">
+                        <div class="chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Breakdown -->
+                <div
+                    class="card animate-in delay-3"
+                    aria-label="Breakdown Kategori"
+                >
+                    <div class="card-header">
+                        <h3 class="card-title">Kategori</h3>
+                        <span class="card-subtitle" id="categoryCount"
+                            >6 kategori</span
+                        >
+                    </div>
+
+                    <div class="category-list" id="categoryList"></div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div
+                    class="card animate-in delay-4"
+                    aria-label="Statistik Cepat"
+                >
+                    <div class="card-header">
+                        <h3 class="card-title">Statistik Cepat</h3>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-tile">
+                            <p class="stat-tile-label">Rata-rata/Hari</p>
+                            <p class="stat-tile-value" id="avgPerDay">
+                                Rp 417rb
+                            </p>
+                        </div>
+
+                        <div class="stat-tile">
+                            <p class="stat-tile-label">Kategori Tertinggi</p>
+                            <p class="stat-tile-value truncate" id="topCategory">
+                                IPL
+                            </p>
+                            <p class="stat-tile-sub" id="topCategoryAmount">
+                                Rp 8,5jt
+                            </p>
+                        </div>
+
+                        <div class="stat-tile best">
+                            <p class="stat-tile-label">Hari Terbaik</p>
+                            <p class="stat-tile-value" id="bestDayAmount">
+                                Rp 2,1jt
+                            </p>
+                            <p class="stat-tile-sub" id="bestDayDate">
+                                15 Apr 2026
+                            </p>
+                        </div>
+
+                        <div class="stat-tile worst">
+                            <p class="stat-tile-label">Hari Terburuk</p>
+                            <p class="stat-tile-value" id="worstDayAmount">
+                                Rp 450rb
+                            </p>
+                            <p class="stat-tile-sub" id="worstDayDate">
+                                8 Apr 2026
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Spacer for bottom padding -->
+                <div style="height: 16px"></div>
+            </main>
+        </div>
+
+        <!-- Theme Picker (Demo) -->
+        <div class="theme-picker">
+            <button
+                class="theme-picker-btn"
+                aria-label="Ganti tema"
+                onclick="toggleThemePicker()"
+            >
+                <svg
+                    width="24"
+                    height="24"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+                    />
+                </svg>
+            </button>
+
+            <div class="theme-picker-panel" id="themePanel">
+                <div
+                    class="theme-swatch active"
+                    style="background: #43a047"
+                    data-theme="green"
+                    onclick="setTheme('green')"
+                    title="Hijau"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #1976d2"
+                    data-theme="blue"
+                    onclick="setTheme('blue')"
+                    title="Biru"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #7b1fa2"
+                    data-theme="purple"
+                    onclick="setTheme('purple')"
+                    title="Ungu"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #e65100"
+                    data-theme="orange"
+                    onclick="setTheme('orange')"
+                    title="Oranye"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #00897b"
+                    data-theme="teal"
+                    onclick="setTheme('teal')"
+                    title="Teal"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #c2185b"
+                    data-theme="rose"
+                    onclick="setTheme('rose')"
+                    title="Merah Muda"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #1c1c1e"
+                    data-theme="hitam"
+                    onclick="setTheme('hitam')"
+                    title="Hitam"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #d32f2f"
+                    data-theme="red"
+                    onclick="setTheme('red')"
+                    title="Merah"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #f57f17"
+                    data-theme="amber"
+                    onclick="setTheme('amber')"
+                    title="Kuning Emas"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #0097a7"
+                    data-theme="cyan"
+                    onclick="setTheme('cyan')"
+                    title="Sian"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #303f9f"
+                    data-theme="indigo"
+                    onclick="setTheme('indigo')"
+                    title="Indigo"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #9ccc65"
+                    data-theme="lime"
+                    onclick="setTheme('lime')"
+                    title="Jeruk Lemon"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #6d4c41"
+                    data-theme="brown"
+                    onclick="setTheme('brown')"
+                    title="Coklat"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #1b5e20"
+                    data-theme="deep-green"
+                    onclick="setTheme('deep-green')"
+                    title="Hijau Gelap"
+                ></div>
+                <div
+                    class="theme-swatch"
+                    style="background: #ff6f60"
+                    data-theme="coral"
+                    onclick="setTheme('coral')"
+                    title="Karang"
+                ></div>
+            </div>
+        </div>
+
+        <script>
+            // ===== DATA (matches KasRtSummaryResponse type) =====
+            const data = {
+                selectedMonth: {
+                    label: "April 2026",
+                    year: 2026,
+                    month: 4,
+                    income: 12500000,
+                    expense: 8750000,
+                    net: 3750000,
+                    transactionCount: 67,
+                },
+                previousMonth: {
+                    label: "Maret 2026",
+                    income: 11200000,
+                    expense: 9100000,
+                    net: 2100000,
+                },
+                yearlyTrend: [
+                    { label: "Jan", income: 9800000, expense: 7200000 },
+                    { label: "Feb", income: 10500000, expense: 8100000 },
+                    { label: "Mar", income: 11200000, expense: 9100000 },
+                    { label: "Apr", income: 12500000, expense: 8750000 },
+                    { label: "Mei", income: 13100000, expense: 9200000 },
+                    { label: "Jun", income: 14200000, expense: 10100000 },
+                    { label: "Jul", income: 13800000, expense: 9800000 },
+                    { label: "Agu", income: 15000000, expense: 11200000 },
+                    { label: "Sep", income: 14500000, expense: 10500000 },
+                    { label: "Okt", income: 16200000, expense: 12100000 },
+                    { label: "Nov", income: 15800000, expense: 11800000 },
+                    { label: "Des", income: 17500000, expense: 13200000 },
+                ],
+                iplCollection: {
+                    totalHouses: 35,
+                    paidHouses: 28,
+                    percentage: 80,
+                },
+                byCategory: [
+                    {
+                        category: "IPL",
+                        amount: 8500000,
+                        count: 28,
+                        percentage: 50.3,
+                    },
+                    {
+                        category: "Iuran Sampah",
+                        amount: 2100000,
+                        count: 12,
+                        percentage: 12.4,
+                    },
+                    {
+                        category: "Kegiatan RT",
+                        amount: 1850000,
+                        count: 5,
+                        percentage: 10.9,
+                    },
+                    {
+                        category: "Perbaikan Fasilitas",
+                        amount: 1200000,
+                        count: 3,
+                        percentage: 7.1,
+                    },
+                    {
+                        category: "Keamanan",
+                        amount: 950000,
+                        count: 8,
+                        percentage: 5.6,
+                    },
+                    {
+                        category: "Lainnya",
+                        amount: 6250000,
+                        count: 11,
+                        percentage: 36.8,
+                    },
+                ],
+                stats: {
+                    avgPerDay: 416667,
+                    bestDay: { date: "2026-04-15", amount: 2100000 },
+                    worstDay: { date: "2026-04-08", amount: 450000 },
+                    highestCategory: { name: "IPL", amount: 8500000 },
+                },
+            };
+
+            // ===== UTILITIES =====
+            function formatRupiahCompact(value) {
+                if (isNaN(value) || !isFinite(value)) return "Rp 0";
+                const abs = Math.abs(value);
+                const sign = value < 0 ? "-" : "";
+
+                if (abs >= 1000000) {
+                    const millions = abs / 1000000;
+                    return `${sign}${millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)}jt`;
+                }
+
+                if (abs >= 1000) {
+                    return `${sign}${Math.round(abs / 1000)}rb`;
+                }
+
+                return `${sign}${abs.toLocaleString("id-ID")}`;
+            }
+
+            function formatDateIndonesian(dateString) {
+                const date = new Date(dateString + "T00:00:00");
+                return date.toLocaleDateString("id-ID", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                });
+            }
+
+            function calculateChange(current, previous) {
+                if (previous === 0) return current > 0 ? 100 : 0;
+                return ((current - previous) / Math.abs(previous)) * 100;
+            }
+
+            // ===== RENDER FUNCTIONS =====
+            function renderHero() {
+                const { selectedMonth, previousMonth } = data;
+
+                document.getElementById("heroLabel").textContent =
+                    selectedMonth.label;
+                document.getElementById("monthLabel").textContent =
+                    selectedMonth.label;
+                document.getElementById("txCount").textContent =
+                    selectedMonth.transactionCount;
+                document.getElementById("heroBalance").textContent =
+                    formatRupiahCompact(selectedMonth.net);
+                document.getElementById("heroIncome").textContent =
+                    formatRupiahCompact(selectedMonth.income);
+                document.getElementById("heroExpense").textContent =
+                    formatRupiahCompact(selectedMonth.expense);
+                document.getElementById("heroNet").textContent =
+                    formatRupiahCompact(selectedMonth.net);
+
+                // Calculate and render changes
+                const incomeChange = calculateChange(
+                    selectedMonth.income,
+                    previousMonth.income,
+                );
+                const expenseChange = calculateChange(
+                    selectedMonth.expense,
+                    previousMonth.expense,
+                );
+                const netChange = calculateChange(
+                    selectedMonth.net,
+                    previousMonth.net,
+                );
+
+                renderChangeBadge(
+                    "incomeChange",
+                    incomeChange,
+                    selectedMonth.income >= previousMonth.income,
+                );
+                renderChangeBadge(
+                    "expenseChange",
+                    expenseChange,
+                    selectedMonth.expense <= previousMonth.expense,
+                );
+                renderChangeBadge(
+                    "netChange",
+                    netChange,
+                    selectedMonth.net >= previousMonth.net,
+                );
+            }
+
+            function renderChangeBadge(elementId, percent, isPositive) {
+                const el = document.getElementById(elementId);
+                const absPercent = Math.abs(percent).toFixed(1);
+                el.className = `hero-stat-change ${isPositive ? "up" : "down"}`;
+                el.innerHTML = `
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isPositive ? "M5 10l7-7m0 0l7 7m-7-7v18" : "M19 14l-7 7m0 0l-7-7m7 7V3"}" />
+                    </svg>
+                    <span>${absPercent}%</span>
+                `;
+            }
+
+            function renderIPL() {
+                const { iplCollection } = data;
+                const unpaid = iplCollection.totalHouses - iplCollection.paidHouses;
+
+                document.getElementById("iplSubtitle").textContent = `${iplCollection.paidHouses} dari ${iplCollection.totalHouses} rumah`;
+                document.getElementById("iplPercent").textContent = `${iplCollection.percentage}%`;
+                document.getElementById("iplProgress").style.width = `${iplCollection.percentage}%`;
+                document.getElementById("iplPaid").textContent = `${iplCollection.paidHouses} rumah sudah bayar`;
+                document.getElementById("iplUnpaid").textContent = `${unpaid} rumah belum`;
+            }
+
+            function renderCategories() {
+                const { byCategory } = data;
+                const maxAmount = Math.max(...byCategory.map((c) => c.amount));
+                const container = document.getElementById("categoryList");
+
+                document.getElementById("categoryCount").textContent = `${byCategory.length} kategori`;
+
+                container.innerHTML = byCategory
+                    .map((cat) => {
+                        const barWidth = (cat.amount / maxAmount) * 100;
+                        const barClass =
+                            cat.category === "IPL"
+                                ? "ipl"
+                                : cat.category.toLowerCase().includes("iuran") ||
+                                    cat.category.toLowerCase().includes("pemasukan")
+                                  ? "income"
+                                  : "expense";
+
+                        return `
+                            <div class="category-item">
+                                <div class="category-row">
+                                    <div class="category-info">
+                                        <p class="category-name">${cat.category}</p>
+                                        <p class="category-count">${cat.count} transaksi</p>
+                                    </div>
+                                    <div class="category-values">
+                                        <p class="category-amount">${formatRupiahCompact(cat.amount)}</p>
+                                        <p class="category-percent">${cat.percentage.toFixed(1)}%</p>
+                                    </div>
+                                </div>
+                                <div class="category-bar-track">
+                                    <div class="category-bar-fill ${barClass}" style="width: ${barWidth}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    })
+                    .join("");
+            }
+
+            function renderQuickStats() {
+                const { stats } = data;
+
+                document.getElementById("avgPerDay").textContent =
+                    formatRupiahCompact(stats.avgPerDay);
+                document.getElementById("topCategory").textContent =
+                    stats.highestCategory.name;
+                document.getElementById("topCategoryAmount").textContent =
+                    formatRupiahCompact(stats.highestCategory.amount);
+                document.getElementById("bestDayAmount").textContent =
+                    formatRupiahCompact(stats.bestDay.amount);
+                document.getElementById("bestDayDate").textContent =
+                    formatDateIndonesian(stats.bestDay.date);
+                document.getElementById("worstDayAmount").textContent =
+                    formatRupiahCompact(stats.worstDay.amount);
+                document.getElementById("worstDayDate").textContent =
+                    formatDateIndonesian(stats.worstDay.date);
+            }
+
+            // ===== CHART (Canvas Candle/Bar Chart) =====
+            function renderChart() {
+                const canvas = document.getElementById("trendChart");
+                const wrap = canvas.parentElement;
+                const dpr = window.devicePixelRatio || 1;
+                const W = wrap.offsetWidth;
+                const H = 220;
+
+                canvas.width = W * dpr;
+                canvas.height = H * dpr;
+                canvas.style.width = `${W}px`;
+                canvas.style.height = `${H}px`;
+
+                const ctx = canvas.getContext("2d");
+                ctx.scale(dpr, dpr);
+
+                const trend = data.yearlyTrend;
+                const allValues = trend.flatMap((d) => [d.income, d.expense]);
+                const maxV = Math.max(...allValues) * 1.1;
+
+                const padL = 52,
+                    padR = 16,
+                    padT = 12,
+                    padB = 30;
+                const chartW = W - padL - padR;
+                const chartH = H - padT - padB;
+                const n = trend.length;
+                const step = chartW / (n - 1);
+                const barW = Math.min(24, step * 0.35);
+
+                function xOf(i) {
+                    return padL + i * step;
+                }
+                function yOf(val) {
+                    return padT + chartH * (1 - val / maxV);
+                }
+
+                // Clear
+                ctx.clearRect(0, 0, W, H);
+
+                // Grid lines
+                const gridCount = 4;
+                ctx.strokeStyle = "#f0f0f0";
+                ctx.lineWidth = 1;
+                for (let g = 0; g <= gridCount; g++) {
+                    const y = padT + (chartH / gridCount) * g;
+                    ctx.beginPath();
+                    ctx.moveTo(padL, y);
+                    ctx.lineTo(padL + chartW, y);
+                    ctx.stroke();
+
+                    // Y axis labels
+                    const val = maxV - (maxV / gridCount) * g;
+                    ctx.fillStyle = "#9ca3af";
+                    ctx.font = "9px Inter";
+                    ctx.textAlign = "right";
+                    const label =
+                        val >= 1000000
+                            ? (val / 1000000).toFixed(1) + "M"
+                            : Math.round(val / 1000) + "K";
+                    ctx.fillText(label, padL - 6, y + 3.5);
+                }
+
+                // Draw candle bars for each month
+                trend.forEach((d, i) => {
+                    const x = xOf(i);
+                    const incomeY = yOf(d.income);
+                    const expenseY = yOf(d.expense);
+                    const isLast = i === n - 1;
+
+                    // Income bar (left side)
+                    const incomeX = x - barW - 2;
+                    const incomeH = yOf(0) - incomeY;
+                    
+                    ctx.fillStyle = isLast ? "#10b981" : "#a7f3d0";
+                    ctx.beginPath();
+                    ctx.roundRect(incomeX, incomeY, barW, incomeH, [4, 4, 0, 0]);
+                    ctx.fill();
+
+                    // Expense bar (right side)
+                    const expenseX = x + 2;
+                    const expenseH = yOf(0) - expenseY;
+                    
+                    ctx.fillStyle = isLast ? "#ef4444" : "#fca5a5";
+                    ctx.beginPath();
+                    ctx.roundRect(expenseX, expenseY, barW, expenseH, [4, 4, 0, 0]);
+                    ctx.fill();
+
+                    // X labels
+                    ctx.fillStyle = isLast ? "#1f2937" : "#9ca3af";
+                    ctx.font = isLast ? "700 10px Inter" : "500 10px Inter";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "top";
+                    ctx.fillText(d.label, x, padT + chartH + 18);
+                });
+
+                // Callout badges for last month
+                const lastIncome = trend[n - 1].income;
+                const lastExpense = trend[n - 1].expense;
+                const lastX = xOf(n - 1);
+                const lastIncomeY = yOf(lastIncome);
+                const lastExpenseY = yOf(lastExpense);
+
+                function drawCallout(y, label, value, color, offsetX) {
+                    const text = `${label}: ${formatRupiahCompact(value)}`;
+                    ctx.font = "700 10px Inter";
+                    const tw = ctx.measureText(text).width;
+                    const bx = lastX - tw / 2 - 4 + offsetX;
+                    const by = y - 26;
+                    const bw = tw + 8;
+                    const bh = 20;
+
+                    // Badge background
+                    ctx.fillStyle = color + "15";
+                    ctx.strokeStyle = color + "40";
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.roundRect(bx, by, bw, bh, 6);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Text
+                    ctx.fillStyle = color;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(text, lastX + offsetX, by + bh / 2);
+
+                    // Arrow line
+                    ctx.beginPath();
+                    ctx.moveTo(lastX + offsetX, by + bh);
+                    ctx.lineTo(lastX + offsetX, y);
+                    ctx.strokeStyle = color + "30";
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([3, 3]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                drawCallout(lastIncomeY - 8, "Pemasukan", lastIncome, "#10b981", -35);
+                drawCallout(lastExpenseY - 8, "Pengeluaran", lastExpense, "#ef4444", 35);
+            }
+
+            // ===== MONTH NAVIGATION =====
+            let currentYear = 2026;
+            let currentMonth = 4;
+
+            function navigateMonth(delta) {
+                let newMonth = currentMonth + delta;
+                let newYear = currentYear;
+
+                if (newMonth > 12) {
+                    newMonth = 1;
+                    newYear += 1;
+                } else if (newMonth < 1) {
+                    newMonth = 12;
+                    newYear -= 1;
+                }
+
+                currentMonth = newMonth;
+                currentYear = newYear;
+
+                const date = new Date(newYear, newMonth - 1);
+                const label = date.toLocaleDateString("id-ID", {
+                    month: "long",
+                    year: "numeric",
+                });
+
+                document.getElementById("monthLabel").textContent = label;
+                document.getElementById("heroLabel").textContent = label;
+
+                // In a real app, this would fetch new data
+                console.log(`Navigated to ${label}`);
+            }
+
+            // ===== THEME PICKER =====
+            function toggleThemePicker() {
+                const panel = document.getElementById("themePanel");
+                panel.classList.toggle("open");
+            }
+
+            function setTheme(themeId) {
+                document.documentElement.setAttribute("data-theme", themeId);
+
+                // Update active state
+                document.querySelectorAll(".theme-swatch").forEach((swatch) => {
+                    swatch.classList.toggle(
+                        "active",
+                        swatch.dataset.theme === themeId,
+                    );
+                });
+
+                // Close panel
+                document.getElementById("themePanel").classList.remove("open");
+
+                // Save preference
+                localStorage.setItem("warga-digital-theme", themeId);
+            }
+
+            // ===== INITIALIZATION =====
+            function init() {
+                // Load saved theme
+                const savedTheme = localStorage.getItem("warga-digital-theme");
+                if (savedTheme) {
+                    setTheme(savedTheme);
+                }
+
+                // Render all components
+                renderHero();
+                renderIPL();
+                renderCategories();
+                renderQuickStats();
+                renderChart();
+
+                // Close theme picker when clicking outside
+                document.addEventListener("click", (e) => {
+                    const picker = document.querySelector(".theme-picker");
+                    if (!picker.contains(e.target)) {
+                        document
+                            .getElementById("themePanel")
+                            .classList.remove("open");
+                    }
+                });
+
+                // Redraw chart on resize
+                let resizeTimeout;
+                window.addEventListener("resize", () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(renderChart, 200);
+                });
+            }
+
+            // Start the app
+            init();
+        </script>
+    </body>
+</html>

@@ -12,6 +12,7 @@ interface KasRtSummaryHeroProps {
 
 /**
  * Hero section displaying key financial metrics with month-over-month comparison
+ * Redesigned to match kas-rt-summary-redesigned.html specifications
  */
 export function KasRtSummaryHero({ summary, isLoading = false }: KasRtSummaryHeroProps) {
   const { selectedMonth, previousMonth } = summary;
@@ -33,16 +34,15 @@ export function KasRtSummaryHero({ summary, isLoading = false }: KasRtSummaryHer
   }, [selectedMonth.net, previousMonth.net]);
 
   // Helper to render change badge
-  const renderChangeBadge = (percent: number) => {
-    const isPositive = percent >= 0;
+  const renderChangeBadge = (percent: number, isPositive: boolean) => {
     const absPercent = Math.abs(percent).toFixed(1);
 
     return (
       <span
         className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
           isPositive
-            ? "bg-green-100 text-green-700"
-            : "bg-red-100 text-red-700"
+            ? "bg-emerald-500/20 text-emerald-300"
+            : "bg-red-500/20 text-red-300"
         }`}
       >
         {isPositive ? (
@@ -57,7 +57,7 @@ export function KasRtSummaryHero({ summary, isLoading = false }: KasRtSummaryHer
 
   if (isLoading) {
     return (
-      <section className="shrink-0 overflow-hidden rounded-b-3xl bg-gradient-to-br from-primary-600 to-primary-700 px-4 pb-6 pt-5 text-white">
+      <section className="mx-4 relative overflow-hidden rounded-[22px] px-5 pb-6 pt-5 text-white">
         <div className="animate-pulse">
           <div className="flex items-center justify-between">
             <div className="h-6 w-32 rounded bg-white/20"></div>
@@ -67,7 +67,7 @@ export function KasRtSummaryHero({ summary, isLoading = false }: KasRtSummaryHer
           <div className="mt-2 h-3 w-56 rounded bg-white/20"></div>
           <div className="mt-5 grid grid-cols-3 gap-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-xl bg-white/15 p-2">
+              <div key={i} className="rounded-xl bg-white/15 p-2.5">
                 <div className="h-2 w-full rounded bg-white/20"></div>
                 <div className="mt-2 h-4 w-3/4 rounded bg-white/20"></div>
                 <div className="mt-1 h-2 w-1/2 rounded bg-white/20"></div>
@@ -79,18 +79,26 @@ export function KasRtSummaryHero({ summary, isLoading = false }: KasRtSummaryHer
     );
   }
 
+  const incomeIsPositive = incomeChange >= 0;
+  const expenseIsPositive = expenseChange <= 0; // Lower expense is good
+  const netIsPositive = netChange >= 0;
+
   return (
     <section
-      className="shrink-0 overflow-hidden rounded-b-3xl bg-gradient-to-br from-primary-600 to-primary-700 px-4 pb-6 pt-5 text-white"
+      className="mx-4 relative overflow-hidden rounded-[22px] px-5 pb-6 pt-5 text-white"
       aria-label="Ringkasan Keuangan"
+      style={{
+        backgroundColor: "var(--color-primary)",
+        boxShadow: "0 4px 12px var(--color-primary-shadow)",
+      }}
     >
       {/* Decorative elements */}
       <div
-        className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10"
+        className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-white/10"
+        className="pointer-events-none absolute -bottom-8 -left-8 h-24 w-24 rounded-full bg-white/10"
         aria-hidden
       />
 
@@ -132,14 +140,14 @@ export function KasRtSummaryHero({ summary, isLoading = false }: KasRtSummaryHer
             <p className="text-[9px] font-semibold uppercase tracking-wider leading-tight text-white/60">
               Pemasukan
             </p>
-            <div className="mt-1 flex items-center justify-center gap-1">
-              <p className="text-sm font-extrabold leading-tight text-white">
-                {formatRupiahCompact(selectedMonth.income)}
-              </p>
-              {renderChangeBadge(incomeChange)}
+            <p className="mt-1 text-sm font-extrabold leading-tight text-white">
+              {formatRupiahCompact(selectedMonth.income)}
+            </p>
+            <div className="mt-1 flex justify-center">
+              {renderChangeBadge(incomeChange, incomeIsPositive)}
             </div>
             <p className="mt-0.5 text-[8px] leading-tight text-white/50">
-              vs bulan sebelumnya
+              vs bulan lalu
             </p>
           </div>
 
@@ -148,14 +156,14 @@ export function KasRtSummaryHero({ summary, isLoading = false }: KasRtSummaryHer
             <p className="text-[9px] font-semibold uppercase tracking-wider leading-tight text-white/60">
               Pengeluaran
             </p>
-            <div className="mt-1 flex items-center justify-center gap-1">
-              <p className="text-sm font-extrabold leading-tight text-white">
-                {formatRupiahCompact(selectedMonth.expense)}
-              </p>
-              {renderChangeBadge(expenseChange)}
+            <p className="mt-1 text-sm font-extrabold leading-tight text-white">
+              {formatRupiahCompact(selectedMonth.expense)}
+            </p>
+            <div className="mt-1 flex justify-center">
+              {renderChangeBadge(expenseChange, expenseIsPositive)}
             </div>
             <p className="mt-0.5 text-[8px] leading-tight text-white/50">
-              vs bulan sebelumnya
+              vs bulan lalu
             </p>
           </div>
 
@@ -164,11 +172,11 @@ export function KasRtSummaryHero({ summary, isLoading = false }: KasRtSummaryHer
             <p className="text-[9px] font-semibold uppercase tracking-wider leading-tight text-white/60">
               Laba/Rugi
             </p>
-            <div className="mt-1 flex items-center justify-center gap-1">
-              <p className="text-sm font-extrabold leading-tight text-white">
-                {formatRupiahCompact(selectedMonth.net)}
-              </p>
-              {renderChangeBadge(netChange)}
+            <p className="mt-1 text-sm font-extrabold leading-tight text-white">
+              {formatRupiahCompact(selectedMonth.net)}
+            </p>
+            <div className="mt-1 flex justify-center">
+              {renderChangeBadge(netChange, netIsPositive)}
             </div>
             <p className="mt-0.5 text-[8px] leading-tight text-white/50">
               vs {previousMonth.label}
