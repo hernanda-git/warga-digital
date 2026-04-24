@@ -435,7 +435,6 @@ export async function GET() {
       walletBalanceFormatted: formatRupiah(Math.max(walletBalance, 0)),
     });
   } catch (err) {
-    console.error("[Profile GET] Error:", err);
     return NextResponse.json({ error: "Gagal memuat profil" }, { status: 500 });
   }
 }
@@ -623,7 +622,6 @@ export async function PATCH(request: NextRequest) {
           { status: 409 },
         );
       }
-      console.error("[Profile PATCH] Supabase error:", error);
       return NextResponse.json(
         { error: "Gagal menyimpan profil" },
         { status: 500 },
@@ -693,7 +691,6 @@ export async function PATCH(request: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("[Profile PATCH] Error:", err);
     return NextResponse.json(
       { error: "Gagal menyimpan profil" },
       { status: 500 },

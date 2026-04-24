@@ -78,7 +78,6 @@ export async function GET(request: Request) {
     .range(offset, offset + limit - 1);
 
   if (error) {
-    console.error("[Announcements GET] Supabase error:", error);
     return NextResponse.json(
       { error: "Gagal memuat pengumuman" },
       { status: 500 }

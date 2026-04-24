@@ -42,9 +42,9 @@ export type ApiResult<T> =
  * @example
  * const result = await fetchProfile();
  * if (result.success) {
- *   console.log(result.data.fullName);
+ *
  * } else {
- *   console.error(result.error);
+ *
  * }
  */
 export async function fetchProfile(): Promise<ApiResult<ProfileApiResponse>> {
@@ -125,7 +125,7 @@ export async function fetchMarketplaceSummary(): Promise<
  * const result = await fetchAnnouncements();
  * if (result.success) {
  *   result.data.announcements.forEach(announcement => {
- *     console.log(announcement.title);
+ *
  *   });
  * }
  */

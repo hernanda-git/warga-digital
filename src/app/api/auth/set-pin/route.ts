@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
       .eq("id", userId);
 
     if (updateError) {
-      console.error("[SetPin] Update error:", updateError);
       return NextResponse.json(
         { error: "Gagal menyimpan PIN" },
         { status: 500 },
@@ -111,7 +110,6 @@ export async function POST(request: NextRequest) {
       fullName: user.full_name,
     });
   } catch (err) {
-    console.error("[SetPin] Error:", err);
     return NextResponse.json({ error: "Terjadi kesalahan" }, { status: 500 });
   }
 }

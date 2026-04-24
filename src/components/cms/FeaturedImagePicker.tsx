@@ -84,7 +84,6 @@ export function FeaturedImagePicker({
     } catch (err) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan";
       setError(message);
-      console.error("Error uploading featured image:", err);
     } finally {
       setUploading(false);
     }
@@ -107,7 +106,6 @@ export function FeaturedImagePicker({
     } catch (err) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan";
       setError(message);
-      console.error("Error removing featured image:", err);
     }
   };
 

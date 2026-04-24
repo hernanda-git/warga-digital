@@ -58,7 +58,6 @@ export async function GET(request: NextRequest) {
     const { data: articles, error, count } = await query;
 
     if (error) {
-      console.error("Error fetching articles:", error);
       return NextResponse.json(
         { error: "Failed to fetch articles" },
         { status: 500 },
@@ -75,7 +74,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error in GET /api/cms/articles:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -136,7 +134,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("Error creating article:", error);
       if (error.code === "23505") {
         return NextResponse.json(
           { error: "An article with this slug already exists" },
@@ -151,7 +148,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ article }, { status: 201 });
   } catch (error) {
-    console.error("Error in POST /api/cms/articles:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

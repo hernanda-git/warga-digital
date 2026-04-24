@@ -26,7 +26,6 @@ export async function GET() {
       .maybeSingle();
 
     if (error) {
-      console.error("[Community Info] DB error:", error);
       return NextResponse.json(
         {
           communityName: "Warga Digital",
@@ -54,7 +53,6 @@ export async function GET() {
       communityId: community.id,
     } as CommunityInfoResponse);
   } catch (error) {
-    console.error("[Community Info] Unexpected error:", error);
     return NextResponse.json(
       {
         communityName: "Warga Digital",

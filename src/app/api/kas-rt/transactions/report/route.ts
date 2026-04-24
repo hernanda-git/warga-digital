@@ -1029,7 +1029,6 @@ export async function GET(request: Request) {
     const { data, error } = await query;
 
     if (error || !data) {
-      console.error("[Kas RT] Fetch report transactions error:", error);
       return NextResponse.json(
         { message: "Gagal memuat transaksi untuk laporan." },
         { status: 500 },
@@ -1097,7 +1096,6 @@ export async function GET(request: Request) {
       },
     });
   } catch (err) {
-    console.error("[Kas RT] Unexpected report error:", err);
     return NextResponse.json(
       { message: "Terjadi kesalahan saat menyiapkan laporan." },
       { status: 500 },

@@ -14,7 +14,6 @@ export async function POST() {
     await clearSessionCookie();
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[Logout] Error:", err);
     await clearSessionCookie();
     return NextResponse.json({ success: true });
   }

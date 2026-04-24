@@ -60,7 +60,6 @@ export default function LandingPageClient({
         }
       } catch (e) {
         if (process.env.NODE_ENV === "development") {
-          console.warn("Notification count fetch failed:", e);
         }
       }
     };
@@ -80,10 +79,6 @@ export default function LandingPageClient({
         setViewingService(data.data);
       }
     } catch (error) {
-      console.error(
-        "Failed to view service:",
-        error instanceof Error ? error.message : "Unknown error",
-      );
     }
   };
 
@@ -100,10 +95,6 @@ export default function LandingPageClient({
         setViewingGoods(data.data);
       }
     } catch (error) {
-      console.error(
-        "Failed to view goods:",
-        error instanceof Error ? error.message : "Unknown error",
-      );
     }
   };
 

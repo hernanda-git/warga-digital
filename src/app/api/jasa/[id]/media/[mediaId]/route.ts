@@ -65,7 +65,6 @@ export async function DELETE(
         .from("jasa-images")
         .remove([filePath])
         .catch((err) => {
-          console.error("Failed to delete file from storage:", err);
         });
     }
 
@@ -76,7 +75,6 @@ export async function DELETE(
       .eq("id", mediaId);
 
     if (deleteError) {
-      console.error("Error deleting media record:", deleteError);
       return NextResponse.json(
         { success: false, error: "Gagal menghapus media" },
         { status: 500 },
@@ -105,7 +103,6 @@ export async function DELETE(
       message: "Media berhasil dihapus",
     });
   } catch (error: any) {
-    console.error("Error deleting media:", error);
     return NextResponse.json(
       { success: false, error: "Gagal menghapus media" },
       { status: 500 },

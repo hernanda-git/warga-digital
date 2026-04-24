@@ -92,7 +92,6 @@ export async function POST(request: Request) {
       });
 
     if (uploadError) {
-      console.error("[Organisation Avatar] Upload error:", uploadError);
       return NextResponse.json(
         { message: "Gagal mengupload foto." },
         { status: 500 },
@@ -109,7 +108,6 @@ export async function POST(request: Request) {
       filePath,
     });
   } catch (error) {
-    console.error("[Organisation Avatar] Error:", error);
     return NextResponse.json(
       { message: "Gagal mengupload foto." },
       { status: 500 },

@@ -35,7 +35,6 @@ export async function GET(request: Request) {
       .order("blok_rumah");
 
     if (housesError) {
-      console.error("Error fetching houses:", housesError);
       return NextResponse.json(
         { message: "Gagal memuat daftar rumah." },
         { status: 500 },
@@ -63,7 +62,6 @@ export async function GET(request: Request) {
       .in("reference", blokList);
 
     if (txError) {
-      console.error("Error fetching transactions:", txError);
       return NextResponse.json(
         { message: "Gagal memuat data transaksi." },
         { status: 500 },
@@ -102,7 +100,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(statuses);
   } catch (error) {
-    console.error("Unexpected error in house-statuses:", error);
     return NextResponse.json(
       { message: "Terjadi kesalahan tak terduga." },
       { status: 500 },

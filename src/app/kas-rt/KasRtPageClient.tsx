@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
 import { findDuplicateTransactions } from "@/lib/kas-rt-utils";
@@ -19,6 +19,7 @@ import {
   KasRtDuplicateWarningDialog,
 } from "@/components/kas-rt";
 import { KasRtTransactionListSkeleton } from "@/components/kas-rt/skeletons";
+import { KasRtBackToTop } from "@/components/kas-rt/KasRtBackToTop";
 import { ROUTES } from "@/config/landing";
 import type {
   KasRtDownloadState,
@@ -43,6 +44,7 @@ export default function KasRtPageClient({
 }: KasRtPageClientProps) {
   const now = useMemo(() => new Date(), []);
   const router = useRouter();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     transactions,
@@ -52,6 +54,7 @@ export default function KasRtPageClient({
     isPageLoading,
     isTransactionsLoading,
     isRefreshing,
+    isLoadingMore,
     refreshedAt,
     filterState,
     setFilterState,
@@ -62,9 +65,12 @@ export default function KasRtPageClient({
     allCategoryNames,
     allBlockNames,
     activeAdvancedFilterCount,
+    pagination,
     refreshData,
     setTransactions,
     applyFilters,
+    loadMore,
+    resetFilters,
   } = useKasRtTransactions({
     now,
     initialData: {
@@ -217,16 +223,11 @@ export default function KasRtPageClient({
   }, [formHook, transactions, editingTxId]);
 
   // ── Reset filter handler ──────────────────────────────────────────────────
-  const handleResetFilter = useCallback(() => {
-    const defaultDates = getDefaultFilterDates(now);
-    setFilterState({
-      typeFilter: "all",
-      categoryFilter: "",
-      blockFilter: "",
-      startDate: defaultDates.startDate,
-      endDate: defaultDates.endDate,
-    });
-  }, [now, setFilterState]);
+  const handleResetFilter = useCallback(async () => {
+    await resetFilters();
+    // Scroll to top after resetting filters
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [resetFilters]);
 
   // ── Navigation handlers ───────────────────────────────────────────────────
   const handleOpenForm = useCallback(() => {
@@ -297,6 +298,7 @@ export default function KasRtPageClient({
   return (
     <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
       <div
+        ref={scrollContainerRef}
         className="flex-1 overflow-y-auto overscroll-contain"
         style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}
       >
@@ -342,6 +344,10 @@ export default function KasRtPageClient({
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
+            hasMore={pagination.hasMore}
+            isLoadingMore={isLoadingMore}
+            onLoadMore={loadMore}
+            totalCount={pagination.total}
           />
         )}
       </div>
@@ -421,6 +427,11 @@ export default function KasRtPageClient({
         isDeleteConfirming={isDeleteConfirming}
         onClose={() => setDeletingTx(null)}
         onConfirm={handleDeleteTx}
+      />
+
+      <KasRtBackToTop
+        containerRef={scrollContainerRef}
+        visibleItemsCount={filteredTransactions.length}
       />
     </main>
   );

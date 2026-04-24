@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (checkError && checkError.code !== "PGRST116") {
-      console.error("[Check WA Number] Supabase error:", checkError);
       return NextResponse.json({ error: "Terjadi kesalahan" }, { status: 500 });
     }
 
@@ -56,7 +55,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ available: true });
   } catch (err) {
-    console.error("[Check WA Number] Error:", err);
     return NextResponse.json({ error: "Terjadi kesalahan" }, { status: 500 });
   }
 }

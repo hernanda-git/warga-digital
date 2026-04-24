@@ -29,7 +29,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
       .order("sort_order", { ascending: true });
 
     if (error) {
-      console.error("Error fetching article images:", error);
       return NextResponse.json(
         { error: "Failed to fetch images" },
         { status: 500 },
@@ -38,7 +37,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ images: images || [] });
   } catch (error) {
-    console.error("Error in GET /images:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -114,7 +112,6 @@ async function handleImageCreate(
     .single();
 
   if (insertError) {
-    console.error("Error creating article image:", insertError);
     return NextResponse.json(
       { error: "Failed to create image record" },
       { status: 500 },
@@ -192,7 +189,6 @@ async function handleImageReplace(
       .single();
 
     if (updateError) {
-      console.error("Error updating image metadata:", updateError);
       return NextResponse.json(
         { error: "Failed to update image metadata" },
         { status: 500 },
@@ -201,7 +197,6 @@ async function handleImageReplace(
 
     // 5. Queue old object for deletion (could be done via background job)
     // For now, we'll just log it. In production, this should go to a queue.
-    console.log(`Old object queued for deletion: ${existingImage.object_key}`);
 
     return NextResponse.json({
       image: updatedImage,
@@ -209,7 +204,6 @@ async function handleImageReplace(
       oldObjectKey: existingImage.object_key,
     });
   } catch (error) {
-    console.error("Error in POST /images:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -241,7 +235,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       .eq("article_id", articleId);
 
     if (fetchError) {
-      console.error("Error fetching images for deletion:", fetchError);
       return NextResponse.json(
         { error: "Failed to fetch images" },
         { status: 500 },
@@ -256,7 +249,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       try {
         await deleteObjects(objectKeys);
       } catch (error) {
-        console.error("Error deleting objects from R2:", error);
         r2DeleteError =
           error instanceof Error ? error : new Error("R2 delete failed");
         // Continue with DB deletion even if R2 fails
@@ -270,7 +262,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       .eq("article_id", articleId);
 
     if (deleteError) {
-      console.error("Error deleting images from database:", deleteError);
       return NextResponse.json(
         { error: "Failed to delete images from database" },
         { status: 500 },
@@ -284,7 +275,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       r2Error: r2DeleteError?.message,
     });
   } catch (error) {
-    console.error("Error in DELETE /images:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -332,7 +322,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error in PATCH /images:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

@@ -47,7 +47,6 @@ export async function GET() {
       .order("name", { ascending: true });
 
     if (error) {
-      console.error("[Kas RT] Fetch categories error:", error);
       return NextResponse.json(
         { message: "Gagal memuat kategori kas RT." },
         { status: 500 },
@@ -56,7 +55,6 @@ export async function GET() {
 
     return NextResponse.json((data ?? []) as KasRtCategoryRow[]);
   } catch (error) {
-    console.error("[Kas RT] Unexpected GET categories error:", error);
     return NextResponse.json(
       { message: "Terjadi kesalahan saat memuat kategori." },
       { status: 500 },

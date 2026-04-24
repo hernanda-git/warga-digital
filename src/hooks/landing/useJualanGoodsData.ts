@@ -64,7 +64,6 @@ export function useJualanGoodsData(): UseJualanGoodsDataReturn {
         return;
       }
       const message = err instanceof Error ? err.message : "Gagal memuat barang";
-      console.error("[Jualan Goods] loadJualanGoods error:", err);
       setError(message);
       setIsLoading(false);
       setIsLoaded(true);

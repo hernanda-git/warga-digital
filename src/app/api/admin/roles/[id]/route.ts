@@ -75,7 +75,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     .single();
 
   if (error) {
-    console.error("[admin/roles] PATCH error:", error);
     if (error.code === "23505") {
       return NextResponse.json(
         { error: "Nama role sudah digunakan. Pilih nama lain." },
@@ -127,7 +126,6 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     .is("revoked_at", null);
 
   if (countError) {
-    console.error("[admin/roles] DELETE count error:", countError);
     return NextResponse.json({ error: countError.message }, { status: 500 });
   }
 
@@ -143,7 +141,6 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   const { error } = await supabase.from("roles").delete().eq("id", roleId);
 
   if (error) {
-    console.error("[admin/roles] DELETE error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

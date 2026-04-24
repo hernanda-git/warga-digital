@@ -8,7 +8,6 @@ import {
   ChevronRightIcon,
   PencilIcon,
   TrashIcon,
-  PhoneIcon,
 } from "@heroicons/react/24/outline";
 import { formatRupiah } from "@/lib/constants/marketplace-catalog";
 
@@ -112,7 +111,6 @@ export function JualanDetailModal({
       await onDelete(goods.id);
       onClose();
     } catch (error) {
-      console.error("Error deleting:", error);
       alert("Gagal menghapus barang");
     } finally {
       setIsDeleting(false);
@@ -347,14 +345,32 @@ export function JualanDetailModal({
                   </div>
 
                   <div className="flex gap-3">
-                    <button
-                      onClick={handleContact}
-                      disabled={!goods.wa_number || isSoldOut}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-app-primary py-3.5 text-sm font-bold text-white transition hover:bg-app-primary-hover disabled:opacity-50"
-                    >
-                      <PhoneIcon className="h-5 w-5" />
-                      Hubungi Penjual
-                    </button>
+                    {goods.wa_number ? (
+                      <button
+                        onClick={handleContact}
+                        disabled={isSoldOut}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-white transition-all active:scale-[0.98]"
+                        style={{
+                          background: "var(--color-primary)",
+                          boxShadow: "0 6px 20px -6px var(--color-primary-shadow)",
+                        }}
+                      >
+                        <span>💬</span>
+                        <span>Hubungi via WhatsApp</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={onClose}
+                        className="flex flex-1 items-center justify-center rounded-2xl py-3.5 text-sm font-semibold transition-all active:scale-[0.98]"
+                        style={{
+                          background: "var(--color-surface-alt)",
+                          border: "1.5px solid var(--color-input-border)",
+                          color: "var(--color-body)",
+                        }}
+                      >
+                        Tutup
+                      </button>
+                    )}
                   </div>
                 </div>
               </>

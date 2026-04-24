@@ -441,24 +441,12 @@ function OrganisationSheet({
     setSaving(true);
     const userId = selectedUserId.trim() ? selectedUserId.trim() : null;
     
-    console.log("[Manage Page] Submitting member:", {
-      kind,
-      userId,
-      useCustomData,
-      customData,
-      roleId,
-      existingMemberId: member?.id
-    });
-    
     try {
       let customPayload = useCustomData ? customData : undefined;
       let memberId: string | null = null;
       
-      console.log("[Manage Page] Sending customPayload:", customPayload);
-      
       // First, create/update member
       if (kind === "add-member" && roleId) {
-        console.log("[Manage Page] POST to /api/organisation/roles/", roleId, "/members");
         const res = await apiFetch(
           `/api/organisation/roles/${roleId}/members`,
           {
@@ -469,11 +457,9 @@ function OrganisationSheet({
           },
         );
         const data = await res.json();
-        console.log("[Manage Page] POST response:", { status: res.status, data });
         if (!res.ok) throw new Error(data.message ?? "Gagal menambah anggota");
         memberId = data.id;
       } else if (kind === "edit-member" && member) {
-        console.log("[Manage Page] PATCH to /api/organisation/members/", member.id);
         const res = await apiFetch(`/api/organisation/members/${member.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -481,7 +467,6 @@ function OrganisationSheet({
           body: JSON.stringify({ userId, custom: customPayload }),
         });
         const data = await res.json();
-        console.log("[Manage Page] PATCH response:", { status: res.status, data });
         if (!res.ok) throw new Error(data.message ?? "Gagal mengubah anggota");
         memberId = member.id;
       }
@@ -505,7 +490,6 @@ function OrganisationSheet({
             });
           }
         } catch (uploadError) {
-          console.error("Avatar upload error:", uploadError);
           // Continue anyway, don't block the save
         } finally {
           setUploadingAvatar(false);

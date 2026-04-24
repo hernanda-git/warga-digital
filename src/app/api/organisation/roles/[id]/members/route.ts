@@ -76,13 +76,6 @@ export async function POST(request: Request, context: RouteContext) {
       const rawUserId = body.userId;
       const customData = body.custom;
       
-      console.log("[Organisation POST] Received request:", {
-        roleId,
-        userId: rawUserId,
-        hasCustom: !!customData,
-        customData: customData
-      });
-      
       const isVacant =
         rawUserId === null ||
         rawUserId === undefined ||
@@ -125,13 +118,11 @@ export async function POST(request: Request, context: RouteContext) {
         .single();
 
       if (error) {
-        console.error("[Organisation] POST member (vacant) error:", error);
         return NextResponse.json({ message: "Gagal menambah slot Vacant." }, { status: 500 });
       }
 
       // Insert custom data if provided
       if (customData) {
-        console.log("[Organisation POST] Inserting custom data for member:", data.id, customData);
         const { data: customInsertData, error: customError } = await supabase.from("organisation_member_customs").insert({
           organisation_member_id: data.id,
           custom_full_name: customData.fullName,
@@ -140,15 +131,8 @@ export async function POST(request: Request, context: RouteContext) {
           custom_profile_picture_url: customData.profilePictureUrl ?? null,
         }).select();
         
-        console.log("[Organisation POST] Custom insert result:", {
-          data: customInsertData,
-          error: customError
-        });
-        
         if (customError) {
-          console.error("[Organisation] Failed to insert custom data:", customError);
         } else {
-          console.log("[Organisation POST] ✅ Custom data inserted successfully");
         }
       }
 
@@ -202,13 +186,11 @@ export async function POST(request: Request, context: RouteContext) {
       .single();
 
     if (error) {
-      console.error("[Organisation] POST member error:", error);
       return NextResponse.json({ message: "Gagal menambah anggota." }, { status: 500 });
     }
 
     // Insert custom data if provided
     if (customData) {
-      console.log("[Organisation POST] Inserting custom data for member:", data.id, customData);
       const { data: customInsertData, error: customError } = await supabase.from("organisation_member_customs").insert({
         organisation_member_id: data.id,
         custom_full_name: customData.fullName,
@@ -217,15 +199,8 @@ export async function POST(request: Request, context: RouteContext) {
         custom_profile_picture_url: customData.profilePictureUrl ?? null,
       }).select();
       
-      console.log("[Organisation POST] Custom insert result:", {
-        data: customInsertData,
-        error: customError
-      });
-      
       if (customError) {
-        console.error("[Organisation] Failed to insert custom data:", customError);
       } else {
-        console.log("[Organisation POST] ✅ Custom data inserted successfully");
       }
     }
 
@@ -260,7 +235,6 @@ export async function POST(request: Request, context: RouteContext) {
       sortOrder: data.sort_order ?? 0,
     });
   } catch (error) {
-    console.error("[Organisation] POST member error:", error);
     return NextResponse.json({ message: "Gagal menambah anggota." }, { status: 500 });
   }
 }

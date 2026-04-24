@@ -121,25 +121,12 @@ export default function JasaPage() {
           }
         }
       } catch (err) {
-        console.error("Failed to fetch data:", err);
       }
     };
     fetchData();
   }, []);
 
   const fetchServices = useCallback(async () => {
-    console.log("[Jasa Page] fetchServices called with params:", {
-      page,
-      limit,
-      selectedCategory,
-      selectedStatus,
-      searchQuery,
-      minPrice,
-      maxPrice,
-
-      selectedDays,
-      communityId,
-    });
     setIsLoading(true);
 
     setError(null);
@@ -175,18 +162,9 @@ export default function JasaPage() {
       if (communityId) params.set("community_id", communityId);
 
       const queryString = params.toString();
-      console.log("[Jasa Page] API query string:", queryString);
 
       const response = await apiFetch(`/api/jasa?${queryString}`);
       const data: JasaListApiResponse = await response.json();
-
-      console.log("[Jasa Page] API response:", {
-        ok: response.ok,
-        success: data.success,
-        servicesCount: data.data?.services?.length,
-        total: data.data?.pagination?.total,
-        error: data.error,
-      });
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || "Gagal memuat layanan");
@@ -204,8 +182,6 @@ export default function JasaPage() {
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Gagal memuat layanan";
-
-      console.error("[Jasa Page] fetchServices error:", err);
       setError(message);
     } finally {
       setIsLoading(false);
@@ -247,7 +223,6 @@ export default function JasaPage() {
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleCreateSubmit = async (formData: FormData) => {
-    console.log("[Jasa Page] handleCreateSubmit called");
     const response = await apiFetch("/api/jasa", {
       method: "POST",
 
@@ -255,12 +230,6 @@ export default function JasaPage() {
     });
 
     const data = await response.json();
-
-    console.log("[Jasa Page] Create response:", {
-      ok: response.ok,
-      success: data.success,
-      error: data.error,
-    });
     if (!response.ok) throw new Error(data.error || "Gagal membuat layanan");
 
     await fetchServices();
@@ -268,11 +237,6 @@ export default function JasaPage() {
 
   const handleEditSubmit = async (data: any) => {
     if (!editingService) return;
-
-    console.log(
-      "[Jasa Page] handleEditSubmit called for service:",
-      editingService.id,
-    );
     setIsEditingLoading(true);
 
     try {
@@ -283,12 +247,6 @@ export default function JasaPage() {
       });
 
       const result = await response.json();
-
-      console.log("[Jasa Page] Edit response:", {
-        ok: response.ok,
-        success: result.success,
-        error: result.error,
-      });
       if (!response.ok)
         throw new Error(result.error || "Gagal memperbarui layanan");
 
@@ -299,16 +257,9 @@ export default function JasaPage() {
   };
 
   const handleDeleteService = async (id: string) => {
-    console.log("[Jasa Page] handleDeleteService called for id:", id);
     const response = await apiFetch(`/api/jasa/${id}`, { method: "DELETE" });
 
     const data = await response.json();
-
-    console.log("[Jasa Page] Delete response:", {
-      ok: response.ok,
-      success: data.success,
-      error: data.error,
-    });
     if (!response.ok) throw new Error(data.error || "Gagal menghapus layanan");
 
     setViewingService(null);
@@ -334,7 +285,6 @@ export default function JasaPage() {
         setViewingService(data.data);
       }
     } catch (err) {
-      console.error("Failed to view service:", err);
     }
   };
 

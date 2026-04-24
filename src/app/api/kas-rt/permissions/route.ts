@@ -41,7 +41,6 @@ export async function GET() {
     const canSubmitTransaction = (roleAssignments?.length ?? 0) > 0;
     return NextResponse.json({ canSubmitTransaction });
   } catch (error) {
-    console.error("[Kas RT] Permissions error:", error);
     return NextResponse.json({ canSubmitTransaction: false });
   }
 }

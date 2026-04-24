@@ -51,7 +51,6 @@ export async function GET() {
       communityName: community.name,
     } as KasRtInfoResponse);
   } catch (error) {
-    console.error("[Kas RT Info] Unexpected error:", error);
     return NextResponse.json(
       { communityName: "Warga Digital" },
       { status: 200 },

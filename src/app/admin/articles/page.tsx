@@ -248,12 +248,6 @@ function ArticleImageUploader({
     );
 
     try {
-      console.log(
-        "[ArticleImageUploader] Requesting upload URL for:",
-        file.name,
-        "articleId:",
-        articleId,
-      );
       const urlRes = await fetch("/api/cms/articles/upload-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -266,22 +260,12 @@ function ArticleImageUploader({
         signal: ac.signal,
       });
 
-      console.log(
-        "[ArticleImageUploader] Upload URL response status:",
-        urlRes.status,
-      );
-
       if (!urlRes.ok) {
         const err = await urlRes.json();
-        console.error("[ArticleImageUploader] Error getting upload URL:", err);
         throw new Error(err.error || "Gagal mendapatkan URL upload");
       }
 
       const { uploadUrl, publicUrl, objectKey } = await urlRes.json();
-      console.log(
-        "[ArticleImageUploader] Got upload URL, publicUrl:",
-        publicUrl,
-      );
 
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -293,19 +277,12 @@ function ArticleImageUploader({
             );
           }
         });
-        xhr.addEventListener("load", () => {
-          console.log(
-            `[ArticleImageUploader] XHR load: status=${xhr.status}, response=${xhr.responseText?.substring(0, 200)}`,
+        xhr.addEventListener("load", () => {}`,
           );
           if (xhr.status >= 200 && xhr.status < 300) resolve();
           else reject(new Error(`Upload gagal: ${xhr.status}`));
         });
         xhr.addEventListener("error", () => {
-          console.error(
-            "[ArticleImageUploader] XHR error:",
-            xhr.statusText,
-            xhr.responseText,
-          );
           reject(new Error("Network error"));
         });
         xhr.addEventListener("abort", () => reject(new Error("Dibatalkan")));
@@ -335,15 +312,7 @@ function ArticleImageUploader({
             mimeType: file.type,
           }),
         });
-        console.log(
-          "[ArticleImageUploader] Image record created for:",
-          file.name,
-        );
       } catch (recordErr) {
-        console.error(
-          "[ArticleImageUploader] Failed to create image record:",
-          recordErr,
-        );
       }
     } catch (err) {
       if (ac.signal.aborted) {

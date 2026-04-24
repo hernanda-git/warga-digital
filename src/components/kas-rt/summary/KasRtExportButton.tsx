@@ -93,7 +93,6 @@ export function KasRtExportButton({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("PDF export error:", error);
       alert("Gagal mengekspor PDF. Silakan coba lagi.");
     } finally {
       setIsExporting(false);
@@ -132,7 +131,6 @@ export function KasRtExportButton({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Excel export error:", error);
       alert("Gagal mengekspor Excel. Silakan coba lagi.");
     } finally {
       setIsExporting(false);
@@ -167,7 +165,6 @@ export function KasRtExportButton({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Image export error:", error);
       alert("Gagal mengekspor gambar. Silakan coba lagi.");
     } finally {
       setIsExporting(false);

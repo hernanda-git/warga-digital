@@ -47,7 +47,6 @@ export async function GET(
     .single();
 
   if (error) {
-    console.error("[admin/kas-rt-category-details] GET error:", error);
     return NextResponse.json(
       { error: "Detail kategori tidak ditemukan." },
       { status: 404 },
@@ -133,7 +132,6 @@ export async function PATCH(
     .single();
 
   if (error) {
-    console.error("[admin/kas-rt-category-details] PATCH error:", error);
     if (error.code === "23505") {
       return NextResponse.json(
         { error: "Detail dengan nama tersebut sudah ada di kategori ini." },
@@ -177,7 +175,6 @@ export async function DELETE(
     .eq("id", id);
 
   if (error) {
-    console.error("[admin/kas-rt-category-details] DELETE error:", error);
     return NextResponse.json(
       { error: "Gagal menghapus detail kategori." },
       { status: 500 },

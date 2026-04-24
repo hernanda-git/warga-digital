@@ -134,7 +134,6 @@ export async function fetchLandingArticles(): Promise<{
       .range(0, 4);
 
     if (error) {
-      console.error("[Landing SSR] articles error:", error);
       return { articles: [], error: "Gagal memuat artikel" };
     }
 
@@ -157,7 +156,6 @@ export async function fetchLandingArticles(): Promise<{
 
     return { articles, error: null };
   } catch (err) {
-    console.error("[Landing SSR] articles exception:", err);
     return { articles: [], error: "Gagal memuat artikel" };
   }
 }
@@ -193,7 +191,6 @@ export async function fetchLandingJualan(userId: string): Promise<JualanGoodsWit
       .range(0, 5);
 
     if (error) {
-      console.error("[Landing SSR] jualan error:", error);
       return [];
     }
 
@@ -224,7 +221,6 @@ export async function fetchLandingJualan(userId: string): Promise<JualanGoodsWit
       media_count: item.media?.length || 0,
     }));
   } catch (err) {
-    console.error("[Landing SSR] jualan exception:", err);
     return [];
   }
 }
@@ -265,7 +261,7 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
       .range(0, 9);
 
     if (error || !services?.length) {
-      if (error) console.error("[Landing SSR] jasa error:", error);
+      if (error)
       return [];
     }
 
@@ -322,7 +318,6 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
       };
     });
   } catch (err) {
-    console.error("[Landing SSR] jasa exception:", err);
     return [];
   }
 }

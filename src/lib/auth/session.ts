@@ -30,7 +30,6 @@ export async function createSession(userId: string): Promise<string> {
   });
 
   if (error) {
-    console.error("[Session] createSession error:", error);
     throw new Error("Failed to create session");
   }
 
@@ -68,7 +67,6 @@ export async function getSessionFromCookie(): Promise<{
     .maybeSingle();
 
   if (fetchError) {
-    console.error("[Session] getSessionFromCookie fetch error:", fetchError);
     return null;
   }
 
@@ -93,7 +91,7 @@ export async function getSessionFromCookie(): Promise<{
   if (isStale || needsRenewal) {
     const newExpiresAt = new Date(Date.now() + SESSION_MAX_AGE * 1000);
 
-    (async () => {
+    (async (store) => {
       try {
         const { error } = await supabase
           .from("sessions")
@@ -104,16 +102,20 @@ export async function getSessionFromCookie(): Promise<{
           .eq("id", session.id);
 
         if (error) {
-          console.error("[Session] renewal update error:", error);
           return;
         }
 
         const newJwt = await signSessionToken(session.id, session.user_id);
-        await setSessionCookie(newJwt);
+        store.set(SESSION_COOKIE, newJwt, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: SESSION_MAX_AGE,
+          path: "/",
+        });
       } catch (err) {
-        console.error("[Session] renewal unexpected error:", err);
       }
-    })();
+    })(cookieStore);
   }
 
   return { userId: payload.userId, sessionId: payload.sessionId };
@@ -132,6 +134,5 @@ export async function destroySession(sessionId: string) {
     .eq("id", sessionId);
 
   if (error) {
-    console.error("[Session] destroySession error:", error);
   }
 }

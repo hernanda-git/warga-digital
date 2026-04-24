@@ -83,13 +83,6 @@ export async function PATCH(request: Request, context: RouteContext) {
       const rawUserId = body.userId;
       const customData = body.custom;
       
-      console.log("[Organisation PATCH] Received request:", {
-        id,
-        userId: rawUserId,
-        hasCustom: !!customData,
-        customData: customData
-      });
-      
       const isVacant =
         rawUserId === null ||
         rawUserId === undefined ||
@@ -116,7 +109,6 @@ export async function PATCH(request: Request, context: RouteContext) {
         .single();
 
       if (error) {
-        console.error("[Organisation] PATCH member (vacant) error:", error);
         return NextResponse.json(
           { message: "Gagal mengubah anggota." },
           { status: 500 },
@@ -130,7 +122,6 @@ export async function PATCH(request: Request, context: RouteContext) {
 
       // Upsert custom data if provided, otherwise delete existing custom
       if (customData) {
-        console.log("[Organisation PATCH] Upserting custom data for member:", id, customData);
         const { data: customUpsertData, error: customError } = await supabase.from("organisation_member_customs").upsert({
           organisation_member_id: id,
           custom_full_name: customData.fullName,
@@ -142,29 +133,14 @@ export async function PATCH(request: Request, context: RouteContext) {
           onConflict: "organisation_member_id",
         }).select();
         
-        console.log("[Organisation PATCH] Custom upsert result:", {
-          data: customUpsertData,
-          error: customError
-        });
-        
         if (customError) {
-          console.error("[Organisation] Failed to upsert custom data:", customError);
         } else {
-          console.log("[Organisation PATCH] ✅ Custom data upserted successfully");
         }
       } else {
-        console.log("[Organisation PATCH] Deleting custom data for member:", id);
         const { data: deleteData, error: deleteError } = await supabase.from("organisation_member_customs").delete().eq("organisation_member_id", id).select();
         
-        console.log("[Organisation PATCH] Custom delete result:", {
-          data: deleteData,
-          error: deleteError
-        });
-        
         if (deleteError) {
-          console.error("[Organisation] Failed to delete custom data:", deleteError);
         } else {
-          console.log("[Organisation PATCH] ✅ Custom data deleted successfully");
         }
       }
 
@@ -241,7 +217,6 @@ export async function PATCH(request: Request, context: RouteContext) {
       .single();
 
     if (error) {
-      console.error("[Organisation] PATCH member error:", error);
       return NextResponse.json(
         { message: "Gagal mengubah anggota." },
         { status: 500 },
@@ -299,7 +274,6 @@ export async function PATCH(request: Request, context: RouteContext) {
       sortOrder: data.sort_order ?? 0,
     });
   } catch (error) {
-    console.error("[Organisation] PATCH member error:", error);
     return NextResponse.json(
       { message: "Gagal mengubah anggota." },
       { status: 500 },
@@ -328,7 +302,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
     .eq("id", id);
 
   if (error) {
-    console.error("[Organisation] DELETE member error:", error);
     return NextResponse.json(
       { message: "Gagal menghapus anggota." },
       { status: 500 },

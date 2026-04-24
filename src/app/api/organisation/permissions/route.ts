@@ -38,7 +38,6 @@ export async function GET() {
     const canManageOrganisation = (roleAssignments?.length ?? 0) > 0;
     return NextResponse.json({ canManageOrganisation });
   } catch (error) {
-    console.error("[Organisation] Permissions error:", error);
     return NextResponse.json({ canManageOrganisation: false });
   }
 }

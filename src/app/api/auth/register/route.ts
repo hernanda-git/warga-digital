@@ -56,7 +56,6 @@ async function provisionHouseAndTenantMembership(
       .single();
 
     if (newHouse.error) {
-      console.error("[Register] Insert house error:", newHouse.error);
       throw new Error("Gagal membuat data rumah");
     }
     houseId = newHouse.data.id;
@@ -76,7 +75,6 @@ async function provisionHouseAndTenantMembership(
     .single();
 
   if (tuError || !tenantUser?.id) {
-    console.error("[Register] Upsert tenant_users error:", tuError);
     throw new Error("Gagal mendaftarkan ke tenant");
   }
 
@@ -107,7 +105,6 @@ async function provisionHouseAndTenantMembership(
     role_id: DEFAULT_ROLE_WARGA_ID,
   });
   if (roleErr && roleErr.code !== "23505") {
-    console.error("[Register] Insert tenant_user_roles error:", roleErr);
   }
 
   return { houseId };
@@ -122,7 +119,6 @@ async function assignDefaultWargaRole(
     role_id: DEFAULT_ROLE_WARGA_ID,
   });
   if (roleErr && roleErr.code !== "23505") {
-    console.error("[Register] Insert tenant_user_roles error:", roleErr);
   }
 }
 
@@ -141,10 +137,6 @@ async function tryClaimSystemPreregisteredOwner(
     },
   );
   if (error) {
-    console.error(
-      "[Register] claim_system_preregistered_owner rpc error:",
-      error,
-    );
     return { claimed: false };
   }
   if (Array.isArray(data) && data.length > 0) {
@@ -278,7 +270,6 @@ export async function POST(request: NextRequest) {
         );
       }
       if (updateErr) {
-        console.error("[Register] Update user error:", updateErr);
         return NextResponse.json(
           { error: "Gagal memperbarui data" },
           { status: 500 },
@@ -299,7 +290,6 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (newUser.error) {
-        console.error("[Register] Insert user error:", newUser.error);
         if (newUser.error.code === "23505") {
           return NextResponse.json(
             { error: "Nomor WhatsApp atau username sudah terdaftar" },
@@ -353,10 +343,6 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (tuError || !tenantUser?.id) {
-        console.error(
-          "[Register] Upsert tenant_users after claim error:",
-          tuError,
-        );
         return NextResponse.json(
           { error: "Gagal mendaftarkan ke tenant" },
           { status: 500 },
@@ -369,12 +355,10 @@ export async function POST(request: NextRequest) {
         .from("user_badges")
         .insert({ user_id: userId, badge_id: 1 });
       if (_b1 && _b1.code !== "23505")
-        console.error("[Register] user_badges badge 1:", _b1);
       const { error: _b2 } = await supabase
         .from("user_badges")
         .insert({ user_id: userId, badge_id: 2 });
       if (_b2 && _b2.code !== "23505")
-        console.error("[Register] user_badges badge 2:", _b2);
 
       const { data: user } = await supabase
         .from("users")
@@ -429,7 +413,6 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (tuError || !tenantUser?.id) {
-        console.error("[Register] Upsert tenant_users error:", tuError);
         return NextResponse.json(
           { error: "Gagal mendaftarkan ke tenant" },
           { status: 500 },
@@ -449,7 +432,6 @@ export async function POST(request: NextRequest) {
         });
 
       if (reqErr) {
-        console.error("[Register] Insert house_join_requests error:", reqErr);
         return NextResponse.json(
           { error: "Gagal mengirim permintaan bergabung" },
           { status: 500 },
@@ -514,10 +496,6 @@ export async function POST(request: NextRequest) {
             created_by: userId,
           });
         if (notifErr) {
-          console.error(
-            "[Register] Insert owner notification error:",
-            notifErr,
-          );
         }
       }
 
@@ -525,7 +503,6 @@ export async function POST(request: NextRequest) {
         .from("user_badges")
         .insert({ user_id: userId, badge_id: 1 });
       if (_b1 && _b1.code !== "23505")
-        console.error("[Register] user_badges insert:", _b1);
       const { data: user } = await supabase
         .from("users")
         .select("id, full_name")
@@ -578,7 +555,6 @@ export async function POST(request: NextRequest) {
       );
       houseId = provisioned.houseId;
     } catch (err) {
-      console.error("[Register] Provision house/tenant error:", err);
       return NextResponse.json(
         {
           error:
@@ -592,12 +568,10 @@ export async function POST(request: NextRequest) {
       .from("user_badges")
       .insert({ user_id: userId, badge_id: 1 });
     if (_b1 && _b1.code !== "23505")
-      console.error("[Register] user_badges badge 1:", _b1);
     const { error: _b2 } = await supabase
       .from("user_badges")
       .insert({ user_id: userId, badge_id: 2 });
     if (_b2 && _b2.code !== "23505")
-      console.error("[Register] user_badges badge 2:", _b2);
     const { data: user } = await supabase
       .from("users")
       .select("id, full_name")
@@ -637,7 +611,6 @@ export async function POST(request: NextRequest) {
       blokRumah,
     });
   } catch (err) {
-    console.error("[Register] Error:", err);
     return NextResponse.json({ error: "Terjadi kesalahan" }, { status: 500 });
   }
 }

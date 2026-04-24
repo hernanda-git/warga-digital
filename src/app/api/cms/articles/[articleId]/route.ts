@@ -47,7 +47,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ article });
   } catch (error) {
-    console.error("Error in GET /api/cms/articles/[articleId]:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -130,7 +129,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       .single();
 
     if (error) {
-      console.error("Error updating article:", error);
       if (error.code === "23505") {
         return NextResponse.json(
           { error: "An article with this slug already exists" },
@@ -145,7 +143,6 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ article });
   } catch (error) {
-    console.error("Error in PUT /api/cms/articles/[articleId]:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -245,7 +242,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       .single();
 
     if (error) {
-      console.error("Error updating article:", error);
       if (error.code === "23505") {
         return NextResponse.json(
           { error: "An article with this slug already exists" },
@@ -260,7 +256,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ article, autosaved: !!autosave });
   } catch (error) {
-    console.error("Error in PATCH /api/cms/articles/[articleId]:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -319,7 +314,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       .eq("id", articleId);
 
     if (deleteError) {
-      console.error("Error soft-deleting article:", deleteError);
       return NextResponse.json(
         { error: "Failed to delete article" },
         { status: 500 },
@@ -349,7 +343,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
           objectKeysToDelete.push(objectKey);
         }
       } catch (e) {
-        console.error("Failed to parse featured image URL:", e);
       }
     }
 
@@ -357,17 +350,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     if (objectKeysToDelete.length > 0) {
       try {
         await deleteObjects(objectKeysToDelete);
-        console.log(
-          `Cleaned up ${objectKeysToDelete.length} images from R2`,
-        );
       } catch (cleanupError) {
-        console.error("R2 cleanup failed (non-blocking):", cleanupError);
       }
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error in DELETE /api/cms/articles/[articleId]:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

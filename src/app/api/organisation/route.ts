@@ -25,7 +25,6 @@ export async function GET() {
       .order("sort_order", { ascending: true });
 
     if (rolesError) {
-      console.error("[Organisation] GET roles error:", rolesError);
       return NextResponse.json({ message: "Gagal memuat organisasi" }, { status: 500 });
     }
 
@@ -41,7 +40,6 @@ export async function GET() {
       .order("sort_order", { ascending: true });
 
     if (membersError) {
-      console.error("[Organisation] GET members error:", membersError);
       return NextResponse.json({ message: "Gagal memuat organisasi" }, { status: 500 });
     }
 
@@ -65,8 +63,6 @@ export async function GET() {
 
     // Fetch custom data for all members
     const memberIds = memberList.map((m) => m.id);
-    console.log("[Organisation API] Fetching custom data for", memberIds.length, "members");
-    console.log("[Organisation API] Member IDs:", memberIds);
     
     let customDataMap: Record<string, { fullName: string; blockName: string; whatsappNumber: string; profilePictureUrl: string | null }> = {};
     if (memberIds.length > 0) {
@@ -75,14 +71,7 @@ export async function GET() {
         .select("organisation_member_id, custom_full_name, custom_block_name, custom_whatsapp_number, custom_profile_picture_url")
         .in("organisation_member_id", memberIds);
       
-      console.log("[Organisation API] Customs query result:", {
-        data: customs,
-        error: customsError,
-        count: customs?.length ?? 0
-      });
-      
       if (customsError) {
-        console.error("[Organisation API] Error fetching customs:", customsError);
       }
       
       customDataMap = (customs ?? []).reduce<Record<string, { fullName: string; blockName: string; whatsappNumber: string; profilePictureUrl: string | null }>>((acc, c) => {
@@ -94,8 +83,6 @@ export async function GET() {
         };
         return acc;
       }, {});
-      
-      console.log("[Organisation API] Custom data map:", customDataMap);
     }
 
     const membersByRole = memberList.reduce<Record<string, OrganisationMemberApi[]>>((acc, m) => {
@@ -105,13 +92,6 @@ export async function GET() {
         ? (userAvatarMap[m.user_id] ?? m.profile_picture_url ?? null)
         : (m.profile_picture_url ?? null);
       const custom = customDataMap[m.id] ?? null;
-      
-      console.log("[Organisation API] Processing member:", {
-        id: m.id,
-        full_name: m.full_name,
-        custom: custom,
-        finalFullName: custom?.fullName ?? m.full_name
-      });
       
       acc[roleId].push({
         id: m.id,
@@ -137,7 +117,6 @@ export async function GET() {
 
     return NextResponse.json(tree);
   } catch (error) {
-    console.error("[Organisation] GET error:", error);
     return NextResponse.json({ message: "Gagal memuat organisasi" }, { status: 500 });
   }
 }

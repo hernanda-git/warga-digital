@@ -89,7 +89,6 @@ export function CMSImageGallery({
         );
         toast.success('Image order updated');
       } catch (error) {
-        console.error('Failed to update image order:', error);
         toast.error('Failed to save image order');
       }
     }
@@ -107,7 +106,6 @@ export function CMSImageGallery({
         await onImageDelete(imageId);
         toast.success('Image deleted successfully');
       } catch (error) {
-        console.error('Failed to delete image:', error);
         toast.error('Failed to delete image');
       }
     } else {
@@ -130,7 +128,6 @@ export function CMSImageGallery({
         await onImageUpdate(imageId, { alt_text: altTextValue });
         toast.success('Alt text updated');
       } catch (error) {
-        console.error('Failed to update alt text:', error);
         toast.error('Failed to save alt text');
         return;
       }

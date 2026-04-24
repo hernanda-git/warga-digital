@@ -124,7 +124,6 @@ export default function JualanPage() {
           }
         }
       } catch (err) {
-        console.error("Failed to fetch data:", err);
       }
     };
     fetchData();
@@ -167,7 +166,6 @@ export default function JualanPage() {
       );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Gagal memuat data";
-      console.error("[Jualan Page] fetchGoods error:", err);
       setError(message);
     } finally {
       setIsLoading(false);
@@ -183,7 +181,6 @@ export default function JualanPage() {
   }, [searchQuery, selectedCategory, minPrice, maxPrice, sortBy]);
 
   const handleCreateSubmit = async (formData: any) => {
-    console.log("[Jualan Page] Create successful:", formData);
     await fetchGoods();
   };
 
@@ -230,7 +227,6 @@ export default function JualanPage() {
         setViewingGoods(data.data);
       }
     } catch (err) {
-      console.error("Failed to view goods:", err);
     }
   };
 

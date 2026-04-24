@@ -83,7 +83,6 @@ export async function POST(
     .maybeSingle();
 
   if (fetchError) {
-    console.error("[Kas RT] Attachment fetch error:", fetchError);
     return NextResponse.json(
       { message: "Gagal memverifikasi transaksi." },
       { status: 500 },
@@ -158,10 +157,6 @@ export async function POST(
         });
 
       if (uploadError) {
-        console.error(
-          "[Kas RT] Upload attachment error:",
-          uploadError,
-        );
         return NextResponse.json(
           { message: `Gagal mengunggah file ${file.name}.` },
           { status: 500 },
@@ -176,7 +171,6 @@ export async function POST(
         size_bytes: file.size,
       });
     } catch (err) {
-      console.error("[Kas RT] Unexpected upload error:", err);
       return NextResponse.json(
         { message: `Terjadi kesalahan saat mengunggah file ${file.name}.` },
         { status: 500 },
@@ -191,10 +185,6 @@ export async function POST(
       .insert(attachmentsToInsert);
 
     if (attachmentError) {
-      console.error(
-        "[Kas RT] Insert attachment rows error:",
-        attachmentError,
-      );
       return NextResponse.json(
         { message: "Gagal menyimpan data lampiran." },
         { status: 500 },
@@ -282,7 +272,6 @@ export async function DELETE(
     .eq("transaction_id", transactionId);
 
   if (fetchError) {
-    console.error("[Kas RT] DELETE fetch attachments error:", fetchError);
     return NextResponse.json(
       { message: "Gagal memverifikasi lampiran." },
       { status: 500 },
@@ -306,7 +295,6 @@ export async function DELETE(
     .remove(storagePaths);
 
   if (storageError) {
-    console.error("[Kas RT] DELETE from storage error:", storageError);
     // Continue to delete database records even if storage deletion fails
   }
 
@@ -317,7 +305,6 @@ export async function DELETE(
     .in("id", attachmentIds);
 
   if (deleteError) {
-    console.error("[Kas RT] DELETE attachment rows error:", deleteError);
     return NextResponse.json(
       { message: "Gagal menghapus lampiran." },
       { status: 500 },

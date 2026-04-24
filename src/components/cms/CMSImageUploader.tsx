@@ -281,7 +281,6 @@ export function CMSImageUploader({
         toast.success(`${updatedFiles.length} file(s) uploaded successfully`);
       }
     } catch (error) {
-      console.error("Upload error:", error);
       toast.error("Some uploads failed. Please retry failed files.");
     } finally {
       setIsUploading(false);

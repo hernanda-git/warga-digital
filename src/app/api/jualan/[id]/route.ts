@@ -105,7 +105,6 @@ export async function GET(
       updated_at: goods.updated_at,
     });
   } catch (error) {
-    console.error("Error in GET /api/jualan/[id]:", error);
     return errorResponse("Terjadi kesalahan server", 500);
   }
 }
@@ -186,7 +185,6 @@ export async function PUT(
       .single();
 
     if (error) {
-      console.error("Error updating jualan goods:", error);
       if (error.code === "23505") {
         return badRequestResponse("Nama barang sudah digunakan");
       }
@@ -199,7 +197,6 @@ export async function PUT(
       updated_at: data.updated_at,
     });
   } catch (error) {
-    console.error("Error in PUT /api/jualan/[id]:", error);
     return errorResponse("Terjadi kesalahan server", 500);
   }
 }
@@ -241,13 +238,11 @@ export async function DELETE(
       .eq("id", resolvedParams.id);
 
     if (error) {
-      console.error("Error archiving jualan goods:", error);
       return errorResponse("Gagal menghapus barang", 500);
     }
 
     return successResponse({ message: "Barang berhasil diarsipkan" });
   } catch (error) {
-    console.error("Error in DELETE /api/jualan/[id]:", error);
     return errorResponse("Terjadi kesalahan server", 500);
   }
 }

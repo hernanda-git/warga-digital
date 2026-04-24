@@ -106,8 +106,6 @@ export function useJasaServicesData(): UseJasaServicesDataReturn {
       }
       const message =
         err instanceof Error ? err.message : "Gagal memuat layanan";
-
-      console.error("[JASA Services] loadJasaServices error:", err);
       setError(message);
       setIsLoading(false);
       setIsLoaded(true);

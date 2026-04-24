@@ -52,10 +52,10 @@ export type ApiResult<T> =
  * @example
  * const result = await fetchProfile();
  * if (result.success) {
- *   console.log(result.data.fullName);
- *   console.log(result.data.house?.members);
+ *
+ *
  * } else {
- *   console.error(result.error);
+ *
  * }
  */
 export async function fetchProfile(): Promise<ApiResult<ProfileData>> {
@@ -94,7 +94,7 @@ export async function fetchProfile(): Promise<ApiResult<ProfileData>> {
  *   email: 'john@example.com'
  * });
  * if (result.success) {
- *   console.log('Profile updated:', result.data.profile);
+ *
  * }
  */
 export async function updateProfile(
@@ -143,9 +143,9 @@ export async function updateProfile(
  * @example
  * const result = await checkUsernameAvailability('johndoe');
  * if (result.success && result.data.available) {
- *   console.log('Username is available');
+ *
  * } else if (result.success && !result.data.available) {
- *   console.log('Username is taken');
+ *
  * }
  */
 export async function checkUsernameAvailability(
@@ -193,7 +193,7 @@ export async function checkUsernameAvailability(
  * @example
  * const result = await checkWaNumberAvailability('081234567890');
  * if (result.success && result.data.available) {
- *   console.log('WhatsApp number is available');
+ *
  * }
  */
 export async function checkWaNumberAvailability(
@@ -245,7 +245,7 @@ export async function checkWaNumberAvailability(
  * const file = document.querySelector('input[type="file"]').files[0];
  * const result = await uploadAvatar(file);
  * if (result.success) {
- *   console.log('New avatar URL:', result.data.profilePictureUrl);
+ *
  * }
  */
 export async function uploadAvatar(
@@ -292,9 +292,9 @@ export async function uploadAvatar(
  * @example
  * const result = await changePin('1234', '5678', '5678');
  * if (result.success) {
- *   console.log('PIN changed successfully');
+ *
  * } else {
- *   console.error('Failed to change PIN:', result.error);
+ *
  * }
  */
 export async function changePin(
@@ -386,7 +386,7 @@ export async function logout(): Promise<ApiResult<void>> {
  * @example
  * const result = await updateTheme('blue');
  * if (result.success) {
- *   console.log('Theme updated successfully');
+ *
  * }
  */
 export async function updateTheme(
@@ -433,7 +433,7 @@ export async function updateTheme(
  *   houseId: 'house-123'
  * });
  * if (result.success) {
- *   console.log('Family member added');
+ *
  * }
  */
 export async function addFamilyMember(memberData: {
@@ -483,7 +483,7 @@ export async function addFamilyMember(memberData: {
  * @example
  * const result = await transferOwnership('house-123', 'user-456');
  * if (result.success) {
- *   console.log('Ownership transferred successfully');
+ *
  * }
  */
 export async function transferOwnership(
@@ -526,7 +526,7 @@ export async function transferOwnership(
  * @example
  * const result = await removeFamilyMember('house-123', 'user-456');
  * if (result.success) {
- *   console.log('Family member removed');
+ *
  * }
  */
 export async function removeFamilyMember(
@@ -571,7 +571,7 @@ export async function removeFamilyMember(
  * @example
  * const result = await respondToJoinRequest('req-123', 'approve');
  * if (result.success) {
- *   console.log('Join request approved');
+ *
  * }
  */
 export async function respondToJoinRequest(
@@ -615,7 +615,7 @@ export async function respondToJoinRequest(
  * @example
  * const { profile } = await fetchAllProfileData();
  * if (profile.success) {
- *   console.log('Profile loaded:', profile.data);
+ *
  * }
  */
 export async function fetchAllProfileData() {

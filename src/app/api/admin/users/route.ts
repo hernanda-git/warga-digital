@@ -61,7 +61,6 @@ export async function GET(request: NextRequest) {
     .limit(limit * 3); // Over-fetch so we can filter in JS after joining blok_rumah
 
   if (error) {
-    console.error("[admin/users] GET error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

@@ -143,7 +143,6 @@ export async function POST(
         if (path) {
           await supabase.storage.from("jasa-images").remove([path]);
         }
-        console.error("Error inserting media record:", insertError);
         return NextResponse.json(
           { success: false, error: "Gagal menyimpan data gambar" },
           { status: 500 },
@@ -159,7 +158,6 @@ export async function POST(
       message: `${files.length} gambar berhasil diupload`,
     });
   } catch (error: any) {
-    console.error("Error uploading images:", error);
     return NextResponse.json(
       { success: false, error: "Gagal upload gambar" },
       { status: 500 },
@@ -238,7 +236,6 @@ async function uploadImageToStorage(
       });
 
     if (uploadError) {
-      console.error("Storage upload error:", uploadError);
       return { success: false, url: null, error: "Gagal upload gambar" };
     }
 
@@ -249,7 +246,6 @@ async function uploadImageToStorage(
 
     return { success: true, url: publicUrlData.publicUrl };
   } catch (error) {
-    console.error("Upload exception:", error);
     return { success: false, url: null, error: "Gagal upload gambar" };
   }
 }

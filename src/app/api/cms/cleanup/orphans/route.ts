@@ -75,7 +75,6 @@ export async function POST(request: NextRequest) {
       .select("object_key, created_at");
 
     if (dbError) {
-      console.error("Error fetching database images:", dbError);
       return NextResponse.json(
         { error: "Failed to fetch database records" },
         { status: 500 },
@@ -188,7 +187,6 @@ export async function POST(request: NextRequest) {
         : `Cleanup complete. Deleted ${result.deletedObjects.length} of ${result.orphanedObjects.length} orphaned objects.`,
     });
   } catch (error) {
-    console.error("Error in orphan cleanup:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -221,7 +219,6 @@ export async function GET(request: NextRequest) {
       .select("*", { count: "exact", head: true });
 
     if (dbError) {
-      console.error("Error fetching database count:", dbError);
       return NextResponse.json(
         { error: "Failed to fetch database statistics" },
         { status: 500 },
@@ -255,7 +252,6 @@ export async function GET(request: NextRequest) {
       message: "Use POST to perform actual cleanup",
     });
   } catch (error) {
-    console.error("Error in orphan cleanup stats:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

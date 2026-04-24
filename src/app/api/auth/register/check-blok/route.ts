@@ -106,7 +106,6 @@ export async function POST(request: NextRequest) {
       claimableExistingHouse: false,
     });
   } catch (err) {
-    console.error("[CheckBlok] Error:", err);
     return NextResponse.json(
       { error: "Terjadi kesalahan" },
       { status: 500 }

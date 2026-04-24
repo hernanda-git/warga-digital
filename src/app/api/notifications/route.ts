@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
         .is("read_at", null);
 
       if (error) {
-        console.error("[Notifications GET] Count error:", error);
         return NextResponse.json(
           { error: "Gagal menghitung notifikasi" },
           { status: 500 },
@@ -48,7 +47,6 @@ export async function GET(request: NextRequest) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("[Notifications GET] Supabase error:", error);
       return NextResponse.json(
         { error: "Gagal memuat notifikasi" },
         { status: 500 },
@@ -69,7 +67,6 @@ export async function GET(request: NextRequest) {
       })),
     });
   } catch (error) {
-    console.error("[Notifications GET] Unexpected error:", error);
     return NextResponse.json(
       { error: "Gagal memuat notifikasi" },
       { status: 500 },
@@ -100,7 +97,6 @@ export async function PATCH(request: NextRequest) {
         .is("read_at", null);
 
       if (error) {
-        console.error("[Notifications PATCH] markAll error:", error);
         return NextResponse.json(
           { error: "Gagal menandai notifikasi" },
           { status: 500 },
@@ -129,7 +125,6 @@ export async function PATCH(request: NextRequest) {
       .is("read_at", null);
 
     if (error) {
-      console.error("[Notifications PATCH] single error:", error);
       return NextResponse.json(
         { error: "Gagal menandai notifikasi" },
         { status: 500 },
@@ -138,7 +133,6 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true, mode: "single" });
   } catch (error) {
-    console.error("[Notifications PATCH] Unexpected error:", error);
     return NextResponse.json(
       { error: "Gagal memproses notifikasi" },
       { status: 500 },

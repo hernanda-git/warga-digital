@@ -34,7 +34,6 @@ export async function GET(
       .single();
 
     if (error) {
-      console.error('Error fetching image:', error);
       return NextResponse.json(
         { error: 'Image not found' },
         { status: 404 }
@@ -43,7 +42,6 @@ export async function GET(
 
     return NextResponse.json({ image });
   } catch (error) {
-    console.error('Error in GET /images/[imageId]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -97,7 +95,6 @@ export async function PATCH(
       .single();
 
     if (error) {
-      console.error('Error updating image:', error);
       return NextResponse.json(
         { error: 'Failed to update image' },
         { status: 500 }
@@ -106,7 +103,6 @@ export async function PATCH(
 
     return NextResponse.json({ image: updatedImage });
   } catch (error) {
-    console.error('Error in PATCH /images/[imageId]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -153,7 +149,6 @@ export async function DELETE(
     try {
       await deleteObject(image.object_key);
     } catch (error) {
-      console.error('Error deleting object from R2:', error);
       r2DeleteError = error instanceof Error ? error : new Error('R2 delete failed');
       // Continue with DB deletion even if R2 fails
     }
@@ -166,7 +161,6 @@ export async function DELETE(
       .eq('article_id', articleId);
 
     if (deleteError) {
-      console.error('Error deleting image from database:', deleteError);
       return NextResponse.json(
         { error: 'Failed to delete image from database' },
         { status: 500 }
@@ -179,7 +173,6 @@ export async function DELETE(
       r2Error: r2DeleteError?.message,
     });
   } catch (error) {
-    console.error('Error in DELETE /images/[imageId]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

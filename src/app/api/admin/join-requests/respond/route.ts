@@ -86,7 +86,6 @@ export async function POST(request: NextRequest) {
         .eq("id", requestId);
 
       if (updateErr) {
-        console.error("[admin/join-requests/respond] reject error:", updateErr);
         return NextResponse.json(
           { error: "Gagal menolak permintaan" },
           { status: 500 },
@@ -109,7 +108,6 @@ export async function POST(request: NextRequest) {
         created_by: session.userId,
       });
       if (notifErr) {
-        console.error("[admin/join-requests/respond] reject notif error:", notifErr);
       }
 
       return NextResponse.json({ success: true, action: "reject" });
@@ -142,7 +140,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (insertErr) {
-      console.error("[admin/join-requests/respond] insert user_houses:", insertErr);
       return NextResponse.json(
         { error: "Gagal menambahkan anggota" },
         { status: 500 },
@@ -159,7 +156,6 @@ export async function POST(request: NextRequest) {
       .eq("id", requestId);
 
     if (updateErr) {
-      console.error("[admin/join-requests/respond] approve update:", updateErr);
       return NextResponse.json(
         { error: "Gagal memperbarui permintaan" },
         { status: 500 },
@@ -182,12 +178,10 @@ export async function POST(request: NextRequest) {
       created_by: session.userId,
     });
     if (notifErr) {
-      console.error("[admin/join-requests/respond] approve notif error:", notifErr);
     }
 
     return NextResponse.json({ success: true, action: "approve" });
   } catch (err) {
-    console.error("[admin/join-requests/respond] error:", err);
     return NextResponse.json(
       { error: "Terjadi kesalahan saat memproses permintaan" },
       { status: 500 },

@@ -46,10 +46,6 @@ async function sendCategoryNotification(
       .eq("status", "ACTIVE");
 
     if (userFetchErr || !tenantUsers?.length) {
-      console.error(
-        "[Kas RT Categories] Fetch tenant users error:",
-        userFetchErr,
-      );
       return;
     }
 
@@ -106,13 +102,8 @@ async function sendCategoryNotification(
       .insert(notificationRows);
 
     if (notifErr) {
-      console.error(
-        "[Kas RT Categories] Insert notifications error:",
-        notifErr,
-      );
     }
   } catch (error) {
-    console.error("[Kas RT Categories] Unexpected notification error:", error);
   }
 }
 
@@ -147,7 +138,6 @@ export async function GET() {
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("[admin/kas-rt-categories] GET error:", error);
     return NextResponse.json(
       { error: "Gagal memuat kategori kas RT." },
       { status: 500 },
@@ -245,7 +235,6 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    console.error("[admin/kas-rt-categories] POST insert error:", error);
     if (error.code === "23505") {
       return NextResponse.json(
         { error: `Kategori dengan nama "${name}" sudah ada.` },

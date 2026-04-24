@@ -22,7 +22,6 @@ function toDateInputValue(date: Date): string {
 // Excludes soft-deleted transactions (deleted_at IS NULL).
 
 export async function GET(request: Request) {
-  console.log("[Kas RT Summary API] Request received");
   try {
     // ── Auth check ─────────────────────────────────────────────────────────
     const session = await getSessionFromCookie();
@@ -104,7 +103,6 @@ export async function GET(request: Request) {
       .lte("date", selectedMonthEndStr);
 
     if (txError) {
-      console.error("[Kas RT] Summary fetch error:", txError);
       return NextResponse.json(
         { message: "Gagal memuat data transaksi." },
         { status: 500 },
@@ -112,10 +110,6 @@ export async function GET(request: Request) {
     }
 
     const transactions = allTx ?? [];
-    console.log(
-      "[Kas RT Summary API] Fetched transactions:",
-      transactions.length,
-    );
 
     // ── Calculate Selected Month Data ───────────────────────────────────────
     // Use string comparison for YYYY-MM-DD dates to avoid timezone issues
@@ -346,15 +340,10 @@ export async function GET(request: Request) {
       yearlyTrend,
       iplCollection,
       stats,
-    };
-
-    console.log(
-      "[Kas RT Summary API] Returning response:",
-      JSON.stringify(response).substring(0, 200),
+    };.substring(0, 200),
     );
     return NextResponse.json(response);
   } catch (err) {
-    console.error("[Kas RT] Summary unexpected error:", err);
     return NextResponse.json(
       { message: "Terjadi kesalahan saat memuat ringkasan." },
       { status: 500 },

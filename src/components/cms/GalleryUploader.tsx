@@ -174,7 +174,6 @@ export function GalleryUploader({
     } catch (err) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan";
       setGlobalError(message);
-      console.error("Error handling files:", err);
     }
   };
 
@@ -217,7 +216,6 @@ export function GalleryUploader({
     } catch (err) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan";
       setGlobalError(message);
-      console.error("Error saving images:", err);
     } finally {
       setUploading(false);
     }
@@ -249,7 +247,6 @@ export function GalleryUploader({
     } catch (err) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan";
       setGlobalError(message);
-      console.error("Error retrying file:", err);
     }
   };
 

@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
       .eq("id", memberLink.id);
 
     if (updateErr) {
-      console.error("[RemoveMember] Update error:", updateErr);
       return NextResponse.json(
         { error: "Gagal mengeluarkan anggota" },
         { status: 500 }
@@ -79,7 +78,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[RemoveMember] Error:", err);
     return NextResponse.json(
       { error: "Terjadi kesalahan" },
       { status: 500 }

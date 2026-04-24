@@ -58,7 +58,6 @@ export async function DELETE(
       try {
         await deleteObject(objectKey);
       } catch (r2Error) {
-        console.error("Error deleting from R2:", r2Error);
       }
     }
 
@@ -68,7 +67,6 @@ export async function DELETE(
       .eq("id", resolvedParams.mediaId);
 
     if (deleteError) {
-      console.error("Error deleting media record:", deleteError);
       return errorResponse("Gagal menghapus media", 500);
     }
 
@@ -90,7 +88,6 @@ export async function DELETE(
 
     return successResponse({ message: "Media berhasil dihapus" });
   } catch (error) {
-    console.error("Error in DELETE /api/jualan/[id]/media/[mediaId]:", error);
     return errorResponse("Terjadi kesalahan server", 500);
   }
 }

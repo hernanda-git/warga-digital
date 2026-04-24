@@ -44,7 +44,6 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error("[Organisation] POST role error:", error);
       return NextResponse.json(
         { message: "Gagal menambah peran." },
         { status: 500 },
@@ -78,7 +77,6 @@ export async function POST(request: Request) {
       members: [],
     });
   } catch (error) {
-    console.error("[Organisation] POST role error:", error);
     return NextResponse.json(
       { message: "Gagal menambah peran." },
       { status: 500 },

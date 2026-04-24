@@ -119,7 +119,6 @@ export async function getAdminUserIds(
       ),
     ];
   } catch (err) {
-    console.error("[Notifications] getAdminUserIds error:", err);
     return [];
   }
 }
@@ -146,7 +145,6 @@ export async function getAllActiveUserIds(
       ),
     ];
   } catch (err) {
-    console.error("[Notifications] getAllActiveUserIds error:", err);
     return [];
   }
 }
@@ -170,10 +168,6 @@ export async function notifyMany(
     .from("notifications")
     .insert(rows as unknown[]);
   if (error) {
-    console.error(
-      `[Notifications${tag ? ` – ${tag}` : ""}] Insert error:`,
-      error,
-    );
   }
 }
 
@@ -213,7 +207,6 @@ export async function notifyAdmins(
 
     await notifyMany(supabase, rows, base.title);
   } catch (err) {
-    console.error("[Notifications] notifyAdmins error:", err);
   }
 }
 
@@ -249,6 +242,5 @@ export async function notifyAllActiveUsers(
 
     await notifyMany(supabase, rows, base.title);
   } catch (err) {
-    console.error("[Notifications] notifyAllActiveUsers error:", err);
   }
 }

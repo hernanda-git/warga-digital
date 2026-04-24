@@ -90,7 +90,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .select('id, url, object_key, sort_order, alt_text');
 
     if (insertError) {
-      console.error('Error batch inserting images:', insertError);
       return NextResponse.json(
         { error: 'Failed to create image records' },
         { status: 500 }
@@ -99,7 +98,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ images: insertedImages }, { status: 201 });
   } catch (error) {
-    console.error('Error in POST /api/cms/articles/{articleId}/images/batch:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

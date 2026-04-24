@@ -83,7 +83,6 @@ export async function POST(request: Request) {
       .lte("date", selectedMonthEndStr);
 
     if (txError) {
-      console.error("[Kas RT] Export fetch error:", txError);
       return NextResponse.json(
         { message: "Gagal memuat data transaksi." },
         { status: 500 },
@@ -328,7 +327,6 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   } catch (err) {
-    console.error("[Kas RT] Export error:", err);
     return NextResponse.json(
       { message: "Terjadi kesalahan saat mengekspor." },
       { status: 500 },

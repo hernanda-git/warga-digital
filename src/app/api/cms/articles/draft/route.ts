@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating draft article:', error);
       return NextResponse.json(
         { error: 'Failed to create draft article' },
         { status: 500 }
@@ -70,7 +69,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error in POST /api/cms/articles/draft:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

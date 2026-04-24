@@ -95,7 +95,6 @@ export async function POST(
       message: `Generated ${uploadUrls.length} signed upload URL(s)`,
     });
   } catch (error) {
-    console.error("Error in POST /api/jualan/[id]/upload:", error);
     return errorResponse("Terjadi kesalahan server", 500);
   }
 }
@@ -151,7 +150,6 @@ export async function PATCH(
       .insert(mediaRecords);
 
     if (error) {
-      console.error("Error saving media records:", error);
       return errorResponse("Gagal menyimpan data media", 500);
     }
 
@@ -160,7 +158,6 @@ export async function PATCH(
       count: mediaRecords.length,
     });
   } catch (error) {
-    console.error("Error in PATCH /api/jualan/[id]/upload/confirm:", error);
     return errorResponse("Terjadi kesalahan server", 500);
   }
 }

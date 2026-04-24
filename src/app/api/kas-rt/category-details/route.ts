@@ -59,7 +59,6 @@ export async function GET(request: Request) {
       .order("sort_order", { ascending: true });
 
     if (detailsError) {
-      console.error("[Kas RT] Fetch category details error:", detailsError);
       return NextResponse.json(
         { error: "Gagal memuat detail kategori." },
         { status: 500 },
@@ -76,7 +75,6 @@ export async function GET(request: Request) {
       .eq("status", "ACTIVE");
 
     if (countError) {
-      console.error("[Kas RT] Count user_houses error:", countError);
     }
 
     const count = activeResidents?.length ?? 0;
@@ -89,7 +87,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error("[Kas RT] Unexpected GET category-details error:", error);
     return NextResponse.json(
       { error: "Terjadi kesalahan saat memuat detail kategori." },
       { status: 500 },

@@ -86,7 +86,6 @@ export default function ArtikelDetailPage() {
           setReadingTime(Math.ceil(wordCount / wordsPerMinute));
         }
       } catch (error) {
-        console.error("Error fetching article:", error);
         toast.error("Gagal memuat artikel");
       } finally {
         setLoading(false);

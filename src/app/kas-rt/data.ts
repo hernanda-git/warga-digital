@@ -231,7 +231,7 @@ export async function fetchKasRtTransactions(
       .is("deleted_at", null)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(50);
+      .limit(10);
 
     if (filters.typeFilter && filters.typeFilter !== "all") {
       query = query.eq("type", filters.typeFilter);
@@ -251,7 +251,7 @@ export async function fetchKasRtTransactions(
 
     const { data: transactions, error } = await query;
     if (error || !transactions?.length) {
-      if (error) console.error("[Kas RT SSR] transactions error:", error);
+      if (error)
       return [];
     }
 
@@ -318,7 +318,6 @@ export async function fetchKasRtTransactions(
       };
     });
   } catch (err) {
-    console.error("[Kas RT SSR] transactions exception:", err);
     return [];
   }
 }
@@ -340,7 +339,6 @@ export async function fetchKasRtSummary(
     if (!response.ok) return null;
     return (await response.json()) as KasRtSummaryResponse;
   } catch (err) {
-    console.error("[Kas RT SSR] summary exception:", err);
     return null;
   }
 }
@@ -360,7 +358,7 @@ export async function fetchKasRtHouseStatuses(): Promise<HouseTransactionStatus[
       .order("blok_rumah");
 
     if (housesError || !houses?.length) {
-      if (housesError) console.error("[Kas RT SSR] houses error:", housesError);
+      if (housesError)
       return [];
     }
 
@@ -377,7 +375,6 @@ export async function fetchKasRtHouseStatuses(): Promise<HouseTransactionStatus[
       .in("reference", blokList);
 
     if (txError) {
-      console.error("[Kas RT SSR] house tx error:", txError);
       return [];
     }
 
@@ -407,7 +404,6 @@ export async function fetchKasRtHouseStatuses(): Promise<HouseTransactionStatus[
       a.blokRumah.localeCompare(b.blokRumah),
     );
   } catch (err) {
-    console.error("[Kas RT SSR] house statuses exception:", err);
     return [];
   }
 }

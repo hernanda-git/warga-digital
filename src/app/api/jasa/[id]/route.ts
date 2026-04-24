@@ -125,7 +125,6 @@ export async function GET(
 
     return NextResponse.json({ success: true, data: response });
   } catch (error: any) {
-    console.error("Error fetching jasa service:", error);
     return NextResponse.json(
       { success: false, error: "Gagal memuat detail layanan" },
       { status: 500 },
@@ -261,7 +260,6 @@ export async function PUT(
       .single();
 
     if (updateError) {
-      console.error("Error updating jasa service:", updateError);
       return NextResponse.json(
         { success: false, error: "Gagal memperbarui layanan jasa" },
         { status: 500 },
@@ -274,7 +272,6 @@ export async function PUT(
       message: "Layanan jasa berhasil diperbarui",
     });
   } catch (error: any) {
-    console.error("Error updating jasa service:", error);
     return NextResponse.json(
       { success: false, error: "Gagal memperbarui layanan jasa" },
       { status: 500 },
@@ -340,7 +337,6 @@ export async function DELETE(
           .from("jasa-images")
           .remove(filePaths)
           .catch((err) => {
-            console.error("Failed to delete files from storage:", err);
           });
       }
     }
@@ -352,7 +348,6 @@ export async function DELETE(
       .eq("id", id);
 
     if (deleteError) {
-      console.error("Error deleting jasa service:", deleteError);
       return NextResponse.json(
         { success: false, error: "Gagal menghapus layanan jasa" },
         { status: 500 },
@@ -364,7 +359,6 @@ export async function DELETE(
       message: "Layanan jasa berhasil dihapus",
     });
   } catch (error: any) {
-    console.error("Error deleting jasa service:", error);
     return NextResponse.json(
       { success: false, error: "Gagal menghapus layanan jasa" },
       { status: 500 },

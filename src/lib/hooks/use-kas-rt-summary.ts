@@ -49,7 +49,6 @@ export function useKasRtSummary({
 
   // ── Data loader ───────────────────────────────────────────────────────
   const loadSummary = useCallback(async (year: number, month: number) => {
-    console.log("[useKasRtSummary] Loading summary for:", year, month);
     try {
       setError(null);
       const params = new URLSearchParams();
@@ -57,23 +56,18 @@ export function useKasRtSummary({
       params.set("month", month.toString());
 
       const url = `/api/kas-rt/summary?${params.toString()}`;
-      console.log("[useKasRtSummary] Fetching:", url);
 
       const response = await apiFetch(url);
-      console.log("[useKasRtSummary] Response status:", response.status);
 
       if (!response.ok) {
         const err = (await response.json().catch(() => ({}))) as {
           message?: string;
         };
-        console.error("[useKasRtSummary] API error:", err);
         throw new Error(err.message ?? "Gagal memuat ringkasan.");
       }
       const data = (await response.json()) as KasRtSummaryResponse;
-      console.log("[useKasRtSummary] Received data:", data);
       setSummary(data);
     } catch (err) {
-      console.error("[useKasRtSummary] Error:", err);
       setError(err instanceof Error ? err.message : "Terjadi kesalahan.");
       setSummary(null);
     } finally {
@@ -119,7 +113,6 @@ export function useKasRtSummary({
 
   // ── Initial load ───────────────────────────────────────────────────────
   useEffect(() => {
-    console.log("[useKasRtSummary] Initial load, filter:", filter);
     void loadSummary(filter.year, filter.month);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

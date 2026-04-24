@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
       .eq("id", currentOwnerLink.id);
 
     if (demoteErr) {
-      console.error("[TransferOwner] Demote error:", demoteErr);
       return NextResponse.json(
         { error: "Gagal mengubah peran Anda" },
         { status: 500 }
@@ -83,7 +82,6 @@ export async function POST(request: NextRequest) {
       .eq("id", newOwnerLink.id);
 
     if (promoteErr) {
-      console.error("[TransferOwner] Promote error:", promoteErr);
       return NextResponse.json(
         { error: "Gagal mengalihkan kepala keluarga" },
         { status: 500 }
@@ -92,11 +90,9 @@ export async function POST(request: NextRequest) {
 
     const { error: badgeErr } = await supabase.from("user_badges").insert({ user_id: newOwnerUserId, badge_id: 2 });
     if (badgeErr && badgeErr.code !== "23505") {
-      console.error("[TransferOwner] Insert user_badges error:", badgeErr);
     }
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[TransferOwner] Error:", err);
     return NextResponse.json(
       { error: "Terjadi kesalahan" },
       { status: 500 }

@@ -208,7 +208,6 @@ export function useArticleImageUpload({
 
         return uploadedImages;
       } catch (error) {
-        console.error("Upload error:", error);
         toast.error("Some uploads failed. Please retry failed files.");
         return [];
       } finally {

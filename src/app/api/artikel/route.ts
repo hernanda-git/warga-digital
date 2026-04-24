@@ -60,8 +60,7 @@ export async function GET(request: NextRequest) {
       .order("published_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) {
-      console.error("Error fetching published articles:", JSON.stringify(error, null, 2));
+    if (error) {);
       return NextResponse.json(
         { error: "Failed to fetch articles", details: error.message },
         { status: 500 },
@@ -102,7 +101,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error in GET /api/artikel:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

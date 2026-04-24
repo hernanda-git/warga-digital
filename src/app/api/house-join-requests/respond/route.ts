@@ -96,7 +96,6 @@ export async function POST(request: NextRequest) {
         .eq("id", requestId);
 
       if (updateErr) {
-        console.error("[HouseJoinRespond] Reject update error:", updateErr);
         return NextResponse.json(
           { error: "Gagal menolak permintaan" },
           { status: 500 }
@@ -119,7 +118,6 @@ export async function POST(request: NextRequest) {
         created_by: session.userId,
       });
       if (notifErr) {
-        console.error("[HouseJoinRespond] Reject notification error:", notifErr);
       }
 
       return NextResponse.json({ success: true, action: "reject" });
@@ -153,7 +151,6 @@ export async function POST(request: NextRequest) {
       });
 
       if (insertErr) {
-        console.error("[HouseJoinRespond] Insert user_houses error:", insertErr);
         return NextResponse.json(
           { error: "Gagal menambahkan anggota" },
           { status: 500 }
@@ -170,7 +167,6 @@ export async function POST(request: NextRequest) {
         .eq("id", requestId);
 
       if (updateErr) {
-        console.error("[HouseJoinRespond] Approve update error:", updateErr);
         return NextResponse.json(
           { error: "Gagal memperbarui permintaan" },
           { status: 500 }
@@ -193,7 +189,6 @@ export async function POST(request: NextRequest) {
         created_by: session.userId,
       });
       if (notifErr) {
-        console.error("[HouseJoinRespond] Approve notification error:", notifErr);
       }
 
       return NextResponse.json({ success: true, action: "approve" });
@@ -201,7 +196,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: "Aksi tidak valid" }, { status: 400 });
   } catch (err) {
-    console.error("[HouseJoinRespond] Error:", err);
     return NextResponse.json(
       { error: "Terjadi kesalahan" },
       { status: 500 }

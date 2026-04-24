@@ -81,7 +81,6 @@ export async function POST(request: NextRequest) {
       .eq("id", session.userId);
 
     if (updateError) {
-      console.error("[ChangePin] Update error:", updateError);
       return NextResponse.json(
         { error: "Gagal menyimpan PIN baru" },
         { status: 500 }
@@ -90,7 +89,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[ChangePin] Error:", err);
     return NextResponse.json(
       { error: "Terjadi kesalahan" },
       { status: 500 }

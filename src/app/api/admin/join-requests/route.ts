@@ -38,7 +38,6 @@ export async function GET() {
     .order("created_at", { ascending: false });
 
   if (requestErr) {
-    console.error("[admin/join-requests] query error:", requestErr);
     return NextResponse.json(
       { error: "Gagal memuat data permintaan" },
       { status: 500 },
@@ -59,7 +58,6 @@ export async function GET() {
     .eq("tenant_id", DEFAULT_TENANT_ID);
 
   if (houseErr) {
-    console.error("[admin/join-requests] houses query error:", houseErr);
     return NextResponse.json(
       { error: "Gagal memuat data rumah" },
       { status: 500 },
@@ -79,7 +77,6 @@ export async function GET() {
     .in("id", requesterIds);
 
   if (userErr) {
-    console.error("[admin/join-requests] users query error:", userErr);
     return NextResponse.json(
       { error: "Gagal memuat data pemohon" },
       { status: 500 },

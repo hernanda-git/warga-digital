@@ -60,7 +60,6 @@ export async function GET(request: NextRequest) {
     .order("joined_at", { ascending: false });
 
   if (tuError) {
-    console.error("[admin/warga] tenant_users query error:", tuError);
     return NextResponse.json({ error: tuError.message }, { status: 500 });
   }
 

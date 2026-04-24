@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
       if (!fetchError && data && data.length > 0) {
         user = data[0];
       } else if (fetchError) {
-        console.error("[Check-login] Phone lookup error:", fetchError);
       }
 
       // Fallback: also try the canonical normalized form explicitly
@@ -107,7 +106,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ exists: true, canProceed: true });
   } catch (err) {
-    console.error("[Check-login] Error:", err);
     return NextResponse.json(
       { exists: false, error: "Terjadi kesalahan. Coba lagi." },
       { status: 500 },

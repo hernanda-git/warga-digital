@@ -75,7 +75,6 @@ export default function ArtikelPage() {
       });
       setArticlesThisWeek(newArticles.length);
     } catch (error) {
-      console.error("Error fetching articles:", error);
     } finally {
       setLoading(false);
     }

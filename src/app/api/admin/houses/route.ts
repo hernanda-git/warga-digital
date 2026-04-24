@@ -57,7 +57,6 @@ export async function GET() {
     .order("blok_rumah", { ascending: true, nullsFirst: false });
 
   if (error) {
-    console.error("[admin/houses] GET error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

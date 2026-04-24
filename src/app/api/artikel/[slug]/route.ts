@@ -83,7 +83,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ article: transformedArticle });
   } catch (error) {
-    console.error("Error in GET /api/artikel/[slug]:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

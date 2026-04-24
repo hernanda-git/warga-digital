@@ -85,7 +85,6 @@ export async function GET() {
         .is("deleted_at", null);
 
       if (txError) {
-        console.error("[Kas RT] Hero fetch error:", txError);
         return NextResponse.json(
           { message: "Gagal memuat ringkasan kas." },
           { status: 500 },
@@ -145,7 +144,6 @@ export async function GET() {
     }
 
     if (error) {
-      console.error("[Kas RT] Hero RPC error:", error);
       return NextResponse.json(
         { message: "Gagal memuat ringkasan kas." },
         { status: 500 },
@@ -172,7 +170,6 @@ export async function GET() {
 
     return NextResponse.json(summary);
   } catch (err) {
-    console.error("[Kas RT] Hero unexpected error:", err);
     return NextResponse.json(
       { message: "Terjadi kesalahan saat memuat ringkasan." },
       { status: 500 },

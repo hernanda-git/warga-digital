@@ -132,7 +132,6 @@ export function JualanCreateModal({
 
       return uploaded;
     } catch (error) {
-      console.error("Error uploading images:", error);
       throw error;
     } finally {
       setIsUploading(false);
@@ -183,7 +182,6 @@ export function JualanCreateModal({
       await onSubmit({ itemId, images: uploadedImages });
       handleClose();
     } catch (error) {
-      console.error("Error creating jualan:", error);
       alert(error instanceof Error ? error.message : "Gagal membuat listing");
     } finally {
       setIsSubmitting(false);

@@ -7,7 +7,9 @@ import {
   getMonthYearSeparator,
   toDateInputValue,
 } from "@/lib/kas-rt-utils";
+import { useInfiniteScroll } from "@/lib/hooks/use-infinite-scroll";
 import { KasRtTransactionCard } from "./KasRtTransactionCard";
+import { KasRtLoadMoreSkeleton } from "./skeletons/KasRtLoadMoreSkeleton";
 import type { TransactionItem } from "@/types/kas-rt";
 
 interface KasRtTransactionListProps {
@@ -24,6 +26,11 @@ interface KasRtTransactionListProps {
   onTouchStart: (e: React.TouchEvent) => void;
   onTouchMove: (e: React.TouchEvent) => void;
   onTouchEnd: () => void;
+  // Infinite scroll
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  onLoadMore: () => void;
+  totalCount: number;
 }
 
 // Touch action style to prevent browser default gestures
@@ -32,7 +39,7 @@ const touchActionStyle: React.CSSProperties = {
 };
 
 /**
- * Transaction list with month separators and pull-to-refresh
+ * Transaction list with month separators, pull-to-refresh, and infinite scroll.
  */
 export function KasRtTransactionList({
   transactions,
@@ -48,7 +55,18 @@ export function KasRtTransactionList({
   onTouchStart,
   onTouchMove,
   onTouchEnd,
+  hasMore,
+  isLoadingMore,
+  onLoadMore,
+  totalCount,
 }: KasRtTransactionListProps) {
+  const sentinelRef = useInfiniteScroll({
+    onIntersect: onLoadMore,
+    enabled: hasMore && !isLoadingMore && !isRefreshing,
+    rootMargin: "200px",
+    debounceMs: 300,
+  });
+
   return (
     <div
       className="px-4 pb-8 pt-3"
@@ -143,6 +161,22 @@ export function KasRtTransactionList({
 
             return elements;
           })()}
+
+          {/* Infinite scroll sentinel */}
+          {hasMore && <div ref={sentinelRef} className="h-4" aria-hidden />}
+
+          {/* Load more skeleton */}
+          {isLoadingMore && <KasRtLoadMoreSkeleton count={3} />}
+
+          {/* End of list indicator */}
+          {!hasMore && filteredTransactions.length > 0 && (
+            <div className="py-4 text-center">
+              <div className="mx-auto mb-2 h-px w-16 bg-app-body-muted/20" />
+              <p className="text-[10px] text-app-body-muted/50">
+                Semua transaksi telah dimuat
+              </p>
+            </div>
+          )}
         </div>
       )}
 
@@ -154,7 +188,9 @@ export function KasRtTransactionList({
           minute: "2-digit",
         })}
         {" · "}
-        {transactions.length} transaksi
+        {totalCount > 0
+          ? `${filteredTransactions.length} dari ${totalCount} transaksi`
+          : `${filteredTransactions.length} transaksi`}
       </p>
     </div>
   );

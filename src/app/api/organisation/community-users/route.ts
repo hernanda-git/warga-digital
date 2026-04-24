@@ -74,7 +74,6 @@ export async function GET() {
 
     return NextResponse.json(list);
   } catch (error) {
-    console.error("[Organisation community-users] Error:", error);
     return NextResponse.json({ message: "Gagal memuat data warga." }, { status: 500 });
   }
 }

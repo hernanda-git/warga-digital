@@ -62,6 +62,7 @@ export function JualanEditModal({
   isLoading = false,
 }: JualanEditModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingImages, setPendingImages] = useState<File[]>([]);
   const [existingMedia, setExistingMedia] = useState<MediaItem[]>([]);
@@ -142,8 +143,76 @@ export function JualanEditModal({
 
       setExistingMedia((prev) => prev.filter((m) => m.id !== mediaId));
     } catch (error) {
-      console.error("Error removing media:", error);
       alert("Gagal menghapus gambar");
+    }
+  };
+
+  const uploadImages = async (itemId: string, files: File[]) => {
+    if (files.length === 0) return [];
+
+    setIsUploading(true);
+    try {
+      const uploadPayload = {
+        files: files.map((file) => ({
+          filename: file.name,
+          contentType: file.type,
+          size: file.size,
+        })),
+      };
+
+      const response = await apiFetch(`/api/jualan/${itemId}/upload`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(uploadPayload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || "Gagal mengunggah gambar");
+      }
+
+      const uploadPromises = data.data.uploadUrls.map(
+        async (upload: any, index: number) => {
+          const file = files[index];
+          await fetch(upload.uploadUrl, {
+            method: "PUT",
+            body: file,
+            headers: {
+              "Content-Type": file.type,
+            },
+          });
+
+          return {
+            filename: upload.filename,
+            publicUrl: upload.publicUrl,
+            objectKey: upload.objectKey,
+          };
+        },
+      );
+
+      const uploaded = await Promise.all(uploadPromises);
+
+      const hasExistingMedia = existingMedia.length > 0;
+      const mediaData = uploaded.map((img, index) => ({
+        filename: img.filename,
+        publicUrl: img.publicUrl,
+        altText: img.filename,
+        sortOrder: hasExistingMedia ? existingMedia.length + index : index,
+        isPrimary: !hasExistingMedia && index === 0,
+      }));
+
+      await apiFetch(`/api/jualan/${itemId}/upload`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ media: mediaData }),
+      });
+
+      return uploaded;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -171,10 +240,15 @@ export function JualanEditModal({
         is_active: formData.is_active,
       };
 
+      if (!goods) return;
+
+      if (pendingImages.length > 0) {
+        await uploadImages(goods.id, pendingImages);
+      }
+
       await onSubmit(updatePayload);
       handleClose();
     } catch (error) {
-      console.error("Error updating jualan:", error);
       alert(error instanceof Error ? error.message : "Gagal memperbarui barang");
     } finally {
       setIsSubmitting(false);
@@ -498,6 +572,7 @@ export function JualanEditModal({
                 onPress={handleSubmit}
                 isDisabled={
                   isSubmitting ||
+                  isUploading ||
                   isLoading ||
                   !formData.category_id ||
                   !formData.name ||
@@ -505,7 +580,7 @@ export function JualanEditModal({
                 }
                 className="w-full"
               >
-                {isSubmitting || isLoading ? "Menyimpan..." : "Simpan Perubahan"}
+                {isSubmitting || isUploading || isLoading ? "Menyimpan..." : "Simpan Perubahan"}
               </PrimaryButton>
             </div>
           </div>

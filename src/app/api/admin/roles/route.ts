@@ -29,7 +29,6 @@ export async function GET() {
     .order("id", { ascending: true });
 
   if (rolesError) {
-    console.error("[admin/roles] GET roles error:", rolesError);
     return NextResponse.json({ error: rolesError.message }, { status: 500 });
   }
 
@@ -41,7 +40,6 @@ export async function GET() {
     .is("revoked_at", null);
 
   if (assignmentError) {
-    console.error("[admin/roles] GET assignments error:", assignmentError);
     // Non-fatal — just return zero counts
   }
 
@@ -116,7 +114,6 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    console.error("[admin/roles] POST insert error:", error);
     if (error.code === "23505") {
       return NextResponse.json(
         { error: `Role "${normalizedName}" sudah ada. Gunakan nama lain.` },

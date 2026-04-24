@@ -54,7 +54,6 @@ export async function GET(request: NextRequest) {
     .order("name", { ascending: true });
 
   if (error) {
-    console.error("[admin/kas-rt-category-details] GET error:", error);
     return NextResponse.json(
       { error: "Gagal memuat detail kategori." },
       { status: 500 },
@@ -163,7 +162,6 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    console.error("[admin/kas-rt-category-details] POST insert error:", error);
     if (error.code === "23505") {
       return NextResponse.json(
         { error: `Detail dengan nama "${name}" sudah ada di kategori ini.` },

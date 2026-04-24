@@ -129,7 +129,6 @@ export function ImageLightbox({
         return;
       } catch (error) {
         // User cancelled or share failed, fall through to clipboard
-        console.log("Share cancelled or failed:", error);
       }
     }
     

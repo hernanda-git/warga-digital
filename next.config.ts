@@ -19,6 +19,8 @@ function getSupabaseHostname(): string {
 
 const nextConfig: NextConfig = {
   images: {
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    formats: ["image/webp", "image/avif"],
     remotePatterns: [
       {
         protocol: "https",

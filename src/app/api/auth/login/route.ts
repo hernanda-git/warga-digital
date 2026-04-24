@@ -23,14 +23,8 @@ function getRateLimitKey(login: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("[Login] Request received");
     const body = await request.json();
-    const { login, pin } = body;
-    console.log(
-      "[Login] login:",
-      login,
-      "pin length:",
-      String(pin ?? "").length,
+    const { login, pin } = body;.length,
     );
 
     if (!login || typeof login !== "string" || !login.trim()) {
@@ -57,9 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     const loginTrimmed = login.trim();
-    console.log("[Login] Creating Supabase client...");
     const supabase = createServerClient();
-    console.log("[Login] Supabase client created");
     let user: {
       id: string;
       full_name: string;
@@ -68,12 +60,10 @@ export async function POST(request: NextRequest) {
     } | null = null;
 
     if (looksLikePhone(loginTrimmed)) {
-      console.log("[Login] Detected as phone number");
       // Query all plausible storage variants so we match regardless of which
       // format was used when the account was originally created
       // (e.g. "08...", "628...", "+628...", or bare "8...").
       const variants = getWaNumberVariants(loginTrimmed);
-      console.log("[Login] Phone variants:", variants);
 
       const { data, error: fetchError } = await supabase
         .from("users")
@@ -83,9 +73,7 @@ export async function POST(request: NextRequest) {
 
       if (!fetchError && data && data.length > 0) {
         user = data[0];
-        console.log("[Login] User found via phone variants");
       } else if (fetchError) {
-        console.error("[Login] Phone lookup error:", fetchError);
       }
 
       // Fallback: also try the canonical normalized form explicitly
@@ -93,7 +81,6 @@ export async function POST(request: NextRequest) {
       if (!user) {
         const canonical = normalizeWaNumber(loginTrimmed);
         if (!variants.includes(canonical)) {
-          console.log("[Login] Trying canonical phone:", canonical);
           const { data: fb, error: fbErr } = await supabase
             .from("users")
             .select("id, full_name, pin_hash, status")
@@ -101,12 +88,10 @@ export async function POST(request: NextRequest) {
             .maybeSingle();
           if (!fbErr && fb) {
             user = fb;
-            console.log("[Login] User found via canonical phone");
           }
         }
       }
     } else {
-      console.log("[Login] Detected as username");
       // Treat as username (case-insensitive)
       const { data: row, error: fetchError } = await supabase
         .from("users")
@@ -116,24 +101,16 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
       if (!fetchError) {
         user = row;
-        console.log(
-          "[Login] Username lookup result:",
-          user ? "found" : "not found",
-        );
       } else {
-        console.error("[Login] Username lookup error:", fetchError);
       }
     }
 
     if (!user) {
-      console.log("[Login] User not found");
       return NextResponse.json(
         { error: "Username atau nomor WhatsApp tidak ditemukan." },
         { status: 404 },
       );
     }
-
-    console.log("[Login] User found, checking PIN hash...");
     if (!user.pin_hash) {
       return NextResponse.json(
         {
@@ -152,20 +129,13 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-
-    console.log("[Login] Verifying PIN...");
     if (!verifyPin(pinStr, user.pin_hash)) {
-      console.log("[Login] PIN verification failed");
       return NextResponse.json({ error: "PIN salah." }, { status: 401 });
     }
-    console.log("[Login] PIN verified");
 
     // ── Create session ─────────────────────────────────────────────────────
-    console.log("[Login] Creating session...");
     const jwt = await createSession(user.id);
-    console.log("[Login] Session created, setting cookie...");
     await setSessionCookie(jwt);
-    console.log("[Login] Cookie set");
 
     // ── Set community name cookie ─────────────────────────────────────────
     // Already have supabase client from earlier in the function
@@ -184,7 +154,6 @@ export async function POST(request: NextRequest) {
 
       if (community?.name) {
         await setCommunityNameCookie(community.name);
-        console.log("[Login] Community name cookie set:", community.name);
       }
     }
 
@@ -201,8 +170,6 @@ export async function POST(request: NextRequest) {
       err instanceof Error
         ? { message: err.message, stack: err.stack, name: err.name }
         : String(err);
-    console.error("[Login] Unhandled error:", errorDetails);
-    console.error("[Login] Raw error:", err);
     return NextResponse.json({ error: "Terjadi kesalahan" }, { status: 500 });
   }
 }

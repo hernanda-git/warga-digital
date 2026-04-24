@@ -13,3 +13,4 @@ export { KasRtDeleteConfirmDialog } from "./KasRtDeleteConfirmDialog";
 export { KasRtDuplicateWarningDialog } from "./KasRtDuplicateWarningDialog";
 export { HouseTransactionStatusCard } from "./HouseTransactionStatusCard";
 export { HouseTransactionStatusCardVertical } from "./HouseTransactionStatusCardVertical";
+export { KasRtBackToTop } from "./KasRtBackToTop";

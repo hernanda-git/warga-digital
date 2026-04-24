@@ -35,6 +35,13 @@ interface UseKasRtTransactionsOptions {
   };
 }
 
+interface PaginationState {
+  currentPage: number;
+  pageSize: number;
+  hasMore: boolean;
+  total: number;
+}
+
 interface UseKasRtTransactionsReturn {
   // Data
   transactions: TransactionItem[];
@@ -44,6 +51,7 @@ interface UseKasRtTransactionsReturn {
   isPageLoading: boolean;
   isTransactionsLoading: boolean;
   isRefreshing: boolean;
+  isLoadingMore: boolean;
   refreshedAt: Date;
 
   // Filter state
@@ -59,20 +67,35 @@ interface UseKasRtTransactionsReturn {
   allBlockNames: string[];
   activeAdvancedFilterCount: number;
 
+  // Pagination
+  pagination: PaginationState;
+
   // Actions
   refreshData: () => Promise<void>;
   loadCategories: () => Promise<void>;
   setTransactions: React.Dispatch<React.SetStateAction<TransactionItem[]>>;
   applyFilters: () => Promise<void>;
+  loadMore: () => Promise<void>;
+  resetFilters: () => Promise<void>;
+}
+
+const PAGE_SIZE = 10;
+
+/**
+ * Build a stable filter key from filter state for change detection.
+ */
+function buildFilterKey(filters: KasRtFilterState): string {
+  return `${filters.typeFilter}|${filters.categoryFilter.trim()}|${filters.blockFilter.trim()}|${filters.startDate}|${filters.endDate}`;
 }
 
 /**
  * Hook for managing Kas RT transactions data, permissions, and filtering
+ * with infinite scroll pagination (10 items per page).
  *
- * Server-side filtering is applied only when:
- * 1. Initial page load
- * 2. "Terapkan" (Apply) button is clicked
- * 3. Type filter tab is changed (immediate)
+ * Behaviors:
+ * - Initial load / filter change / refresh → reset to page 1, replace transactions
+ * - Scroll to bottom → load next page, append transactions
+ * - Pending requests are cancelled when filters change
  */
 export function useKasRtTransactions({
   now,
@@ -98,11 +121,19 @@ export function useKasRtTransactions({
     !hasInitialData,
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [refreshedAt, setRefreshedAt] = useState(now);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [summary, setSummary] = useState<KasRtTotals | null>(
     initialData?.summary ?? null,
   );
+
+  const [pagination, setPagination] = useState<PaginationState>({
+    currentPage: 1,
+    pageSize: PAGE_SIZE,
+    hasMore: (initialData?.transactions?.length ?? 0) >= PAGE_SIZE,
+    total: initialData?.transactions?.length ?? 0,
+  });
 
   // Filter state
   const defaultDates = getDefaultFilterDates(now);
@@ -114,45 +145,134 @@ export function useKasRtTransactions({
     endDate: defaultDates.endDate,
   });
 
-  // ── Data loaders ───────────────────────────────────────────────────────
-  const loadTransactions = useCallback(async (filters: KasRtFilterState) => {
-    try {
-      setIsTransactionsLoading(true);
+  // Refs for request cancellation and change tracking
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const prevFilterKeyRef = useRef(buildFilterKey(filterState));
+  const isMountedRef = useRef(true);
 
-      // Build query params from filter state (server-side filtering)
-      const params = new URLSearchParams();
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-      if (filters.typeFilter && filters.typeFilter !== "all") {
-        params.set("type", filters.typeFilter);
-      }
-      if (filters.categoryFilter.trim()) {
-        params.set("category", filters.categoryFilter.trim());
-      }
-      if (filters.blockFilter.trim()) {
-        params.set("block", filters.blockFilter.trim());
-      }
-      if (filters.startDate) {
-        params.set("startDate", filters.startDate);
-      }
-      if (filters.endDate) {
-        params.set("endDate", filters.endDate);
-      }
-
-      const queryString = params.toString();
-      const url = queryString
-        ? `/api/kas-rt/transactions?${queryString}`
-        : "/api/kas-rt/transactions";
-
-      const response = await apiFetch(url);
-      if (!response.ok) return;
-      const json = await response.json();
-      setTransactions(Array.isArray(json) ? json : json.transactions || []);
-    } catch {
-      // silently ignore
-    } finally {
-      setIsTransactionsLoading(false);
+  // ── Cancel pending requests ────────────────────────────────────────────
+  const cancelPendingRequests = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
   }, []);
+
+  // ── Data loaders ───────────────────────────────────────────────────────
+  const loadTransactions = useCallback(
+    async (
+      filters: KasRtFilterState,
+      page: number,
+      append: boolean,
+    ): Promise<boolean> => {
+      cancelPendingRequests();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      try {
+        if (!append) {
+          setIsTransactionsLoading(true);
+        } else {
+          setIsLoadingMore(true);
+        }
+
+        // Build query params from filter state (server-side filtering)
+        const params = new URLSearchParams();
+        params.set("limit", String(PAGE_SIZE));
+        params.set("offset", String((page - 1) * PAGE_SIZE));
+
+        if (filters.typeFilter && filters.typeFilter !== "all") {
+          params.set("type", filters.typeFilter);
+        }
+        if (filters.categoryFilter.trim()) {
+          params.set("category", filters.categoryFilter.trim());
+        }
+        if (filters.blockFilter.trim()) {
+          params.set("block", filters.blockFilter.trim());
+        }
+        if (filters.startDate) {
+          params.set("startDate", filters.startDate);
+        }
+        if (filters.endDate) {
+          params.set("endDate", filters.endDate);
+        }
+
+        const url = `/api/kas-rt/transactions?${params.toString()}`;
+
+        const response = await apiFetch(url, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          if (response.status !== 0) {
+            // 0 = aborted
+          }
+          return false;
+        }
+
+        const json = (await response.json()) as {
+          transactions: TransactionItem[];
+          pagination: {
+            total: number;
+            limit: number;
+            offset: number;
+            has_more: boolean;
+            total_pages: number;
+            current_page: number;
+          };
+        };
+
+        const newTransactions = json.transactions ?? [];
+        const hasMore = json.pagination?.has_more ?? false;
+        const total = json.pagination?.total ?? 0;
+
+        if (!isMountedRef.current) return false;
+
+        if (append) {
+          setTransactions((prev) => {
+            // Deduplicate by ID in case of race conditions
+            const existingIds = new Set(prev.map((t) => t.id));
+            const uniqueNew = newTransactions.filter(
+              (t) => !existingIds.has(t.id),
+            );
+            return [...prev, ...uniqueNew];
+          });
+        } else {
+          setTransactions(newTransactions);
+        }
+
+        setPagination({
+          currentPage: page,
+          pageSize: PAGE_SIZE,
+          hasMore,
+          total,
+        });
+
+        return true;
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          // Silently ignore aborted requests
+          return false;
+        }
+        return false;
+      } finally {
+        if (!isMountedRef.current) return false;
+        if (!append) {
+          setIsTransactionsLoading(false);
+        } else {
+          setIsLoadingMore(false);
+        }
+      }
+    },
+    [cancelPendingRequests],
+  );
 
   const loadCategories = useCallback(async () => {
     try {
@@ -176,20 +296,57 @@ export function useKasRtTransactions({
     }
   }, []);
 
+  // ── Actions ────────────────────────────────────────────────────────────
+
   // Apply filters - called when "Terapkan" button is clicked
   const applyFilters = useCallback(async () => {
-    await loadTransactions(filterState);
+    await loadTransactions(filterState, 1, false);
   }, [filterState, loadTransactions]);
+
+  // Load more - called when scrolling to bottom
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || isTransactionsLoading || !pagination.hasMore) return;
+    await loadTransactions(filterState, pagination.currentPage + 1, true);
+  }, [
+    isLoadingMore,
+    isTransactionsLoading,
+    pagination.hasMore,
+    pagination.currentPage,
+    filterState,
+    loadTransactions,
+  ]);
+
+  // Reset filters - called when "Reset Filter" is clicked
+  const resetFilters = useCallback(async () => {
+    const defaultDates = getDefaultFilterDates(now);
+    const newFilterState: KasRtFilterState = {
+      typeFilter: "all",
+      categoryFilter: "",
+      blockFilter: "",
+      startDate: defaultDates.startDate,
+      endDate: defaultDates.endDate,
+    };
+    setFilterState(newFilterState);
+    prevFilterKeyRef.current = buildFilterKey(newFilterState);
+    await loadTransactions(newFilterState, 1, false);
+  }, [now, loadTransactions]);
 
   const refreshData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([loadTransactions(filterState), loadSummary()]);
+      // Cancel any pending load-more
+      cancelPendingRequests();
+      await Promise.all([
+        loadTransactions(filterState, 1, false),
+        loadSummary(),
+      ]);
       setRefreshedAt(new Date());
     } finally {
-      setIsRefreshing(false);
+      if (isMountedRef.current) {
+        setIsRefreshing(false);
+      }
     }
-  }, [filterState, loadTransactions, loadSummary]);
+  }, [filterState, loadTransactions, loadSummary, cancelPendingRequests]);
 
   // ── Initial data loading ───────────────────────────────────────────────
   useEffect(() => {
@@ -197,6 +354,10 @@ export function useKasRtTransactions({
       // SSR provided initial data; skip client-side initial fetch
       setIsPageLoading(false);
       setIsTransactionsLoading(false);
+      // If initial data has fewer than PAGE_SIZE items, hasMore should be false
+      if ((initialData?.transactions?.length ?? 0) < PAGE_SIZE) {
+        setPagination((prev) => ({ ...prev, hasMore: false }));
+      }
       return;
     }
 
@@ -219,7 +380,7 @@ export function useKasRtTransactions({
       setIsPageLoading(false);
 
       // Phase 2: Load transactions and summary with default filters
-      await Promise.all([loadTransactions(filterState), loadSummary()]);
+      await Promise.all([loadTransactions(filterState, 1, false), loadSummary()]);
     }
     void init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -227,7 +388,7 @@ export function useKasRtTransactions({
 
   // ── Type filter change triggers immediate reload ───────────────────────
   // Type filter is in the top bar (tabs), not in the filter sheet
-  // So it should trigger immediate API call
+  // So it should trigger immediate API call and reset pagination
   const prevTypeFilterRef = useRef(filterState.typeFilter);
 
   useEffect(() => {
@@ -236,10 +397,22 @@ export function useKasRtTransactions({
       return;
     }
 
-    // Type filter changed, reload immediately
+    // Type filter changed, reload page 1
     prevTypeFilterRef.current = filterState.typeFilter;
-    void loadTransactions(filterState);
+    prevFilterKeyRef.current = buildFilterKey(filterState);
+    void loadTransactions(filterState, 1, false);
   }, [filterState.typeFilter, filterState, isPageLoading, loadTransactions]);
+
+  // ── Advanced filter change detection ───────────────────────────────────
+  // When filterState changes (via setFilterState), check if the key changed
+  // This handles the case where user opens filter sheet, changes values,
+  // and clicks "Terapkan" (which just calls applyFilters).
+  // We already handle applyFilters directly, but this also catches any
+  // direct setFilterState calls that should trigger reload.
+  // Actually, we should NOT auto-apply on every setFilterState change
+  // because the filter sheet uses setFilterState for intermediate changes.
+  // Only applyFilters, resetFilters, and typeFilter effect trigger reloads.
+  // So we don't need an additional effect here.
 
   // ── Derived data ───────────────────────────────────────────────────────
   // Default totals while loading (from API)
@@ -296,6 +469,7 @@ export function useKasRtTransactions({
     isPageLoading,
     isTransactionsLoading,
     isRefreshing,
+    isLoadingMore,
     refreshedAt,
 
     // Filter state
@@ -311,10 +485,15 @@ export function useKasRtTransactions({
     allBlockNames,
     activeAdvancedFilterCount,
 
+    // Pagination
+    pagination,
+
     // Actions
     refreshData,
     loadCategories,
     setTransactions,
     applyFilters,
+    loadMore,
+    resetFilters,
   };
 }

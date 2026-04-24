@@ -198,7 +198,6 @@ export async function POST(request: Request) {
       .single();
 
     if (error || !data) {
-      console.error("[Kas RT] Insert transaction error:", error);
       return NextResponse.json(
         { message: "Gagal menyimpan transaksi kas RT." },
         { status: 500 },
@@ -255,7 +254,6 @@ export async function POST(request: Request) {
         .is("revoked_at", null);
 
       if (roleErr) {
-        console.error("[Kas RT] Fetch role rows error:", roleErr);
       } else if (roleRows?.length) {
         const authorizedTenantUserIds = roleRows.map((r) => r.tenant_user_id);
 
@@ -268,7 +266,6 @@ export async function POST(request: Request) {
           .neq("user_id", session.userId);
 
         if (recipientErr) {
-          console.error("[Kas RT] Fetch recipients error:", recipientErr);
         } else if (recipientRows && recipientRows.length > 0) {
           const uniqueRecipients = Array.from(
             new Set(recipientRows.map((row) => row.user_id).filter(Boolean)),
@@ -295,7 +292,6 @@ export async function POST(request: Request) {
             .insert(notificationRows);
 
           if (notifErr) {
-            console.error("[Kas RT] Insert notifications error:", notifErr);
           }
         }
       }
@@ -331,10 +327,6 @@ export async function POST(request: Request) {
             });
 
           if (uploadResult.error) {
-            console.error(
-              "[Kas RT] Upload attachment error:",
-              uploadResult.error,
-            );
             continue;
           }
 
@@ -348,7 +340,6 @@ export async function POST(request: Request) {
 
           attachmentNames.push(file.name);
         } catch (err) {
-          console.error("[Kas RT] Unexpected upload error:", err);
         }
       }
 
@@ -357,10 +348,6 @@ export async function POST(request: Request) {
           .from("kas_rt_attachments")
           .insert(attachmentsToInsert);
         if (attachmentError) {
-          console.error(
-            "[Kas RT] Insert attachment rows error:",
-            attachmentError,
-          );
         }
       }
     }
@@ -421,10 +408,6 @@ export async function POST(request: Request) {
         .select("id, name, rate_per_warga, jumlah_warga, subtotal, sort_order");
 
       if (detailsError) {
-        console.error(
-          "[Kas RT] Insert transaction details error:",
-          detailsError,
-        );
       } else if (insertedDetails) {
         savedTransactionDetails = insertedDetails;
       }
@@ -445,7 +428,6 @@ export async function POST(request: Request) {
       transaction_details: savedTransactionDetails,
     });
   } catch (error) {
-    console.error("[Kas RT] Unexpected error:", error);
     return NextResponse.json(
       { message: "Terjadi kesalahan saat menyimpan transaksi." },
       { status: 500 },
@@ -516,7 +498,6 @@ export async function GET(request: Request) {
     const { count: totalCount, error: countError } = await countQuery;
 
     if (countError) {
-      console.error("[Kas RT] Count transactions error:", countError);
     }
 
     // ── Fetch paginated transactions with filters ──────────────────────────
@@ -551,7 +532,6 @@ export async function GET(request: Request) {
 
     const { data: transactions, error: fetchError } = await query;
     if (fetchError) {
-      console.error("[Kas RT] Fetch transactions error:", fetchError);
       return NextResponse.json(
         { message: "Gagal mengambil data transaksi." },
         { status: 500 },
@@ -652,7 +632,6 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error("[Kas RT] GET transactions error:", error);
     return NextResponse.json(
       { message: "Terjadi kesalahan saat mengambil data transaksi." },
       { status: 500 },

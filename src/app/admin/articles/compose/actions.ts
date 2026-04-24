@@ -22,7 +22,6 @@ export async function getSignedUploadUrl(
       expiresIn,
     );
   } catch (error) {
-    console.error("Error generating signed upload URL:", error);
     throw new Error(
       error instanceof Error ? error.message : "Failed to generate upload URL",
     );

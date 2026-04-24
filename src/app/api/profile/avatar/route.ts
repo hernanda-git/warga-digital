@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
       });
 
     if (uploadError) {
-      console.error("[Profile avatar] Upload error:", uploadError);
       return NextResponse.json(
         { error: "Gagal mengunggah foto. Coba lagi." },
         { status: 500 },
@@ -65,7 +64,6 @@ export async function POST(request: NextRequest) {
       .eq("id", session.userId);
 
     if (updateError) {
-      console.error("[Profile avatar] Update user error:", updateError);
       return NextResponse.json(
         { error: "Gagal menyimpan referensi foto." },
         { status: 500 },
@@ -82,7 +80,6 @@ export async function POST(request: NextRequest) {
       profilePictureUrl,
     });
   } catch (err) {
-    console.error("[Profile avatar] Error:", err);
     return NextResponse.json(
       { error: "Gagal mengunggah foto profil." },
       { status: 500 },

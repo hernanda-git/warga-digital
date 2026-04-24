@@ -35,10 +35,6 @@ async function sendCategoryNotification(
       .eq("status", "ACTIVE");
 
     if (userFetchErr || !tenantUsers?.length) {
-      console.error(
-        "[Kas RT Categories] Fetch tenant users error:",
-        userFetchErr,
-      );
       return;
     }
 
@@ -95,13 +91,8 @@ async function sendCategoryNotification(
       .insert(notificationRows);
 
     if (notifErr) {
-      console.error(
-        "[Kas RT Categories] Insert notifications error:",
-        notifErr,
-      );
     }
   } catch (error) {
-    console.error("[Kas RT Categories] Unexpected notification error:", error);
   }
 }
 
@@ -214,7 +205,6 @@ export async function PATCH(
     .maybeSingle();
 
   if (fetchError) {
-    console.error("[admin/kas-rt-categories] PATCH fetch error:", fetchError);
     return NextResponse.json(
       { error: "Gagal memverifikasi kategori." },
       { status: 500 },
@@ -240,7 +230,6 @@ export async function PATCH(
     .single();
 
   if (error) {
-    console.error("[admin/kas-rt-categories] PATCH error:", error);
     if (error.code === "23505") {
       return NextResponse.json(
         { error: `Kategori dengan nama tersebut sudah ada.` },
@@ -316,7 +305,6 @@ export async function DELETE(
     .maybeSingle();
 
   if (fetchError) {
-    console.error("[admin/kas-rt-categories] DELETE fetch error:", fetchError);
     return NextResponse.json(
       { error: "Gagal memverifikasi kategori." },
       { status: 500 },
@@ -338,7 +326,6 @@ export async function DELETE(
     .eq("community_id", DEFAULT_COMMUNITY_ID);
 
   if (deleteError) {
-    console.error("[admin/kas-rt-categories] DELETE error:", deleteError);
     return NextResponse.json(
       { error: "Gagal menghapus kategori." },
       { status: 500 },

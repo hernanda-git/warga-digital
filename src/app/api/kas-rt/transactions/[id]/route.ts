@@ -85,7 +85,6 @@ async function sendKasRtNotification(
       .is("revoked_at", null);
 
     if (roleErr) {
-      console.error("[Kas RT] Fetch role rows error:", roleErr);
       return;
     }
 
@@ -103,7 +102,6 @@ async function sendKasRtNotification(
       .neq("user_id", actorUserId);
 
     if (tuErr) {
-      console.error("[Kas RT] Fetch recipients error:", tuErr);
       return;
     }
 
@@ -165,10 +163,8 @@ async function sendKasRtNotification(
       .insert(notificationRows);
 
     if (notifErr) {
-      console.error("[Kas RT] Insert notifications error:", notifErr);
     }
   } catch (error) {
-    console.error("[Kas RT] Unexpected notification error:", error);
   }
 }
 
@@ -335,7 +331,6 @@ export async function PATCH(
     .maybeSingle();
 
   if (fetchError) {
-    console.error("[Kas RT] PATCH fetch error:", fetchError);
     return NextResponse.json(
       { message: "Gagal memverifikasi transaksi." },
       { status: 500 },
@@ -361,7 +356,6 @@ export async function PATCH(
     .single();
 
   if (error || !data) {
-    console.error("[Kas RT] PATCH update error:", error);
     return NextResponse.json(
       { message: "Gagal memperbarui transaksi." },
       { status: 500 },
@@ -408,7 +402,6 @@ export async function PATCH(
         .select("id, name, rate_per_warga, jumlah_warga, subtotal, sort_order");
 
       if (detailsError) {
-        console.error("[Kas RT] PATCH insert transaction details error:", detailsError);
       } else if (insertedDetails) {
         savedTransactionDetails = insertedDetails;
       }
@@ -499,10 +492,6 @@ export async function PATCH(
           });
 
         if (uploadError) {
-          console.error(
-            "[Kas RT] PATCH upload attachment error:",
-            uploadError,
-          );
           continue;
         }
 
@@ -514,7 +503,6 @@ export async function PATCH(
           size_bytes: file.size,
         });
       } catch (err) {
-        console.error("[Kas RT] PATCH unexpected upload error:", err);
       }
     }
 
@@ -525,10 +513,6 @@ export async function PATCH(
         .select("id, file_name, storage_path, mime_type");
 
       if (attachmentError) {
-        console.error(
-          "[Kas RT] PATCH insert attachment rows error:",
-          attachmentError,
-        );
       } else if (insertedAttachments) {
         // Generate signed URLs for newly uploaded attachments in parallel
         const signedResults = await Promise.all(
@@ -602,7 +586,6 @@ export async function DELETE(
     .maybeSingle();
 
   if (fetchError) {
-    console.error("[Kas RT] DELETE fetch error:", fetchError);
     return NextResponse.json(
       { message: "Gagal memverifikasi transaksi." },
       { status: 500 },
@@ -624,7 +607,6 @@ export async function DELETE(
     .eq("community_id", DEFAULT_COMMUNITY_ID);
 
   if (deleteError) {
-    console.error("[Kas RT] DELETE soft-delete error:", deleteError);
     return NextResponse.json(
       { message: "Gagal menghapus transaksi." },
       { status: 500 },

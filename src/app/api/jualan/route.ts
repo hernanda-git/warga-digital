@@ -124,7 +124,6 @@ export async function GET(request: NextRequest) {
     const { data, error, count } = await query;
 
     if (error) {
-      console.error("Error fetching jualan goods:", error);
       return errorResponse("Gagal memuat data barang", 500);
     }
 
@@ -172,7 +171,6 @@ export async function GET(request: NextRequest) {
         : undefined,
     });
   } catch (error) {
-    console.error("Error in GET /api/jualan:", error);
     return errorResponse("Terjadi kesalahan server", 500);
   }
 }
@@ -266,7 +264,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error("Error creating jualan goods:", error);
       if (error.code === "23505") {
         return badRequestResponse("Nama barang sudah digunakan");
       }
@@ -282,7 +279,6 @@ export async function POST(request: NextRequest) {
       201,
     );
   } catch (error) {
-    console.error("Error in POST /api/jualan:", error);
     return errorResponse("Terjadi kesalahan server", 500);
   }
 }

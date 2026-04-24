@@ -66,7 +66,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     .range(offset, offset + limit - 1);
 
   if (rowsError) {
-    console.error("[admin/roles/users] GET error:", rowsError);
     return NextResponse.json({ error: rowsError.message }, { status: 500 });
   }
 
@@ -208,7 +207,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
     .single();
 
   if (insertError) {
-    console.error("[admin/roles/users] POST insert error:", insertError);
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
@@ -233,7 +231,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       entity_id: assigned.id,
     });
   } catch (notifErr) {
-    console.error("[admin/roles/users] POST notification error:", notifErr);
   }
 
   // Best-effort: notify all admin personnel about the assignment
@@ -274,10 +271,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
       session.userId, // exclude the actor so they don't notify themselves
     );
   } catch (adminNotifErr) {
-    console.error(
-      "[admin/roles/users] POST admin notification error:",
-      adminNotifErr,
-    );
   }
 
   return NextResponse.json(
@@ -347,7 +340,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     .is("revoked_at", null);
 
   if (revokeError) {
-    console.error("[admin/roles/users] DELETE revoke error:", revokeError);
     return NextResponse.json({ error: revokeError.message }, { status: 500 });
   }
 
@@ -376,7 +368,6 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       });
     }
   } catch (notifErr) {
-    console.error("[admin/roles/users] DELETE notification error:", notifErr);
   }
 
   return NextResponse.json({ success: true });

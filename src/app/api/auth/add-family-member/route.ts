@@ -103,7 +103,6 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (ownerErr) {
-        console.error("[AddFamilyMember] House lookup error:", ownerErr);
         return NextResponse.json(
           { error: "Gagal memverifikasi rumah" },
           { status: 500 },
@@ -135,10 +134,6 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (ownerErr) {
-        console.error(
-          "[AddFamilyMember] Primary house lookup error:",
-          ownerErr,
-        );
         return NextResponse.json(
           { error: "Gagal memverifikasi rumah" },
           { status: 500 },
@@ -176,7 +171,6 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
-      console.error("[AddFamilyMember] Insert user error:", insertUserErr);
       return NextResponse.json(
         { error: "Gagal menambah anggota" },
         { status: 500 },
@@ -194,7 +188,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (tuErr || !tenantUser?.id) {
-      console.error("[AddFamilyMember] Upsert tenant_users error:", tuErr);
       return NextResponse.json(
         { error: "Gagal mendaftarkan ke tenant" },
         { status: 500 },
@@ -207,7 +200,6 @@ export async function POST(request: NextRequest) {
       role_id: DEFAULT_ROLE_WARGA_ID,
     });
     if (roleErr && roleErr.code !== "23505") {
-      console.error("[AddFamilyMember] Insert role error:", roleErr);
     }
 
     // ── 7. Link user to the house as FAMILY member ─────────────────────────
@@ -223,7 +215,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (uhErr) {
-      console.error("[AddFamilyMember] Insert user_houses error:", uhErr);
       return NextResponse.json(
         { error: "Gagal mengaitkan ke rumah" },
         { status: 500 },
@@ -236,7 +227,6 @@ export async function POST(request: NextRequest) {
       fullName: trimmedName,
     });
   } catch (err) {
-    console.error("[AddFamilyMember] Error:", err);
     return NextResponse.json({ error: "Terjadi kesalahan" }, { status: 500 });
   }
 }

@@ -332,7 +332,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(response);
   } catch (error: any) {
-    console.error("Error fetching jasa services:", error);
     return NextResponse.json(
       { success: false, error: "Gagal memuat layanan jasa" },
       { status: 500 },
@@ -534,7 +533,6 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) {
-      console.error("Error inserting jasa service:", insertError);
       return NextResponse.json(
         { success: false, error: "Gagal membuat layanan jasa" },
         { status: 500 },
@@ -566,7 +564,6 @@ export async function POST(request: Request) {
 
         }
       } catch (uploadError) {
-        console.error("Error uploading primary image:", uploadError);
       }
     }
 
@@ -579,7 +576,6 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error: any) {
-    console.error("Error creating jasa service:", error);
     return NextResponse.json(
       { success: false, error: "Gagal membuat layanan jasa" },
       { status: 500 },
@@ -626,7 +622,6 @@ async function uploadImageToStorage(
       });
 
     if (uploadError) {
-      console.error("Storage upload error:", uploadError);
       return { success: false, url: null, error: "Gagal upload gambar" };
     }
 
@@ -636,7 +631,6 @@ async function uploadImageToStorage(
 
     return { success: true, url: publicUrlData.publicUrl };
   } catch (error) {
-    console.error("Upload exception:", error);
     return { success: false, url: null, error: "Gagal upload gambar" };
   }
 }

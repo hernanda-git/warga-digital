@@ -531,7 +531,6 @@ export function BatchValidationExample() {
     }
 
     // Proceed with submission
-    console.log('Form valid, submitting...');
   };
 
   return (

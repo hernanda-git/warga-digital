@@ -49,7 +49,6 @@ export async function PATCH(request: Request, context: RouteContext) {
       .single();
 
     if (error) {
-      console.error("[Organisation] PATCH role error:", error);
       return NextResponse.json(
         { message: "Gagal mengubah peran." },
         { status: 500 },
@@ -88,7 +87,6 @@ export async function PATCH(request: Request, context: RouteContext) {
       sortOrder: data.sort_order ?? 0,
     });
   } catch (error) {
-    console.error("[Organisation] PATCH role error:", error);
     return NextResponse.json(
       { message: "Gagal mengubah peran." },
       { status: 500 },
@@ -119,7 +117,6 @@ export async function DELETE(_request: Request, context: RouteContext) {
     .eq("tenant_id", DEFAULT_TENANT_ID);
 
   if (error) {
-    console.error("[Organisation] DELETE role error:", error);
     return NextResponse.json(
       { message: "Gagal menghapus peran." },
       { status: 500 },
