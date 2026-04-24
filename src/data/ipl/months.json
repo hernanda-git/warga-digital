@@ -1,0 +1,14 @@
+[
+  { "name": "Januari",   "paid": true  },
+  { "name": "Februari",  "paid": true  },
+  { "name": "Maret",     "paid": true  },
+  { "name": "April",     "paid": false },
+  { "name": "Mei",       "paid": false },
+  { "name": "Juni",      "paid": false },
+  { "name": "Juli",      "paid": false },
+  { "name": "Agustus",   "paid": false },
+  { "name": "September", "paid": false },
+  { "name": "Oktober",   "paid": false },
+  { "name": "November",  "paid": false },
+  { "name": "Desember",  "paid": false }
+]

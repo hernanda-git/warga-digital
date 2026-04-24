@@ -10,6 +10,7 @@ const BOTTOM_NAV_ROUTES = [
   "/organisasi",
   "/dompet",
   "/kas-rt",
+  "/ipl",
   "/jasa",
   "/profil",
   "/admin",

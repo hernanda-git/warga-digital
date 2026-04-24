@@ -34,7 +34,7 @@ export const LANDING_FEATURES = [
     id: "ipl",
     label: "IPL",
     description: "Iuran bulanan perawatan",
-    href: "#ipl",
+    href: "/ipl",
     icon: BuildingOffice2Icon,
     color: "text-indigo-600 dark:text-indigo-400",
   },
