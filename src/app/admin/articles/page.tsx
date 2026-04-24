@@ -198,6 +198,7 @@ function ArticleImageUploader({
 }: ArticleImageUploaderProps) {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [globalError, setGlobalError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllers = useRef<Map<string, AbortController>>(new Map());
 
@@ -208,7 +209,7 @@ function ArticleImageUploader({
     "image/webp",
     "image/gif",
   ];
-  const MAX_SIZE = 5 * 1024 * 1024;
+  const MAX_SIZE = 10 * 1024 * 1024; // 10MB
   const MAX_FILES = 10;
 
   const handleFileSelect = (selectedFiles: FileList | null) => {
@@ -291,7 +292,6 @@ function ArticleImageUploader({
         xhr.send(file);
       });
 
-      // Store the objectKey for creating the image record
       setFiles((prev) =>
         prev.map((f) =>
           f.id === id
@@ -299,20 +299,6 @@ function ArticleImageUploader({
             : f,
         ),
       );
-
-      // Create the image record in the database
-      try {
-        await fetch(`/api/cms/articles/${articleId}/images`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            objectKey,
-            url: publicUrl,
-            mimeType: file.type,
-          }),
-        });
-      } catch (recordErr) {
-      }
     } catch (err) {
       if (ac.signal.aborted) {
         setFiles((prev) =>
@@ -363,7 +349,42 @@ function ArticleImageUploader({
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
-  const handleDone = () => {
+  const handleDone = async () => {
+    const done = files.filter(
+      (f) => f.status === "success" && f.objectKey && f.publicUrl,
+    );
+
+    if (done.length > 0) {
+      setIsUploading(true);
+      setGlobalError(null);
+      try {
+        const res = await apiFetch(`/api/cms/articles/${articleId}/images/batch`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            images: done.map((f, i) => ({
+              object_key: f.objectKey,
+              url: f.publicUrl,
+              mime_type: f.file.type,
+              sort_order: i,
+            })),
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Gagal menyimpan gambar ke database");
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Gagal menyimpan gambar ke database";
+        setGlobalError(message);
+        setIsUploading(false);
+        return;
+      } finally {
+        setIsUploading(false);
+      }
+    }
+
     setFiles([]);
     onUploadComplete();
   };
@@ -404,13 +425,16 @@ function ArticleImageUploader({
             : "Seret & letakkan gambar, atau klik untuk memilih"}
         </p>
         <p className="mt-1 text-xs text-gray-400">
-          Maks 5MB per file, {MAX_FILES} file maksimal
+          Maks 10MB per file, {MAX_FILES} file maksimal
         </p>
       </div>
 
       {/* File list */}
       {files.length > 0 && (
         <div className="space-y-2">
+          {globalError && (
+            <p className="text-sm text-red-600">{globalError}</p>
+          )}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-700">
               {files.length} file(s)
@@ -428,10 +452,12 @@ function ArticleImageUploader({
                 (f) => f.status === "success" || f.status === "failed",
               ) && (
                 <button
-                  onClick={handleDone}
-                  className="px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
+                  onClick={() => void handleDone()}
+                  disabled={isUploading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
-                  Selesai
+                  {isUploading && <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />}
+                  {isUploading ? "Menyimpan..." : "Selesai"}
                 </button>
               )}
             </div>

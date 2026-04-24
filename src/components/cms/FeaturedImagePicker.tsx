@@ -9,6 +9,7 @@ interface FeaturedImagePickerProps {
   currentUrl: string | null;
   onUpdated: (url: string) => void;
   onRemoved: () => void;
+  onArticleIdCreated?: (id: string) => void;
 }
 
 export function FeaturedImagePicker({
@@ -16,6 +17,7 @@ export function FeaturedImagePicker({
   currentUrl,
   onUpdated,
   onRemoved,
+  onArticleIdCreated,
 }: FeaturedImagePickerProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -40,6 +42,7 @@ export function FeaturedImagePicker({
         }
         const { article_id } = await draftRes.json();
         targetArticleId = article_id;
+        onArticleIdCreated?.(article_id);
       }
 
       // Get signed upload URL
@@ -96,7 +99,7 @@ export function FeaturedImagePicker({
       const res = await apiFetch(`/api/cms/articles/${articleId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ featured_image_url: "" }),
+        body: JSON.stringify({ featured_image_url: null }),
       });
       if (!res.ok) {
         const err = await res.json();

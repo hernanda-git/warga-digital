@@ -92,15 +92,23 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       );
     }
 
+    // Auto-slug: generate from title if slug not provided
+    let finalSlug = slug;
+    if (title !== undefined && !slug && title.trim()) {
+      finalSlug = generateSlug(title.trim());
+    }
+
     // Build update data
     const updateData: Record<string, unknown> = {};
 
     if (title !== undefined) updateData.title = title.trim();
-    if (slug !== undefined) updateData.slug = slug;
+    if (finalSlug !== undefined) updateData.slug = finalSlug;
     if (excerpt !== undefined) updateData.excerpt = excerpt;
     if (content !== undefined) updateData.content = content;
-    if (featured_image_url !== undefined)
-      updateData.featured_image_url = featured_image_url;
+    if (featured_image_url !== undefined) {
+      updateData.featured_image_url =
+        featured_image_url === "" ? null : featured_image_url;
+    }
 
     if (status !== undefined) {
       updateData.status = status;
@@ -211,8 +219,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (finalSlug !== undefined) updateData.slug = finalSlug;
     if (excerpt !== undefined) updateData.excerpt = excerpt;
     if (content !== undefined) updateData.content = content;
-    if (featured_image_url !== undefined)
-      updateData.featured_image_url = featured_image_url;
+    if (featured_image_url !== undefined) {
+      updateData.featured_image_url =
+        featured_image_url === "" ? null : featured_image_url;
+    }
 
     if (status !== undefined) {
       updateData.status = status;
