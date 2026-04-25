@@ -98,7 +98,7 @@ export async function fetchKasRtCategories(): Promise<KasRtCategory[]> {
   try {
     const supabase = createServerClient();
     const { data } = await supabase
-      .from("kas_rt_categories")
+      .from("kas_rt_transaction_categories")
       .select("id, name, applies_to, title_template, desc_template, sort_order")
       .eq("is_active", true)
       .order("sort_order");
