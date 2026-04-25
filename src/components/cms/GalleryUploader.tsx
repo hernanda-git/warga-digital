@@ -24,6 +24,7 @@ interface GalleryUploaderProps {
   articleId: string | null;
   existingImages: ArticleImage[];
   onImagesUpdated: (images: ArticleImage[]) => void;
+  onArticleIdCreated?: (id: string) => void;
 }
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -34,6 +35,7 @@ export function GalleryUploader({
   articleId,
   existingImages,
   onImagesUpdated,
+  onArticleIdCreated,
 }: GalleryUploaderProps) {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -55,8 +57,9 @@ export function GalleryUploader({
       throw new Error(err.error || "Gagal membuat draft");
     }
     const { article_id } = await res.json();
+    onArticleIdCreated?.(article_id);
     return article_id;
-  }, [articleId]);
+  }, [articleId, onArticleIdCreated]);
 
   const uploadFile = async (item: UploadFile, targetArticleId: string) => {
     const ac = new AbortController();
