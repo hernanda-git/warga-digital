@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import Head from "next/head";
 import { ImageLightbox } from "@/components/articles/ImageLightbox";
 import { useAuthStore } from "@/stores/auth-store";
+import { formatArticleContent } from "@/lib/articles";
 
 interface Article {
   id: string;
@@ -263,22 +264,22 @@ export default function ArtikelDetailPage() {
           {article.content && (
             <div
               className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline"
-              dangerouslySetInnerHTML={{ __html: article.content }}
+              dangerouslySetInnerHTML={{ __html: formatArticleContent(article.content) }}
             />
           )}
 
           {/* Article Images Gallery */}
           {article.images && article.images.length > 0 && (
-            <div className="mt-12">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">
+            <div className="mt-12 -mx-4 sm:-mx-6 lg:-mx-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-6 px-4 sm:px-6 lg:px-8">
                 Galeri Foto
               </h2>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-0">
                 {article.images.map((image, index) => (
                   <div
                     key={image.id}
                     onClick={() => openLightbox(index)}
-                    className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer"
+                    className="group relative aspect-square overflow-hidden bg-gray-100 cursor-pointer"
                   >
                     <Image
                       src={image.url}
@@ -288,11 +289,6 @@ export default function ArtikelDetailPage() {
                       sizes="(max-width: 768px) 33vw, (max-width: 1200px) 25vw, 20vw"
                       loading={index < 3 ? "eager" : "lazy"}
                     />
-                    
-                    {/* Image counter badge */}
-                    <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 text-white text-xs rounded-md">
-                      {index + 1}
-                    </div>
 
                     {/* Alt text on hover */}
                     {image.alt_text && (

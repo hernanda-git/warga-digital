@@ -56,6 +56,66 @@ export function generateExcerpt(
 }
 
 /**
+ * Format plain-text article content into safe HTML.
+ * If the content already contains HTML tags, returns it unchanged.
+ * Otherwise, wraps blocks in <p> and converts single newlines to <br>,
+ * preserving multiple blank lines as extra spacing.
+ * @param content - Raw article content
+ * @returns Safe HTML string
+ */
+export function formatArticleContent(content: string): string {
+  if (!content) return "";
+
+  // If content already contains HTML tags, trust it as-is
+  const hasHtmlTags = /<[^>]+>/.test(content);
+  if (hasHtmlTags) return content;
+
+  // Escape HTML entities to prevent accidental tag injection
+  const escapeHtml = (text: string) =>
+    text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  // Normalize line endings
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const lines = normalized.split("\n");
+
+  const paragraphs: string[] = [];
+  let currentPara: string[] = [];
+  let emptyLineStreak = 0;
+
+  for (const line of lines) {
+    if (line === "") {
+      emptyLineStreak++;
+      if (currentPara.length > 0) {
+        // Escape each line first, then join with real <br> tags
+        const escapedLines = currentPara.map(escapeHtml);
+        paragraphs.push(`<p>${escapedLines.join("<br>")}</p>`);
+        currentPara = [];
+      }
+      // Each additional empty line beyond the first creates extra spacing
+      if (emptyLineStreak > 1) {
+        paragraphs.push("<p>&nbsp;</p>");
+      }
+    } else {
+      emptyLineStreak = 0;
+      currentPara.push(line);
+    }
+  }
+
+  // Flush final paragraph
+  if (currentPara.length > 0) {
+    const escapedLines = currentPara.map(escapeHtml);
+    paragraphs.push(`<p>${escapedLines.join("<br>")}</p>`);
+  }
+
+  return paragraphs.join("");
+}
+
+/**
  * Download an image from URL
  * @param url - Image URL
  * @param filename - Download filename
