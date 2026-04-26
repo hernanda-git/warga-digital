@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     const insertData: Record<string, unknown> = {
       title: 'Untitled', // Placeholder title — will be overwritten on real save
+      slug: `untitled-${crypto.randomUUID()}`, // unique placeholder slug
       author_id: session.userId,
       status: 'draft',
     };
@@ -54,6 +55,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
+      if (error.code === '23505') {
+        return NextResponse.json(
+          { error: 'An article with this slug already exists' },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { error: 'Failed to create draft article' },
         { status: 500 }
