@@ -98,18 +98,18 @@ export function KasRtMonthlyChartV2({
           data: incomeData,
           backgroundColor: incomeColors,
           borderRadius: [4, 4, 0, 0],
-          barPercentage: 0.35,
-          categoryPercentage: 0.8,
-          barThickness: 8,
+          barPercentage: 0.3,
+          categoryPercentage: 0.7,
+          barThickness: 6,
         },
         {
           label: "Pengeluaran",
           data: expenseData,
           backgroundColor: expenseColors,
           borderRadius: [4, 4, 0, 0],
-          barPercentage: 0.35,
-          categoryPercentage: 0.8,
-          barThickness: 8,
+          barPercentage: 0.3,
+          categoryPercentage: 0.7,
+          barThickness: 6,
         },
       ],
     };
@@ -155,7 +155,7 @@ export function KasRtMonthlyChartV2({
           },
         },
       },
-      barGap: 12,
+      barGap: 50,
       scales: {
         x: {
           grid: {
