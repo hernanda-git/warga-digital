@@ -1,0 +1,406 @@
+{
+  "IPL Bulan Januari": [
+    {
+      "date": "2026-01-31",
+      "reference": "J10",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok J10 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "J10B",
+      "amount": 240000,
+      "details": "NOV, DES 25"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "J11",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok J11 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "J12B",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok J12B periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "J15",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok J15 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "J16",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok J16 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "J17",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok J17 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "J18",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok J18 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K1",
+      "amount": 240000,
+      "details": "JAN, FEB"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K2",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok K2 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K3",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok K3 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K4",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok K4 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K6",
+      "amount": 120000,
+      "details": "Feb-26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K7",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok K7 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K9",
+      "amount": 360000,
+      "details": "DES 25, JAN 26, FEB 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K12",
+      "amount": 240000,
+      "details": "DES 25, JAN 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K15",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok K15 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K17",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok K17 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K19",
+      "amount": 120000,
+      "details": "Feb-26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K22",
+      "amount": 240000,
+      "details": "JAN, FEB 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K23",
+      "amount": 240000,
+      "details": "DES 25, JAN 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K25",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok K25 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K26",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok K26 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "K27",
+      "amount": 240000,
+      "details": "DES 25, JAN 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "L1",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok L1 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "L7",
+      "amount": 240000,
+      "details": "DES 25, JAN 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "L8",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok L8 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "L9",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok L9 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "L10",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok L10 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "L11",
+      "amount": 240000,
+      "details": "JAN, FEB 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "L12",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok L12 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "L13",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok L13 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "L16",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok L16 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "L17",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok L17 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "M1",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok M1 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "M2",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok M2 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "M5",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok M5 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "M6",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok M6 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "M9",
+      "amount": 720000,
+      "details": "JAN - JUN 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "M10",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok M10 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "M19",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok M19 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N1",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok N1 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N2",
+      "amount": 100000,
+      "details": "Pembayaran IPL untuk blok N2 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N3",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok N3 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N4",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok N4 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N5",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok N5 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N6",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok N6 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N7",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok N7 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N8",
+      "amount": 600000,
+      "details": "NOV, DES 25, JAN, FEB, MAR 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N9",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok N9 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N11",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok N11 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N14",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok N14 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N15",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok N15 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N27",
+      "amount": 240000,
+      "details": "JAN, FEB 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "N28",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok N28 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O1",
+      "amount": 240000,
+      "details": "DES 25, JAN 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O4",
+      "amount": 240000,
+      "details": "NOV 25, DES 25"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O5",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok O5 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O6",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok O6 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O7",
+      "amount": 240000,
+      "details": "DES 25, JAN 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O9",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok O9 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O10",
+      "amount": 240000,
+      "details": "JAN, FEB 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O11",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok O11 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O16",
+      "amount": 240000,
+      "details": "NOV, DES 25"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O20",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok O20 periode Januari 2026"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O23A",
+      "amount": 720000,
+      "details": "JAN - JUN 26"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "O24",
+      "amount": 120000,
+      "details": "Pembayaran IPL untuk blok O24 periode Januari 2026"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "Pengeluaran Februari 2026": [
+    {
+      "date": "2026-02-28",
+      "reference": "Satpam + Sampah",
+      "amount": 5100000,
+      "details": "RW + POSYANDU",
+      "category": "OperasionalRW"
+    },
+    {
+      "date": "2026-02-28",
+      "reference": "Kas RW",
+      "amount": 1275000,
+      "details": "Kas RW",
+      "category": "OperasionalRW"
+    },
+    {
+      "date": "2026-02-28",
+      "reference": "Kas Posyandu",
+      "amount": 425500,
+      "details": "Kas Posyandu",
+      "category": "OperasionalRW"
+    },
+    {
+      "date": "2026-02-28",
+      "reference": "Kas DKM",
+      "amount": 212500,
+      "details": "Kas DKM",
+      "category": "OperasionalRW"
+    },
+    {
+      "date": "2026-02-28",
+      "reference": "Gaji Peg. Kebersihan & Kebutuhan lainnya",
+      "amount": 1700000,
+      "details": "SALURAN BLK O",
+      "category": "OperasionalRT"
+    },
+    {
+      "date": "2026-02-28",
+      "reference": "Konsumsi Kegiatan Warga",
+      "amount": 175000,
+      "details": "Konsumsi Kegiatan Warga",
+      "category": "OperasionalRT"
+    },
+    {
+      "date": "2026-02-28",
+      "reference": "Biaya Kegiatan Bulanan",
+      "amount": 3750000,
+      "details": "GIAT NAMA JALAN",
+      "category": "OperasionalRT"
+    },
+    {
+      "date": "2026-02-28",
+      "reference": "Lampu Jalan",
+      "amount": 393500,
+      "details": "Lampu Jalan",
+      "category": "OperasionalRT"
+    }
+  ]
+}

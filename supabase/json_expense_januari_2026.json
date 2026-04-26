@@ -1,0 +1,67 @@
+{
+  "Pengeluaran Januari 2026": [
+    {
+      "date": "2026-01-31",
+      "reference": "Satpam + Sampah",
+      "amount": 5100000,
+      "details": "Satpam + Sampah",
+      "category": "OperasionalRW"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "Kas RW",
+      "amount": 1275000,
+      "details": "Kas RW",
+      "category": "OperasionalRW"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "Kas Posyandu",
+      "amount": 212500,
+      "details": "Kas Posyandu",
+      "category": "OperasionalRW"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "Kas DKM",
+      "amount": 212500,
+      "details": "Kas DKM",
+      "category": "OperasionalRW"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "Gaji Peg. Kebersihan & Kebutuhan lain nya",
+      "amount": 1200000,
+      "details": "Gaji Peg. Kebersihan & Kebutuhan lain nya",
+      "category": "OperasionalRT"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "Konsumsi Kegiatan Warga",
+      "amount": 305000,
+      "details": "Konsumsi Kegiatan Warga",
+      "category": "OperasionalRT"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "Kegiatan Pemerintahan/Keagamaan",
+      "amount": 2009000,
+      "details": "GIAT PEMILIHAN RT",
+      "category": "OperasionalRT"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "Lampu Jalan",
+      "amount": 735000,
+      "details": "Lampu Jalan",
+      "category": "OperasionalRT"
+    },
+    {
+      "date": "2026-01-31",
+      "reference": "Biaya Bank",
+      "amount": 6500,
+      "details": "Biaya Tranfer Operatisonal RW",
+      "category": "Lain-Lain"
+    }
+  ]
+}
