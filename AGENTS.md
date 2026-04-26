@@ -40,6 +40,14 @@ Single app (not a monorepo). Deployed on Vercel.
 - Hybrid: Supabase Auth plus a custom JWT session system (`jose`, 7-day expiry).
 - Custom `apiFetch` wrapper dispatches `auth:unauthorized` on 401; `AuthInterceptor` redirects to login.
 - OTP provider abstraction: `mock` logs to console; `clawdbot` sends real WhatsApp OTP.
+- **Forgot PIN flow**: Self-service PIN reset via email using Resend. See `docs/features/FORGOT_PIN.md` for full architecture. Key files:
+  - `src/app/api/auth/forgot-pin/route.ts` — sends reset email
+  - `src/app/api/auth/reset-pin/route.ts` — applies new PIN
+  - `src/app/api/auth/reset-pin/validate/route.ts` — validates token
+  - `src/lib/email/resend.ts` — email service wrapper
+  - `src/app/auth/forgot-pin/page.tsx` — forgot PIN UI
+  - `src/app/auth/reset-pin/page.tsx` — reset PIN UI
+  - `supabase/migrations/20260426000000_add_password_reset_tokens.sql` — token table
 
 ## Style & toolchain conventions
 - ESLint flat config (`eslint.config.mjs`) extending only `next/core-web-vitals`.

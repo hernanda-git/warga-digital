@@ -19,6 +19,8 @@ const PUBLIC_PAGE_PATHS = new Set([
   "/auth/otp",
   "/auth/set-pin",
   "/auth/add-family",
+  "/auth/forgot-pin",
+  "/auth/reset-pin",
   "/artikel",
 ]);
 

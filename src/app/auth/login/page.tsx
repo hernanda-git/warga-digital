@@ -372,6 +372,17 @@ export default function LoginPage() {
                   Daftar sekarang
                 </Link>
               </p>
+
+              <p className="text-center text-sm text-app-body-muted">
+                Lupa PIN?{" "}
+                <Link
+                  href="/auth/forgot-pin"
+                  className="font-semibold transition-opacity hover:opacity-70"
+                  style={{ color: "var(--color-primary)" }}
+                >
+                  Reset PIN
+                </Link>
+              </p>
             </form>
           )}
 

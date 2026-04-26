@@ -236,6 +236,15 @@ export const pinChangeLimiter = new RateLimiter({
 });
 
 /**
+ * Forgot PIN rate limiter.
+ * 3 requests per 15-minute window.
+ */
+export const forgotPinLimiter = new RateLimiter({
+  windowMs: 15 * 60 * 1000,
+  maxRequests: 3,
+});
+
+/**
  * General API rate limiter.
  * 100 requests per minute.
  */
