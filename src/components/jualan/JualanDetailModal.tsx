@@ -10,7 +10,7 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { formatRupiah } from "@/lib/constants/marketplace-catalog";
-import { useAuthStore } from "@/stores/auth";
+import { useAuthStore } from "@/stores/auth-store";
 
 interface MediaItem {
   id: string;
