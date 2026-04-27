@@ -89,13 +89,20 @@ export function JualanDetailModal({
 
   const handleContact = () => {
     if (goods?.wa_number) {
+      const rawNumber = goods.wa_number;
+      const stripped = rawNumber.replace(/[^0-9]/g, "");
+      const normalized = stripped.replace(/^0/, "62");
       const message = encodeURIComponent(
         `Halo, saya tertarik dengan "${goods.name}". Apakah masih tersedia?`,
       );
-      window.open(
-        `https://wa.me/${goods.wa_number.replace(/[^0-9]/g, "")}?text=${message}`,
-        "_blank",
-      );
+      const url = `https://wa.me/${normalized}?text=${message}`;
+      console.log("[JualanDetailModal] handleContact", {
+        rawWaNumber: rawNumber,
+        stripped,
+        normalized,
+        finalUrl: url,
+      });
+      window.open(url, "_blank");
     }
   };
 

@@ -105,13 +105,20 @@ export function JasaDetailModal({
 
   const handleWhatsAppContact = () => {
     if (!service?.wa_number) return;
+    const rawNumber = service.wa_number;
+    const stripped = rawNumber.replace(/[^0-9]/g, "");
+    const normalized = stripped.replace(/^0/, "62");
     const message = encodeURIComponent(
       `Halo, saya tertarik dengan layanan "${service.name}". Apakah masih tersedia?`,
     );
-    window.open(
-      `https://wa.me/${service.wa_number.replace(/[^0-9]/g, "").replace(/^0/, "62")}?text=${message}`,
-      "_blank",
-    );
+    const url = `https://wa.me/${normalized}?text=${message}`;
+    console.log("[JasaDetailModal] handleWhatsAppContact", {
+      rawWaNumber: rawNumber,
+      stripped,
+      normalized,
+      finalUrl: url,
+    });
+    window.open(url, "_blank");
   };
 
   return (
