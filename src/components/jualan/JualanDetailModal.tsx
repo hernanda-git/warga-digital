@@ -10,6 +10,7 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { formatRupiah } from "@/lib/constants/marketplace-catalog";
+import { useAuthStore } from "@/stores/auth";
 
 interface MediaItem {
   id: string;
@@ -124,7 +125,8 @@ export function JualanDetailModal({
     }
   };
 
-  const isOwner = goods?.owner_user_id;
+  const currentUser = useAuthStore((s) => s.user);
+  const isOwner = !!(currentUser && goods && currentUser.id === goods.owner_user_id);
 
   return (
     <Modal
