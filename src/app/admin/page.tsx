@@ -16,6 +16,7 @@ import {
   InboxIcon,
   Squares2X2Icon,
   DocumentTextIcon,
+  KeyIcon,
 } from "@heroicons/react/24/outline";
 import { ShieldCheckIcon as ShieldCheckSolidIcon } from "@heroicons/react/24/solid";
 import { PageLoader } from "@/components/ui";
@@ -316,6 +317,12 @@ export default function AdminPage() {
       icon: UserPlusIcon,
       badge: isReady ? stats!.pendingJoinRequests : undefined,
       href: "/admin/join-request",
+    },
+    {
+      label: "Reset PIN",
+      sublabel: "Reset PIN user via email",
+      icon: KeyIcon,
+      href: "/admin/reset-pin",
     },
     {
       label: "Marketplace",
