@@ -319,10 +319,10 @@ export default function AdminPage() {
       href: "/admin/join-request",
     },
     {
-      label: "Reset PIN",
-      sublabel: "Reset PIN user via email",
+      label: "Kelola User",
+      sublabel: "Edit profil, reset PIN, hapus user",
       icon: KeyIcon,
-      href: "/admin/reset-pin",
+      href: "/admin/users",
     },
     {
       label: "Marketplace",

@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
         email,
         wa_number,
         username,
-        status
+        status,
+        avatar_path
       )
     `,
     )
@@ -77,6 +78,7 @@ export async function GET(request: NextRequest) {
       username: string | null;
       wa_number: string | null;
       status: string;
+      avatar_path: string | null;
     };
   };
 
@@ -157,20 +159,30 @@ export async function GET(request: NextRequest) {
     });
   }
 
+  const baseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "") ?? "";
+
   // ── 7. Build full warga list ───────────────────────────────────────────────
-  const allWarga = rows.map((r) => ({
-    tenant_user_id: r.id,
-    user_id: r.user_id,
-    full_name: r.users?.full_name ?? "—",
-    email: r.users?.email ?? null,
-    username: r.users?.username ?? null,
-    wa_number: r.users?.wa_number ?? null,
-    blok_rumah: blokMap[r.user_id] ?? null,
-    joined_at: r.joined_at,
-    roles: rolesMap[r.id] ?? [],
-    last_active_at: lastActiveMap[r.user_id] ?? null,
-    status: r.users?.status ?? "INACTIVE",
-  }));
+  const allWarga = rows.map((r) => {
+    const avatarPath = r.users?.avatar_path ?? null;
+    return {
+      tenant_user_id: r.id,
+      user_id: r.user_id,
+      full_name: r.users?.full_name ?? "—",
+      email: r.users?.email ?? null,
+      username: r.users?.username ?? null,
+      wa_number: r.users?.wa_number ?? null,
+      blok_rumah: blokMap[r.user_id] ?? null,
+      joined_at: r.joined_at,
+      roles: rolesMap[r.id] ?? [],
+      last_active_at: lastActiveMap[r.user_id] ?? null,
+      status: r.users?.status ?? "INACTIVE",
+      avatar_path: avatarPath,
+      profile_picture_url:
+        avatarPath && baseUrl
+          ? `${baseUrl}/storage/v1/object/public/avatars/${avatarPath}`
+          : null,
+    };
+  });
 
   // ── 8. Apply search + blok filter in JS ───────────────────────────────────
   const filtered = allWarga.filter((w) => {
