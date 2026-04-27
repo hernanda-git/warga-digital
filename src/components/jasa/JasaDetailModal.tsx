@@ -109,7 +109,7 @@ export function JasaDetailModal({
       `Halo, saya tertarik dengan layanan "${service.name}". Apakah masih tersedia?`,
     );
     window.open(
-      `https://wa.me/${service.wa_number.replace(/[^0-9]/g, "")}?text=${message}`,
+      `https://wa.me/${service.wa_number.replace(/[^0-9]/g, "").replace(/^0/, "62")}?text=${message}`,
       "_blank",
     );
   };
@@ -568,7 +568,8 @@ export function JasaDetailModal({
                   </button>
                 )}
 
-                {/* Edit button */}
+                {/* Edit button – owner only */}
+                {isOwner && onEdit && (
                 <button
                   onClick={onEdit}
                   className="flex items-center justify-center gap-1.5 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all active:scale-95"
@@ -583,6 +584,7 @@ export function JasaDetailModal({
                   <PencilIcon className="h-4 w-4" />
                   <span>Edit</span>
                 </button>
+                )}
 
                 {/* WhatsApp CTA */}
                 {service.wa_number ? (

@@ -271,7 +271,7 @@ export default function JasaPage() {
         `Halo, saya tertarik dengan layanan "${service.name}". Apakah masih tersedia?`,
       );
       window.open(
-        `https://wa.me/${service.wa_number.replace(/[^0-9]/g, "")}?text=${message}`,
+        `https://wa.me/${service.wa_number.replace(/[^0-9]/g, "").replace(/^0/, "62")}?text=${message}`,
         "_blank",
       );
     }
