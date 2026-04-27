@@ -421,21 +421,34 @@ export async function POST(request: NextRequest) {
 
       await assignDefaultWargaRole(supabase, tenantUser.id);
 
-      const requestId = uuidv7();
-      const { error: reqErr } = await supabase
+      const { data: existingRequest } = await supabase
         .from("house_join_requests")
-        .insert({
-          id: requestId,
-          house_id: houseId,
-          requester_user_id: userId,
-          status: "PENDING",
-        });
+        .select("id, status")
+        .eq("house_id", houseId)
+        .eq("requester_user_id", userId)
+        .eq("status", "PENDING")
+        .maybeSingle();
 
-      if (reqErr) {
-        return NextResponse.json(
-          { error: "Gagal mengirim permintaan bergabung" },
-          { status: 500 },
-        );
+      let requestId: string;
+      if (existingRequest) {
+        requestId = existingRequest.id;
+      } else {
+        requestId = uuidv7();
+        const { error: reqErr } = await supabase
+          .from("house_join_requests")
+          .insert({
+            id: requestId,
+            house_id: houseId,
+            requester_user_id: userId,
+            status: "PENDING",
+          });
+
+        if (reqErr) {
+          return NextResponse.json(
+            { error: "Gagal mengirim permintaan bergabung" },
+            { status: 500 },
+          );
+        }
       }
 
       const { data: ownerRow } = await supabase
