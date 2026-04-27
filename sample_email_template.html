@@ -1,42 +1,4 @@
-import { Resend } from "resend";
-
-function getResendClient(): Resend {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY is not configured");
-  }
-  return new Resend(apiKey);
-}
-
-function getFromEmail(): string {
-  const from = process.env.RESEND_FROM_EMAIL;
-  if (!from) {
-    throw new Error("RESEND_FROM_EMAIL is not configured");
-  }
-  return from;
-}
-
-function getAppUrl(): string {
-  const url = process.env.APP_URL;
-  if (!url) {
-    throw new Error("APP_URL is not configured");
-  }
-  return url.replace(/\/$/, "");
-}
-
-export interface SendResetPinEmailParams {
-  to: string;
-  userName: string;
-  resetUrl: string;
-  expiresInHours: number;
-}
-
-function generateResetPinEmailHtml(params: SendResetPinEmailParams): string {
-  const { userName, resetUrl, expiresInHours } = params;
-  const escapedName = escapeHtml(userName);
-  const escapedUrl = escapeHtml(resetUrl);
-
-  return `<!doctype html>
+<!doctype html>
 <html lang="id">
     <head>
         <meta charset="UTF-8" />
@@ -342,7 +304,7 @@ function generateResetPinEmailHtml(params: SendResetPinEmailParams): string {
                     <!-- Body -->
                     <div class="card-body">
                         <p class="greeting-label">Halo,</p>
-                        <p class="greeting-name">${escapedName}</p>
+                        <p class="greeting-name">Muhammad Hernanda</p>
 
                         <p class="body-text">
                             Kami menerima permintaan untuk mereset PIN akun
@@ -384,14 +346,14 @@ function generateResetPinEmailHtml(params: SendResetPinEmailParams): string {
                                 "
                             >
                                 Tautan ini berlaku selama
-                                <strong>${expiresInHours} jam</strong> sejak email ini dikirim
+                                <strong>6 jam</strong> sejak email ini dikirim
                             </p>
                         </div>
 
                         <!-- CTA Button -->
                         <div style="text-align: center; margin-bottom: 24px">
                             <a
-                                href="${escapedUrl}"
+                                href="https://www.warga-digital.com/auth/reset-pin?token=a744c4075ff5faa082fa62045292544426211e72616892b67ecae4273f49a577&user=019ccc29-d853-7f0f-9d35-82c747badbef"
                                 style="
                                     display: inline-block;
                                     background: #1d9e75;
@@ -436,7 +398,7 @@ function generateResetPinEmailHtml(params: SendResetPinEmailParams): string {
                             "
                         >
                             <a
-                                href="${escapedUrl}"
+                                href="https://www.warga-digital.com/auth/reset-pin?token=a744c4075ff5faa082fa62045292544426211e72616892b67ecae4273f49a577&user=019ccc29-d853-7f0f-9d35-82c747badbef"
                                 style="
                                     font-size: 11px;
                                     color: #555;
@@ -448,7 +410,7 @@ function generateResetPinEmailHtml(params: SendResetPinEmailParams): string {
                                     text-decoration: none;
                                 "
                             >
-                                ${escapedUrl}
+                                https://www.warga-digital.com/auth/reset-pin?token=a744c4075ff5faa082fa62045292544426211e72616892b67ecae4273f49a577&user=019ccc29-d853-7f0f-9d35-82c747badbef
                             </a>
                         </div>
 
@@ -523,37 +485,4 @@ function generateResetPinEmailHtml(params: SendResetPinEmailParams): string {
             </div>
         </div>
     </body>
-</html>`;
-}
-
-export async function sendResetPinEmail(params: SendResetPinEmailParams): Promise<void> {
-  const resend = getResendClient();
-  const from = getFromEmail();
-
-  const { to, userName, resetUrl, expiresInHours } = params;
-
-  const html = generateResetPinEmailHtml(params);
-
-  const { error } = await resend.emails.send({
-    from,
-    to,
-    subject: "Permintaan Reset PIN - Warga Digital",
-    html,
-    text: `Halo ${userName},\n\nKami menerima permintaan untuk mereset PIN akun Anda.\n\nSilakan buka tautan berikut untuk mengatur PIN baru:\n${resetUrl}\n\nTautan ini berlaku selama ${expiresInHours} jam.\n\nJika Anda tidak meminta reset PIN, abaikan email ini.`,
-  });
-
-  if (error) {
-    throw new Error(`Failed to send email: ${error.message}`);
-  }
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-export { getAppUrl };
+</html>
