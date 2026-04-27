@@ -1,27 +1,25 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getSessionFromCookie } from "@/lib/auth/session";
+import { createServerClient } from "@/lib/supabase/server";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useOnboardingStore } from "@/stores/onboarding-store";
-import { useAuthStore } from "@/stores/auth-store";
-import { PageLoader } from "@/components/ui";
+export default async function HomePage() {
+  const session = await getSessionFromCookie();
+  
+  if (!session) {
+    redirect("/auth/login");
+  }
+  
+  const supabase = createServerClient();
+  const { data: onboarding } = await supabase
+    .from("tenant_users")
+    .select("id")
+    .eq("user_id", session.userId)
+    .eq("status", "ACTIVE")
+    .maybeSingle();
 
-export default function HomePage() {
-  const router = useRouter();
-  const onboardingCompleted = useOnboardingStore((s) => s.completed);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-
-  useEffect(() => {
-    if (!onboardingCompleted) {
-      router.replace("/onboarding");
-      return;
-    }
-    if (!isAuthenticated) {
-      router.replace("/auth/login");
-      return;
-    }
-    router.replace("/landing");
-  }, [onboardingCompleted, isAuthenticated, router]);
-
-  return <PageLoader message="Memuat..." />;
+  if (!onboarding) {
+    redirect("/onboarding");
+  }
+  
+  redirect("/landing");
 }
