@@ -50,7 +50,9 @@ export async function GET(request: NextRequest) {
       users!inner (
         id,
         full_name,
+        email,
         wa_number,
+        username,
         status
       )
     `,
@@ -71,6 +73,8 @@ export async function GET(request: NextRequest) {
     users: {
       id: string;
       full_name: string;
+      email: string | null;
+      username: string | null;
       wa_number: string | null;
       status: string;
     };
@@ -158,11 +162,14 @@ export async function GET(request: NextRequest) {
     tenant_user_id: r.id,
     user_id: r.user_id,
     full_name: r.users?.full_name ?? "—",
+    email: r.users?.email ?? null,
+    username: r.users?.username ?? null,
     wa_number: r.users?.wa_number ?? null,
     blok_rumah: blokMap[r.user_id] ?? null,
     joined_at: r.joined_at,
     roles: rolesMap[r.id] ?? [],
     last_active_at: lastActiveMap[r.user_id] ?? null,
+    status: r.users?.status ?? "INACTIVE",
   }));
 
   // ── 8. Apply search + blok filter in JS ───────────────────────────────────
@@ -170,6 +177,7 @@ export async function GET(request: NextRequest) {
     const matchSearch =
       !q ||
       w.full_name.toLowerCase().includes(q) ||
+      (w.username ?? "").toLowerCase().includes(q) ||
       (w.wa_number ?? "").toLowerCase().includes(q) ||
       (w.blok_rumah ?? "").toLowerCase().includes(q);
 
