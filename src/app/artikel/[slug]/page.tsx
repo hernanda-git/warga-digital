@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import Head from "next/head";
 import { ImageLightbox } from "@/components/articles/ImageLightbox";
 import { useAuthStore } from "@/stores/auth-store";
-import { formatArticleContent } from "@/lib/articles";
+import MarkdownRenderer from "@/components/articles/MarkdownRenderer";
 
 interface Article {
   id: string;
@@ -262,10 +262,7 @@ export default function ArtikelDetailPage() {
 
           {/* Content */}
           {article.content && (
-            <div
-              className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline"
-              dangerouslySetInnerHTML={{ __html: formatArticleContent(article.content) }}
-            />
+            <MarkdownRenderer content={article.content} />
           )}
 
           {/* Article Images Gallery */}
