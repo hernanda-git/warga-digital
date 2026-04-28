@@ -9,6 +9,7 @@ import {
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
 import { notifyAllActiveUsers } from "@/lib/notifications";
+import { serverUpload, generateSignedGetUrl } from "@/lib/r2";
 
 export async function POST(request: Request) {
   try {
@@ -307,33 +308,22 @@ export async function POST(request: Request) {
     }[] = [];
 
     if (files.length > 0) {
-      const bucketId =
-        process.env.SUPABASE_BUCKET_KAS_RT ?? "kas-rt-attachments";
-
       for (const file of files) {
         try {
           const extension =
             file.name.includes(".") && file.name.split(".").length > 1
               ? file.name.split(".").pop()
               : "bin";
-          const path = `${data.id}/${Date.now()}-${Math.random()
+          const objectKey = `kas-rt/${data.id}/${Date.now()}-${Math.random()
             .toString(36)
             .slice(2)}.${extension}`;
 
-          const uploadResult = await supabase.storage
-            .from(bucketId)
-            .upload(path, file, {
-              contentType: file.type || undefined,
-            });
-
-          if (uploadResult.error) {
-            continue;
-          }
+          await serverUpload(file, objectKey, file.type || "application/octet-stream", "public, max-age=3600");
 
           attachmentsToInsert.push({
             transaction_id: data.id,
             file_name: file.name,
-            storage_path: path,
+            storage_path: objectKey,
             mime_type: file.type || null,
             size_bytes: file.size,
           });
@@ -358,22 +348,17 @@ export async function POST(request: Request) {
       mime_type: string | null;
     }[] = [];
     if (files.length > 0 && attachmentsToInsert.length > 0) {
-      const bucketId =
-        process.env.SUPABASE_BUCKET_KAS_RT ?? "kas-rt-attachments";
       const signedUrlExpiresIn = 3600;
       const signedResults = await Promise.all(
         attachmentsToInsert.map((att) =>
-          supabase.storage
-            .from(bucketId)
-            .createSignedUrl(att.storage_path, signedUrlExpiresIn),
+          generateSignedGetUrl(att.storage_path, signedUrlExpiresIn),
         ),
       );
       for (let i = 0; i < attachmentsToInsert.length; i++) {
         const att = attachmentsToInsert[i];
-        const signed = signedResults[i].data;
         attachmentPayload.push({
           file_name: att.file_name,
-          url: signed?.signedUrl ?? "",
+          url: signedResults[i],
           mime_type: att.mime_type,
         });
       }
@@ -539,10 +524,8 @@ export async function GET(request: Request) {
     }
 
     // ── Process attachments: generate signed URLs in parallel ─────────────
-    const bucketId = process.env.SUPABASE_BUCKET_KAS_RT ?? "kas-rt-attachments";
     const signedUrlExpiresIn = 3600;
 
-    // Collect all attachments across all transactions for parallel signing
     const allAttachmentRefs: {
       txId: string;
       attId: string;
@@ -562,21 +545,17 @@ export async function GET(request: Request) {
       }
     }
 
-    // Fetch all signed URLs in one parallel batch
     const signedResults = await Promise.all(
       allAttachmentRefs.map((ref) =>
-        supabase.storage
-          .from(bucketId)
-          .createSignedUrl(ref.storage_path, signedUrlExpiresIn),
+        generateSignedGetUrl(ref.storage_path, signedUrlExpiresIn),
       ),
     );
 
-    // Map signed URLs back by attachment ID
     const signedUrlByAttId = new Map<string, string>();
     for (let i = 0; i < allAttachmentRefs.length; i++) {
       signedUrlByAttId.set(
         allAttachmentRefs[i].attId,
-        signedResults[i].data?.signedUrl ?? "",
+        signedResults[i],
       );
     }
 

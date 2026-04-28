@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
+import { deleteObject } from "@/lib/r2";
 
-/**
- * DELETE /api/jasa/[id]/media/[mediaId]
- * Delete specific media from a jasa service (owner only)
- */
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string; mediaId: string }> },
 ) {
-  // Require authentication
   const session = await getSessionFromCookie();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,7 +16,6 @@ export async function DELETE(
   const { id, mediaId } = await params;
 
   try {
-    // Verify the media belongs to this service
     const { data: media, error: mediaError } = await supabase
       .from("jasa_service_media")
       .select("id, service_id, url, is_primary")
@@ -35,7 +30,6 @@ export async function DELETE(
       );
     }
 
-    // Check if user is the owner of the service
     const { data: service, error: serviceError } = await supabase
       .from("jasa_services")
       .select("owner_user_id")
@@ -56,19 +50,15 @@ export async function DELETE(
       );
     }
 
-    // Extract file path from URL for storage deletion
-    const filePath = extractPathFromUrl(media.url);
+    const baseUrl = process.env.R2_PUBLIC_BASE_URL;
+    const objectKey = baseUrl && media.url.startsWith(baseUrl)
+      ? media.url.replace(baseUrl + "/", "")
+      : null;
 
-    // Delete from storage first (if file exists)
-    if (filePath) {
-      await supabase.storage
-        .from("jasa-images")
-        .remove([filePath])
-        .catch((err) => {
-        });
+    if (objectKey) {
+      await deleteObject(objectKey);
     }
 
-    // Delete media record from database
     const { error: deleteError } = await supabase
       .from("jasa_service_media")
       .delete()
@@ -81,7 +71,6 @@ export async function DELETE(
       );
     }
 
-    // If deleted media was primary, promote another image to primary
     if (media.is_primary) {
       const { data: nextMedia } = await supabase
         .from("jasa_service_media")
@@ -107,16 +96,5 @@ export async function DELETE(
       { success: false, error: "Gagal menghapus media" },
       { status: 500 },
     );
-  }
-}
-
-// Helper: Extract storage path from public URL
-function extractPathFromUrl(url: string): string | null {
-  try {
-    // URL format: https://[bucket].supabase.co/storage/v1/object/public/jasa-images/[path]
-    const parts = url.split("/jasa-images/");
-    return parts[1] || null;
-  } catch {
-    return null;
   }
 }

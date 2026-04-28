@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { requireCanManageOrganisation } from "../../require-manage";
+import { serverUpload, getPublicUrl } from "@/lib/r2";
 
-/**
- * POST /api/organisation/members/avatar
- * Upload custom avatar for organisation member
- * Body: FormData with 'file' and 'memberId'
- */
 export async function POST(request: Request) {
   const forbidden = await requireCanManageOrganisation();
   if (forbidden) return forbidden;
@@ -30,7 +26,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       return NextResponse.json(
         { message: "File harus berupa gambar (JPG, PNG, dll)." },
@@ -38,7 +33,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
@@ -49,7 +43,6 @@ export async function POST(request: Request) {
 
     const supabase = createServerClient();
 
-    // Verify member exists and user has permission
     const { data: member } = await supabase
       .from("organisation_members")
       .select("id, organisation_role_id")
@@ -76,36 +69,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Upload to Supabase Storage
     const fileExtension = file.name.split(".").pop() || "jpg";
-    const fileName = `custom-${memberId}-${Date.now()}.${fileExtension}`;
-    const filePath = `organisation-members/${fileName}`;
+    const fileName = `organisation-members/custom-${memberId}-${Date.now()}.${fileExtension}`;
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, buffer, {
-        contentType: file.type,
-        upsert: true,
-      });
-
-    if (uploadError) {
-      return NextResponse.json(
-        { message: "Gagal mengupload foto." },
-        { status: 500 },
-      );
-    }
-
-    // Get public URL
-    const baseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "") ?? "";
-    const avatarUrl = `${baseUrl}/storage/v1/object/public/avatars/${filePath}`;
+    await serverUpload(new Uint8Array(await file.arrayBuffer()), fileName, file.type);
 
     return NextResponse.json({
       ok: true,
-      avatarUrl,
-      filePath,
+      avatarUrl: getPublicUrl(fileName),
+      filePath: fileName,
     });
   } catch (error) {
     return NextResponse.json(

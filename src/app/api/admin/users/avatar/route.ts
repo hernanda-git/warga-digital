@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/admin-guard";
+import { serverUpload, deleteObject, getPublicUrl } from "@/lib/r2";
 
-const AVATAR_BUCKET = "avatars";
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 
 export async function POST(request: NextRequest) {
@@ -50,19 +50,7 @@ export async function POST(request: NextRequest) {
       : "jpg";
     const path = `${userId}/avatar.${safeExt}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from(AVATAR_BUCKET)
-      .upload(path, await file.arrayBuffer(), {
-        contentType: file.type,
-        upsert: true,
-      });
-
-    if (uploadError) {
-      return NextResponse.json(
-        { error: "Gagal mengunggah foto. Coba lagi." },
-        { status: 500 },
-      );
-    }
+    await serverUpload(new Uint8Array(await file.arrayBuffer()), path, file.type);
 
     const { error: updateError } = await supabase
       .from("users")
@@ -80,12 +68,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const baseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "") ?? "";
-    const profilePictureUrl = baseUrl
-      ? `${baseUrl}/storage/v1/object/public/avatars/${path}`
-      : null;
-
-    return NextResponse.json({ success: true, profilePictureUrl });
+    return NextResponse.json({ success: true, profilePictureUrl: getPublicUrl(path) });
   } catch {
     return NextResponse.json(
       { error: "Gagal mengunggah foto profil." },
@@ -130,16 +113,7 @@ export async function DELETE(request: NextRequest) {
       });
     }
 
-    const { error: removeError } = await supabase.storage
-      .from(AVATAR_BUCKET)
-      .remove([user.avatar_path]);
-
-    if (removeError) {
-      return NextResponse.json(
-        { error: "Gagal menghapus foto. Coba lagi." },
-        { status: 500 },
-      );
-    }
+    await deleteObject(user.avatar_path);
 
     const { error: updateError } = await supabase
       .from("users")

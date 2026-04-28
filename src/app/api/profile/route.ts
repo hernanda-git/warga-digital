@@ -386,10 +386,10 @@ export async function GET() {
       }
     }
 
-    const baseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "") ?? "";
+    const r2BaseUrl = process.env.R2_PUBLIC_BASE_URL;
     const profilePictureUrl =
-      user.avatar_path && baseUrl
-        ? `${baseUrl}/storage/v1/object/public/avatars/${user.avatar_path}`
+      user.avatar_path && r2BaseUrl
+        ? `${r2BaseUrl}/${user.avatar_path}`
         : null;
 
     const themeId = (user as { theme_id?: string }).theme_id ?? "green";

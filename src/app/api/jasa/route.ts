@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
+import { serverUpload, getPublicUrl } from "@/lib/r2";
 
 // Types for query parameters
 interface JasaListQuery {
@@ -583,7 +584,6 @@ export async function POST(request: Request) {
   }
 }
 
-// Helper function to upload image to Supabase storage
 async function uploadImageToStorage(
   supabase: any,
   userId: string,
@@ -612,24 +612,11 @@ async function uploadImageToStorage(
 
     const fileExt = file.name.split(".").pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${userId}/${serviceId}/${fileName}`;
+    const objectKey = `jasa-images/${userId}/${serviceId}/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("jasa-images")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+    await serverUpload(new Uint8Array(await file.arrayBuffer()), objectKey, file.type);
 
-    if (uploadError) {
-      return { success: false, url: null, error: "Gagal upload gambar" };
-    }
-
-    const { data: publicUrlData } = supabase.storage
-      .from("jasa-images")
-      .getPublicUrl(filePath);
-
-    return { success: true, url: publicUrlData.publicUrl };
+    return { success: true, url: getPublicUrl(objectKey) };
   } catch (error) {
     return { success: false, url: null, error: "Gagal upload gambar" };
   }

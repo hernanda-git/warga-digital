@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
+import { serverUpload, getPublicUrl } from "@/lib/r2";
 
-const AVATAR_BUCKET = "avatars";
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 
-/**
- * POST /api/profile/avatar
- * Upload profile picture. Expects multipart/form-data with field "file".
- * Replaces existing avatar. Returns new profilePictureUrl.
- */
 export async function POST(request: NextRequest) {
   try {
     const session = await getSessionFromCookie();
@@ -40,19 +35,8 @@ export async function POST(request: NextRequest) {
     const path = `${session.userId}/avatar.${safeExt}`;
 
     const supabase = createServerClient();
-    const { error: uploadError } = await supabase.storage
-      .from(AVATAR_BUCKET)
-      .upload(path, await file.arrayBuffer(), {
-        contentType: file.type,
-        upsert: true,
-      });
 
-    if (uploadError) {
-      return NextResponse.json(
-        { error: "Gagal mengunggah foto. Coba lagi." },
-        { status: 500 },
-      );
-    }
+    await serverUpload(new Uint8Array(await file.arrayBuffer()), path, file.type);
 
     const { error: updateError } = await supabase
       .from("users")
@@ -70,14 +54,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const baseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "") ?? "";
-    const profilePictureUrl = baseUrl
-      ? `${baseUrl}/storage/v1/object/public/avatars/${path}`
-      : null;
-
     return NextResponse.json({
       success: true,
-      profilePictureUrl,
+      profilePictureUrl: getPublicUrl(path),
     });
   } catch (err) {
     return NextResponse.json(

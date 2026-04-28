@@ -8,6 +8,7 @@
 import { redirect } from "next/navigation";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
+import { generateSignedGetUrl } from "@/lib/r2";
 import {
   DEFAULT_TENANT_ID,
   DEFAULT_COMMUNITY_ID,
@@ -217,8 +218,6 @@ export async function fetchKasRtTransactions(
 ): Promise<TransactionItem[]> {
   try {
     const supabase = createServerClient();
-    const bucketId =
-      process.env.SUPABASE_BUCKET_KAS_RT ?? "kas-rt-attachments";
     const signedUrlExpiresIn = 3600;
 
     let query = supabase
@@ -277,9 +276,7 @@ export async function fetchKasRtTransactions(
 
     const signedResults = await Promise.all(
       allAttachmentRefs.map((ref) =>
-        supabase.storage
-          .from(bucketId)
-          .createSignedUrl(ref.storage_path, signedUrlExpiresIn),
+        generateSignedGetUrl(ref.storage_path, signedUrlExpiresIn),
       ),
     );
 
@@ -287,7 +284,7 @@ export async function fetchKasRtTransactions(
     for (let i = 0; i < allAttachmentRefs.length; i++) {
       signedUrlByAttId.set(
         allAttachmentRefs[i].attId,
-        signedResults[i].data?.signedUrl ?? "",
+        signedResults[i],
       );
     }
 

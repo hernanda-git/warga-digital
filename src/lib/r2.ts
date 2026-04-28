@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // R2 Configuration
@@ -9,7 +9,7 @@ const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME;
 const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL;
 
 /**
- * Allowed MIME types for article images
+ * Allowed MIME types for image uploads
  */
 export const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
@@ -17,19 +17,53 @@ export const ALLOWED_IMAGE_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
+  "image/heic",
+  "image/avif",
 ] as const;
 
 export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
 
 /**
- * Maximum file size for uploads (10MB)
+ * Allowed MIME types for attachment uploads (kas-rt etc.)
  */
-export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+export const ALLOWED_ATTACHMENT_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "application/pdf",
+] as const;
+
+export type AllowedAttachmentType = (typeof ALLOWED_ATTACHMENT_TYPES)[number];
+
+/**
+ * Maximum file size for images (10MB)
+ */
+export const MAX_IMAGE_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+
+/** @deprecated Use MAX_IMAGE_FILE_SIZE instead */
+export const MAX_FILE_SIZE = MAX_IMAGE_FILE_SIZE;
+
+/**
+ * Maximum file size for attachments (10MB)
+ */
+export const MAX_ATTACHMENT_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+
+/**
+ * Maximum file size for avatars (5MB)
+ */
+export const MAX_AVATAR_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
 /**
  * Default signed URL expiry time (5 minutes)
  */
 export const DEFAULT_SIGNED_URL_EXPIRY = 300; // 5 minutes in seconds
+
+/**
+ * Default signed GET URL expiry (1 hour) for private attachments
+ */
+export const DEFAULT_SIGNED_GET_URL_EXPIRY = 3600; // 1 hour in seconds
 
 /**
  * Lazy-loaded R2 client instance
@@ -109,6 +143,25 @@ export function generateObjectKey(
 }
 
 /**
+ * Constructs a public URL for a given R2 object key
+ */
+export function getPublicUrl(objectKey: string): string {
+  if (!R2_PUBLIC_BASE_URL) {
+    throw new Error("R2_PUBLIC_BASE_URL environment variable is not set");
+  }
+  return `${R2_PUBLIC_BASE_URL}/${objectKey}`;
+}
+
+/**
+ * Extracts the R2 object key from a public URL
+ */
+export function extractObjectKey(publicUrl: string): string | null {
+  if (!R2_PUBLIC_BASE_URL) return null;
+  if (!publicUrl.startsWith(R2_PUBLIC_BASE_URL)) return null;
+  return publicUrl.replace(R2_PUBLIC_BASE_URL + "/", "");
+}
+
+/**
  * Generates a signed PUT URL for direct browser-to-R2 upload
  *
  * @param objectKey - The S3 object key for the file
@@ -161,6 +214,67 @@ export async function generateSignedUploadUrl(
 }
 
 /**
+ * Directly uploads a file to R2 from the server (no signed URL needed)
+ *
+ * @param body - The file body (Buffer, ArrayBuffer, Uint8Array, Blob, or File)
+ * @param objectKey - The S3 object key for the file
+ * @param contentType - The MIME type of the file
+ * @param cacheControl - Cache control header value (optional)
+ * @returns Object containing objectKey and publicUrl
+ */
+export async function serverUpload(
+  body: Buffer | Uint8Array | Blob,
+  objectKey: string,
+  contentType: string,
+  cacheControl?: string,
+): Promise<{
+  objectKey: string;
+  publicUrl: string;
+}> {
+  validateR2Config();
+
+  const r2Client = getR2Client();
+
+  const command = new PutObjectCommand({
+    Bucket: R2_BUCKET_NAME!,
+    Key: objectKey,
+    Body: body,
+    ContentType: contentType,
+    CacheControl: cacheControl ?? "public, max-age=31536000, immutable",
+  });
+
+  await r2Client.send(command);
+
+  return {
+    objectKey,
+    publicUrl: getPublicUrl(objectKey),
+  };
+}
+
+/**
+ * Generates a presigned GET URL for temporary access to a private object
+ *
+ * @param objectKey - The S3 object key
+ * @param expiresIn - URL expiry time in seconds (default: 3600)
+ * @returns The presigned GET URL string
+ */
+export async function generateSignedGetUrl(
+  objectKey: string,
+  expiresIn: number = DEFAULT_SIGNED_GET_URL_EXPIRY,
+): Promise<string> {
+  validateR2Config();
+
+  const r2Client = getR2Client();
+
+  const command = new GetObjectCommand({
+    Bucket: R2_BUCKET_NAME!,
+    Key: objectKey,
+  });
+
+  return getSignedUrl(r2Client, command, { expiresIn });
+}
+
+/**
  * Deletes an object from R2
  *
  * @param objectKey - The S3 object key to delete
@@ -206,7 +320,7 @@ export async function deleteObjects(objectKeys: string[]): Promise<void> {
 }
 
 /**
- * Checks if a content type is allowed for upload
+ * Checks if a content type is allowed for image upload
  */
 export function isAllowedContentType(
   contentType: string,
@@ -215,10 +329,10 @@ export function isAllowedContentType(
 }
 
 /**
- * Validates file size against maximum allowed
+ * Validates file size against maximum allowed for images
  */
 export function isValidFileSize(size: number): boolean {
-  return size > 0 && size <= MAX_FILE_SIZE;
+  return size > 0 && size <= MAX_IMAGE_FILE_SIZE;
 }
 
 /**
