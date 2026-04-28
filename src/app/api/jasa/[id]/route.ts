@@ -13,6 +13,7 @@ interface JasaServiceDetailWithMedia {
   jam_operasional_selesai: string;
   is_available: boolean;
   wa_number: string | null;
+  owner_wa_number: string | null;
   location_note: string | null;
   owner_display_name: string;
   owner_user_id: string;
@@ -80,7 +81,8 @@ export async function GET(
         owner_user_id,
         category_id,
         created_at,
-        updated_at
+        updated_at,
+        owner:users!owner_user_id(wa_number)
       `,
       )
       .eq("id", id)
@@ -118,6 +120,7 @@ export async function GET(
 
     const response: JasaServiceDetailWithMedia = {
       ...service,
+      owner_wa_number: service?.owner?.wa_number || null,
       category_name: category?.name || "Tidak Diketahui",
       category_icon: category?.icon || null,
       media: media || [],

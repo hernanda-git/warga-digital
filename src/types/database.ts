@@ -438,6 +438,7 @@ export interface JasaServiceDetailWithMedia {
   jam_operasional_selesai: string;
   is_available: boolean;
   wa_number: string | null;
+  owner_wa_number: string | null;
   location_note: string | null;
   owner_display_name: string;
   owner_user_id: string;

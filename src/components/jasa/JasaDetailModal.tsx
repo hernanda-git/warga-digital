@@ -104,8 +104,9 @@ export function JasaDetailModal({
     : [];
 
   const handleWhatsAppContact = () => {
-    if (!service?.wa_number) return;
-    const rawNumber = service.wa_number;
+    const contactNumber = service?.wa_number || service?.owner_wa_number;
+    if (!contactNumber) return;
+    const rawNumber = contactNumber;
     const stripped = rawNumber.replace(/[^0-9]/g, "");
     const normalized = stripped.replace(/^0/, "62");
     const message = encodeURIComponent(
@@ -387,7 +388,7 @@ export function JasaDetailModal({
               {/* ── Contact & Location ────────────────────────────── */}
               <div className="grid grid-cols-1 gap-3">
                 {/* WhatsApp contact */}
-                {service.wa_number && (
+                {(service.wa_number || service.owner_wa_number) && (
                   <div
                     className="flex items-center gap-3 rounded-2xl p-4"
                     style={{
@@ -418,7 +419,7 @@ export function JasaDetailModal({
                         className="truncate text-sm font-semibold"
                         style={{ color: "var(--color-body)" }}
                       >
-                        {service.wa_number}
+                        {service.wa_number || service.owner_wa_number}
                       </p>
                     </div>
                   </div>
@@ -594,7 +595,7 @@ export function JasaDetailModal({
                 )}
 
                 {/* WhatsApp CTA */}
-                {service.wa_number ? (
+                {(service.wa_number || service.owner_wa_number) ? (
                   <button
                     onClick={handleWhatsAppContact}
                     className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-white transition-all active:scale-[0.98]"
