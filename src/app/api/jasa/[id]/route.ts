@@ -121,7 +121,7 @@ export async function GET(
 
     const response: JasaServiceDetailWithMedia = {
       ...service,
-      owner_wa_number: service?.owner?.wa_number || null,
+      owner_wa_number: service?.owner?.[0]?.wa_number || null,
       category_name: category?.name || "Tidak Diketahui",
       category_icon: category?.icon || null,
       media: media || [],
