@@ -337,6 +337,12 @@ export default function AdminPage() {
       href: "/admin/roles",
     },
     {
+      label: "Migrasi Database",
+      sublabel: "Skema & data ke server baru",
+      icon: ArrowPathIcon,
+      href: "/admin/migrate-database",
+    },
+    {
       label: "Artikel",
       sublabel: "Kelola konten & berita",
       icon: DocumentTextIcon,
