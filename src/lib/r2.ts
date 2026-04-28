@@ -96,7 +96,7 @@ function validateR2Config(): void {
 /**
  * Gets or creates the R2 S3 client
  */
-function getR2Client(): S3Client {
+export function getR2Client(): S3Client {
   if (!r2ClientInstance) {
     validateR2Config();
 

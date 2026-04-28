@@ -81,16 +81,20 @@ export default function AdminMigrateStoragePage() {
   }, [hasMounted, isAuthenticated]);
 
   async function checkAccess() {
+    console.log("[MigrateStorage] Checking access...");
     try {
       const res = await apiFetch("/api/profile");
       if (!res.ok) throw new Error("Unauthorized");
       const body = await res.json();
       const data: ProfileData | undefined = body?.data ?? body;
       if (!data || !hasAdminRoleInProfile(data)) {
+        console.warn("[MigrateStorage] User does not have admin role, redirecting to /admin");
         router.replace("/admin");
         return;
       }
-    } catch {
+      console.log("[MigrateStorage] Access granted");
+    } catch (e) {
+      console.error("[MigrateStorage] Access check failed", e);
       clearUser();
       router.replace("/auth/login");
       return;
@@ -100,14 +104,18 @@ export default function AdminMigrateStoragePage() {
   }
 
   async function loadScan() {
+    console.log("[MigrateStorage] Loading scan...");
     setScanning(true);
     setError(null);
     try {
       const res = await fetch("/api/admin/migrate-storage");
+      console.log(`[MigrateStorage] Scan response status: ${res.status}`);
       if (!res.ok) throw new Error("Gagal memindai");
       const data: ScanResponse = await res.json();
+      console.log("[MigrateStorage] Scan results:", data);
       setScanResults(data.buckets);
-    } catch {
+    } catch (e) {
+      console.error("[MigrateStorage] Scan failed", e);
       setError("Gagal memindai status migrasi.");
     } finally {
       setScanning(false);
@@ -115,26 +123,37 @@ export default function AdminMigrateStoragePage() {
   }
 
   const startMigration = useCallback(async (bucket: string) => {
+    console.log(`[MigrateStorage] Starting migration for bucket: ${bucket}`);
     setActiveBucket(bucket);
     setMigrating(true);
     setMigrationResult(null);
     setError(null);
 
     try {
+      console.log(`[MigrateStorage] Sending POST request to /api/admin/migrate-storage`, { bucket });
       const res = await fetch("/api/admin/migrate-storage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ bucket }),
       });
 
-      if (!res.ok) throw new Error("Gagal menjalankan migrasi");
+      console.log(`[MigrateStorage] Migration response status: ${res.status}`);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error(`[MigrateStorage] Migration failed with status ${res.status}:`, errorText);
+        throw new Error("Gagal menjalankan migrasi");
+      }
 
       const data: MigrationResponse = await res.json();
+      console.log("[MigrateStorage] Migration result:", data);
       setMigrationResult(data.result);
-    } catch {
+    } catch (e) {
+      console.error("[MigrateStorage] Migration error", e);
       setError("Gagal menjalankan migrasi.");
     } finally {
       setMigrating(false);
+      console.log("[MigrateStorage] Migration complete, reloading scan...");
       loadScan();
     }
   }, []);
