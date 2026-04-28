@@ -119,9 +119,13 @@ export async function GET(
       .eq("service_id", id)
       .order("sort_order", { ascending: true });
 
+    const ownerData = Array.isArray(service?.owner)
+      ? service?.owner[0]
+      : service?.owner;
+
     const response: JasaServiceDetailWithMedia = {
       ...service,
-      owner_wa_number: service?.owner?.[0]?.wa_number || null,
+      owner_wa_number: ownerData?.wa_number || null,
       category_name: category?.name || "Tidak Diketahui",
       category_icon: category?.icon || null,
       media: media || [],

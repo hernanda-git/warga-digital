@@ -271,6 +271,7 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
         `
         id,
         full_name,
+        wa_number,
         user_houses!user_houses_user_id_fkey(
           houses!inner(blok_rumah)
         )
@@ -283,7 +284,7 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
       (owners || []).map((u: any) => {
         const arr = u.user_houses as any[] || [];
         const house = arr[0]?.houses;
-        return [u.id, { name: u.full_name?.trim() || "Unknown", blok: house?.blok_rumah ?? null }];
+        return [u.id, { name: u.full_name?.trim() || "Unknown", blok: house?.blok_rumah ?? null, wa_number: u.wa_number || null }];
       }),
     );
 
@@ -312,6 +313,7 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
         ...service,
         owner_display_name: owner?.name?.trim() || "Unknown",
         owner_blok_rumah: owner?.blok ?? null,
+        owner_wa_number: owner?.wa_number ?? null,
         category_icon: categoryMap.get(service.category_id)?.icon || null,
         primary_image_url: mediaMap.get(service.id) || null,
       };

@@ -25,6 +25,7 @@ interface JasaServiceWithMedia {
   hari_operasional: Record<string, boolean>;
   is_available: boolean;
   wa_number: string | null;
+  owner_wa_number: string | null;
   owner_display_name: string;
   owner_blok_rumah: string | null;
   category_icon: string | null;
@@ -219,6 +220,7 @@ export async function GET(request: Request) {
         `
         id,
         full_name,
+        wa_number,
         user_houses!user_houses_user_id_fkey(
           houses!inner(
             blok_rumah
@@ -240,7 +242,8 @@ export async function GET(request: Request) {
           u.id,
           { 
             name: fullName, 
-            blok: blokRumah
+            blok: blokRumah,
+            wa_number: u.wa_number || null,
           },
         ];
       }),
@@ -279,6 +282,7 @@ export async function GET(request: Request) {
           ...service,
           owner_display_name: finalName,
           owner_blok_rumah: owner?.blok ?? null,
+          owner_wa_number: owner?.wa_number ?? null,
           category_icon: categoryMap.get(service.category_id)?.icon || null,
           primary_image_url: mediaMap.get(service.id) || null,
         };

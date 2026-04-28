@@ -266,15 +266,15 @@ export default function JasaPage() {
   };
 
   const handleContact = (service: JasaServiceWithMedia) => {
-    if (service.wa_number) {
-      const message = encodeURIComponent(
-        `Halo, saya tertarik dengan layanan "${service.name}". Apakah masih tersedia?`,
-      );
-      window.open(
-        `https://wa.me/${service.wa_number.replace(/[^0-9]/g, "").replace(/^0/, "62")}?text=${message}`,
-        "_blank",
-      );
-    }
+    const contactNumber = service.wa_number || service.owner_wa_number;
+    if (!contactNumber) return;
+    const message = encodeURIComponent(
+      `Halo, saya tertarik dengan layanan "${service.name}". Apakah masih tersedia?`,
+    );
+    window.open(
+      `https://wa.me/${contactNumber.replace(/[^0-9]/g, "").replace(/^0/, "62")}?text=${message}`,
+      "_blank",
+    );
   };
 
   const handleViewService = async (serviceId: string) => {

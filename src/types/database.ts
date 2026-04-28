@@ -422,6 +422,7 @@ export interface JasaServiceWithMedia {
   hari_operasional: Record<string, boolean>;
   is_available: boolean;
   wa_number: string | null;
+  owner_wa_number: string | null;
   owner_display_name: string;
   owner_blok_rumah: string | null;
   category_icon: string | null;
