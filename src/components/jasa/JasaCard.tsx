@@ -54,11 +54,11 @@ function summariseDays(hari: Record<string, boolean>): string {
 export function JasaCardSkeleton() {
   return (
     <div
-      className="flex h-40 overflow-hidden rounded-2xl bg-app-surface"
+      className="flex h-48 overflow-hidden rounded-2xl bg-app-surface"
       style={{ border: "1px solid var(--color-input-border)" }}
     >
       <div className="h-full w-[140px] shrink-0 animate-pulse bg-app-surface-alt" />
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 overflow-hidden px-3 py-2.5">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 overflow-hidden px-3 py-3">
         <div className="h-4 w-3/4 animate-pulse rounded bg-app-surface-alt" />
         <div className="h-3.5 w-full animate-pulse rounded bg-app-surface-alt" />
         <div className="h-3.5 w-5/6 animate-pulse rounded bg-app-surface-alt" />
@@ -84,7 +84,7 @@ export const JasaCard = memo(function JasaCard({ service, onClick }: JasaCardPro
         }
       }}
       aria-label={`${service.name} – ${formatRupiah(service.estimated_price)}`}
-      className="group flex h-40 cursor-pointer overflow-hidden rounded-2xl bg-app-surface shadow-sm transition-all active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-primary"
+      className="group flex h-48 cursor-pointer overflow-hidden rounded-2xl bg-app-surface shadow-sm transition-all active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-primary"
       style={{ border: "1px solid var(--color-input-border)" }}
     >
       <div className="relative h-full w-[140px] shrink-0 overflow-hidden bg-app-surface-alt">
@@ -93,7 +93,7 @@ export const JasaCard = memo(function JasaCard({ service, onClick }: JasaCardPro
             src={service.primary_image_url}
             alt={service.name}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="scale-110 object-cover transition-transform duration-300 group-hover:scale-125"
             sizes="140px"
           />
         ) : (
@@ -111,7 +111,7 @@ export const JasaCard = memo(function JasaCard({ service, onClick }: JasaCardPro
         )}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 overflow-hidden px-3 py-2.5">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 overflow-hidden px-3 py-3">
         <h3
           className="line-clamp-2 text-base font-bold leading-snug"
           style={{ color: "var(--color-title)" }}
