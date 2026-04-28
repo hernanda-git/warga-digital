@@ -2,15 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import type { ArticleImage } from "@/types/article-image";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-const AVATARS_BUCKET = process.env.SUPABASE_BUCKET_AVATARS || "avatars";
+const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL;
 
-/**
- * Construct full avatar URL from avatar_path
- */
 function getAvatarUrl(avatarPath: string | null): string | null {
-  if (!avatarPath || !SUPABASE_URL) return null;
-  return `${SUPABASE_URL}/storage/v1/object/public/${AVATARS_BUCKET}/${avatarPath}`;
+  if (!avatarPath || !R2_PUBLIC_BASE_URL) return null;
+  return `${R2_PUBLIC_BASE_URL}/${avatarPath}`;
 }
 
 type RouteContext = { params: Promise<{ slug: string }> };

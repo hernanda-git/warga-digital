@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
+import { deleteObjects } from "@/lib/r2";
 
 interface JasaServiceDetailWithMedia {
   id: string;
@@ -320,31 +321,27 @@ export async function DELETE(
       );
     }
 
-    // Fetch all media URLs before deletion to clean up storage
     const { data: media } = await supabase
       .from("jasa_service_media")
       .select("id, url")
       .eq("service_id", id);
 
-    // Delete media from storage bucket
     if (media && media.length > 0) {
-      const filePaths = media
+      const baseUrl = process.env.R2_PUBLIC_BASE_URL;
+      const objectKeys = media
         .map((m) => {
-          const urlParts = m.url.split("/jasa-images/");
-          return urlParts[1] || null;
+          if (baseUrl && m.url.startsWith(baseUrl)) {
+            return m.url.replace(baseUrl + "/", "");
+          }
+          return null;
         })
-        .filter(Boolean);
+        .filter(Boolean) as string[];
 
-      if (filePaths.length > 0) {
-        await supabase.storage
-          .from("jasa-images")
-          .remove(filePaths)
-          .catch((err) => {
-          });
+      if (objectKeys.length > 0) {
+        await deleteObjects(objectKeys);
       }
     }
 
-    // Delete service (cascade will handle media table records)
     const { error: deleteError } = await supabase
       .from("jasa_services")
       .delete()

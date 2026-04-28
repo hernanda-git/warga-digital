@@ -8,6 +8,7 @@ import {
   DEFAULT_COMMUNITY_ID,
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
+import { serverUpload, generateSignedGetUrl, deleteObjects } from "@/lib/r2";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -122,9 +123,6 @@ export async function POST(
     }
   }
 
-  const bucketId =
-    process.env.SUPABASE_BUCKET_KAS_RT ?? "kas-rt-attachments";
-
   const attachmentsToInsert: {
     transaction_id: string;
     file_name: string;
@@ -139,34 +137,22 @@ export async function POST(
     mime_type: string | null;
   }[] = [];
 
-  // Upload files to storage
   for (const file of files) {
     try {
       const extension =
         file.name.includes(".") && file.name.split(".").length > 1
           ? file.name.split(".").pop()
           : "bin";
-      const path = `${transactionId}/${Date.now()}-${Math.random()
+      const objectKey = `kas-rt/${transactionId}/${Date.now()}-${Math.random()
         .toString(36)
         .slice(2)}.${extension}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from(bucketId)
-        .upload(path, file, {
-          contentType: file.type || undefined,
-        });
-
-      if (uploadError) {
-        return NextResponse.json(
-          { message: `Gagal mengunggah file ${file.name}.` },
-          { status: 500 },
-        );
-      }
+      await serverUpload(file, objectKey, file.type || "application/octet-stream", "public, max-age=3600");
 
       attachmentsToInsert.push({
         transaction_id: transactionId,
         file_name: file.name,
-        storage_path: path,
+        storage_path: objectKey,
         mime_type: file.type || null,
         size_bytes: file.size,
       });
@@ -178,7 +164,6 @@ export async function POST(
     }
   }
 
-  // Insert attachment records into database
   if (attachmentsToInsert.length > 0) {
     const { error: attachmentError } = await supabase
       .from("kas_rt_attachments")
@@ -192,21 +177,17 @@ export async function POST(
     }
   }
 
-  // Generate signed URLs for the uploaded attachments in parallel
   const signedUrlExpiresIn = 3600;
   const signedResults = await Promise.all(
     attachmentsToInsert.map((att) =>
-      supabase.storage
-        .from(bucketId)
-        .createSignedUrl(att.storage_path, signedUrlExpiresIn),
+      generateSignedGetUrl(att.storage_path, signedUrlExpiresIn),
     ),
   );
   for (let i = 0; i < attachmentsToInsert.length; i++) {
     const att = attachmentsToInsert[i];
-    const signed = signedResults[i].data;
     uploadedAttachments.push({
       file_name: att.file_name,
-      url: signed?.signedUrl ?? "",
+      url: signedResults[i],
       mime_type: att.mime_type,
     });
   }
@@ -285,18 +266,8 @@ export async function DELETE(
     );
   }
 
-  const bucketId =
-    process.env.SUPABASE_BUCKET_KAS_RT ?? "kas-rt-attachments";
-
-  // Delete files from storage
-  const storagePaths = attachments.map((att) => att.storage_path);
-  const { error: storageError } = await supabase.storage
-    .from(bucketId)
-    .remove(storagePaths);
-
-  if (storageError) {
-    // Continue to delete database records even if storage deletion fails
-  }
+  const objectKeys = attachments.map((att) => att.storage_path);
+  await deleteObjects(objectKeys);
 
   // Delete attachment records from database
   const { error: deleteError } = await supabase

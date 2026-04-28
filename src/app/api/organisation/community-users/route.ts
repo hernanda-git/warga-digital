@@ -61,14 +61,15 @@ export async function GET() {
       if (blok) userToBlock[l.user_id] = blok;
     });
 
+    const r2BaseUrl = process.env.R2_PUBLIC_BASE_URL;
     const list = users.map((u) => ({
       id: u.id,
       fullName: u.full_name,
       blockName: userToBlock[u.id] ?? "",
       whatsappNumber: u.wa_number ?? "",
       profilePictureUrl:
-        u.avatar_path && baseUrl
-          ? `${baseUrl}/storage/v1/object/public/avatars/${u.avatar_path}`
+        u.avatar_path && r2BaseUrl
+          ? `${r2BaseUrl}/${u.avatar_path}`
           : null,
     }));
 

@@ -45,17 +45,17 @@ export async function GET() {
 
     const memberList = members ?? [];
     const userIds = [...new Set(memberList.map((m) => m.user_id).filter(Boolean))] as string[];
-    const baseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "") ?? "";
     let userAvatarMap: Record<string, string | null> = {};
     if (userIds.length > 0) {
       const { data: users } = await supabase
         .from("users")
         .select("id, avatar_path")
         .in("id", userIds);
+      const r2BaseUrl = process.env.R2_PUBLIC_BASE_URL;
       userAvatarMap = (users ?? []).reduce<Record<string, string | null>>((acc, u) => {
         acc[u.id] =
-          u.avatar_path && baseUrl
-            ? `${baseUrl}/storage/v1/object/public/avatars/${u.avatar_path}`
+          u.avatar_path && r2BaseUrl
+            ? `${r2BaseUrl}/${u.avatar_path}`
             : null;
         return acc;
       }, {});

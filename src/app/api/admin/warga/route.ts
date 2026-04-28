@@ -159,9 +159,8 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const baseUrl = process.env.SUPABASE_URL?.replace(/\/$/, "") ?? "";
+  const r2BaseUrl = process.env.R2_PUBLIC_BASE_URL;
 
-  // ── 7. Build full warga list ───────────────────────────────────────────────
   const allWarga = rows.map((r) => {
     const avatarPath = r.users?.avatar_path ?? null;
     return {
@@ -178,8 +177,8 @@ export async function GET(request: NextRequest) {
       status: r.users?.status ?? "INACTIVE",
       avatar_path: avatarPath,
       profile_picture_url:
-        avatarPath && baseUrl
-          ? `${baseUrl}/storage/v1/object/public/avatars/${avatarPath}`
+        avatarPath && r2BaseUrl
+          ? `${r2BaseUrl}/${avatarPath}`
           : null,
     };
   });

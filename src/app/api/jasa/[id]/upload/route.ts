@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
+import { serverUpload, getPublicUrl, deleteObject } from "@/lib/r2";
 
 /**
  * POST /api/jasa/[id]/upload
@@ -108,11 +109,10 @@ export async function POST(
       );
 
       if (!uploadResult.success || !uploadResult.url) {
-        // Delete any already uploaded files on failure
         for (const media of uploadedMedia) {
-          const path = extractPathFromUrl(media.url);
-          if (path) {
-            await supabase.storage.from("jasa-images").remove([path]);
+          const key = extractObjectKeyFromR2Url(media.url);
+          if (key) {
+            await deleteObject(key);
           }
         }
         return NextResponse.json(
@@ -124,7 +124,6 @@ export async function POST(
         );
       }
 
-      // Insert media record
       const { data: mediaRecord, error: insertError } = await supabase
         .from("jasa_service_media")
         .insert({
@@ -138,10 +137,9 @@ export async function POST(
         .single();
 
       if (insertError) {
-        // Cleanup storage
-        const path = extractPathFromUrl(uploadResult.url);
-        if (path) {
-          await supabase.storage.from("jasa-images").remove([path]);
+        const key = extractObjectKeyFromR2Url(uploadResult.url);
+        if (key) {
+          await deleteObject(key);
         }
         return NextResponse.json(
           { success: false, error: "Gagal menyimpan data gambar" },
@@ -193,7 +191,6 @@ async function getMediaCount(
   return count || 0;
 }
 
-// Helper: Upload image to Supabase storage
 async function uploadImageToStorage(
   supabase: any,
   userId: string,
@@ -202,7 +199,6 @@ async function uploadImageToStorage(
   isPrimary: boolean,
 ): Promise<{ success: boolean; url: string | null; error?: string }> {
   try {
-    // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       return {
@@ -212,7 +208,6 @@ async function uploadImageToStorage(
       };
     }
 
-    // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       return {
@@ -222,40 +217,25 @@ async function uploadImageToStorage(
       };
     }
 
-    // Generate unique filename
     const fileExt = file.name.split(".").pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${userId}/${serviceId}/${fileName}`;
+    const objectKey = `jasa-images/${userId}/${serviceId}/${fileName}`;
 
-    // Upload to storage bucket 'jasa-images'
-    const { error: uploadError } = await supabase.storage
-      .from("jasa-images")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+    await serverUpload(new Uint8Array(await file.arrayBuffer()), objectKey, file.type);
 
-    if (uploadError) {
-      return { success: false, url: null, error: "Gagal upload gambar" };
-    }
-
-    // Get public URL with transformation for optimization
-    const { data: publicUrlData } = supabase.storage
-      .from("jasa-images")
-      .getPublicUrl(filePath);
-
-    return { success: true, url: publicUrlData.publicUrl };
+    return { success: true, url: getPublicUrl(objectKey) };
   } catch (error) {
     return { success: false, url: null, error: "Gagal upload gambar" };
   }
 }
 
-// Helper: Extract storage path from public URL
-function extractPathFromUrl(url: string): string | null {
+function extractObjectKeyFromR2Url(url: string): string | null {
   try {
-    // URL format: https://[bucket].supabase.co/storage/v1/object/public/jasa-images/[path]
-    const parts = url.split("/jasa-images/");
-    return parts[1] || null;
+    const baseUrl = process.env.R2_PUBLIC_BASE_URL;
+    if (baseUrl && url.startsWith(baseUrl)) {
+      return url.replace(baseUrl + "/", "");
+    }
+    return null;
   } catch {
     return null;
   }
