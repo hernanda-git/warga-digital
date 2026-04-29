@@ -103,6 +103,8 @@ export function useKasRtTransactions({
 }: UseKasRtTransactionsOptions): UseKasRtTransactionsReturn {
   const hasInitialData = !!initialData;
 
+
+
   // ── State ─────────────────────────────────────────────────────────────
   const [transactions, setTransactions] = useState<TransactionItem[]>(
     initialData?.transactions ?? [],
@@ -149,6 +151,8 @@ export function useKasRtTransactions({
   const abortControllerRef = useRef<AbortController | null>(null);
   const prevFilterKeyRef = useRef(buildFilterKey(filterState));
   const isMountedRef = useRef(true);
+  const hasMoreRef = useRef(pagination.hasMore);
+  hasMoreRef.current = pagination.hasMore;
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -211,9 +215,7 @@ export function useKasRtTransactions({
         });
 
         if (!response.ok) {
-          if (response.status !== 0) {
-            // 0 = aborted
-          }
+
           return false;
         }
 
@@ -258,9 +260,9 @@ export function useKasRtTransactions({
         return true;
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") {
-          // Silently ignore aborted requests
           return false;
         }
+
         return false;
       } finally {
         if (!isMountedRef.current) return false;
@@ -305,12 +307,11 @@ export function useKasRtTransactions({
 
   // Load more - called when scrolling to bottom
   const loadMore = useCallback(async () => {
-    if (isLoadingMore || isTransactionsLoading || !pagination.hasMore) return;
+    if (isLoadingMore || isTransactionsLoading || !hasMoreRef.current) return;
     await loadTransactions(filterState, pagination.currentPage + 1, true);
   }, [
     isLoadingMore,
     isTransactionsLoading,
-    pagination.hasMore,
     pagination.currentPage,
     filterState,
     loadTransactions,
