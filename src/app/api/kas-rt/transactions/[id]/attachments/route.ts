@@ -133,7 +133,7 @@ export async function POST(
 
   const uploadedAttachments: {
     file_name: string;
-    url: string;
+    url: string | null;
     mime_type: string | null;
   }[] = [];
 

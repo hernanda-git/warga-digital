@@ -420,7 +420,7 @@ export async function PATCH(
     }
   }
 
-  let savedAttachments: { id: string; file_name: string; url: string; mime_type: string | null }[] = [];
+  let savedAttachments: { id: string; file_name: string; url: string | null; mime_type: string | null }[] = [];
 
   const { data: existingAttachments } = await supabase
     .from("kas_rt_attachments")

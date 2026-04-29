@@ -344,7 +344,7 @@ export async function POST(request: Request) {
 
     const attachmentPayload: {
       file_name: string;
-      url: string;
+      url: string | null;
       mime_type: string | null;
     }[] = [];
     if (files.length > 0 && attachmentsToInsert.length > 0) {
