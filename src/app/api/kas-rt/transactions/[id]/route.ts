@@ -8,7 +8,7 @@ import {
   DEFAULT_COMMUNITY_ID,
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
-import { serverUpload, generateSignedGetUrl } from "@/lib/r2";
+import { serverUpload, getPublicUrl } from "@/lib/r2";
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
 
@@ -420,7 +420,6 @@ export async function PATCH(
     }
   }
 
-  const signedUrlExpiresIn = 3600;
   let savedAttachments: { id: string; file_name: string; url: string; mime_type: string | null }[] = [];
 
   const { data: existingAttachments } = await supabase
@@ -430,17 +429,11 @@ export async function PATCH(
     .order("created_at", { ascending: true });
 
   if (existingAttachments && existingAttachments.length > 0) {
-    const signedResults = await Promise.all(
-      existingAttachments.map((att) =>
-        generateSignedGetUrl(att.storage_path, signedUrlExpiresIn),
-      ),
-    );
-    for (let i = 0; i < existingAttachments.length; i++) {
-      const att = existingAttachments[i];
+    for (const att of existingAttachments) {
       savedAttachments.push({
         id: att.id,
         file_name: att.file_name,
-        url: signedResults[i],
+        url: getPublicUrl(att.storage_path),
         mime_type: att.mime_type,
       });
     }
@@ -497,17 +490,11 @@ export async function PATCH(
 
       if (attachmentError) {
       } else if (insertedAttachments) {
-        const signedResults = await Promise.all(
-          insertedAttachments.map((att) =>
-            generateSignedGetUrl(att.storage_path, signedUrlExpiresIn),
-          ),
-        );
-        for (let i = 0; i < insertedAttachments.length; i++) {
-          const att = insertedAttachments[i];
+        for (const att of insertedAttachments) {
           savedAttachments.push({
             id: att.id,
             file_name: att.file_name,
-            url: signedResults[i],
+            url: getPublicUrl(att.storage_path),
             mime_type: att.mime_type,
           });
         }

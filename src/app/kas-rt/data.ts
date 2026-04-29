@@ -8,7 +8,7 @@
 import { redirect } from "next/navigation";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
-import { generateSignedGetUrl } from "@/lib/r2";
+import { getPublicUrl } from "@/lib/r2";
 import {
   DEFAULT_TENANT_ID,
   DEFAULT_COMMUNITY_ID,
@@ -218,8 +218,6 @@ export async function fetchKasRtTransactions(
 ): Promise<TransactionItem[]> {
   try {
     const supabase = createServerClient();
-    const signedUrlExpiresIn = 3600;
-
     let query = supabase
       .from("kas_rt_transactions")
       .select(
@@ -254,40 +252,6 @@ export async function fetchKasRtTransactions(
       return [];
     }
 
-    // Parallel signed URL generation
-    const allAttachmentRefs: {
-      txId: string;
-      attId: string;
-      file_name: string;
-      storage_path: string;
-      mime_type: string | null;
-    }[] = [];
-    for (const tx of transactions) {
-      for (const att of (tx as any).kas_rt_attachments ?? []) {
-        allAttachmentRefs.push({
-          txId: (tx as any).id,
-          attId: att.id,
-          file_name: att.file_name,
-          storage_path: att.storage_path,
-          mime_type: att.mime_type,
-        });
-      }
-    }
-
-    const signedResults = await Promise.all(
-      allAttachmentRefs.map((ref) =>
-        generateSignedGetUrl(ref.storage_path, signedUrlExpiresIn),
-      ),
-    );
-
-    const signedUrlByAttId = new Map<string, string>();
-    for (let i = 0; i < allAttachmentRefs.length; i++) {
-      signedUrlByAttId.set(
-        allAttachmentRefs[i].attId,
-        signedResults[i],
-      );
-    }
-
     return (transactions as any[]).map((tx) => {
       const createdByUser = Array.isArray(tx.created_by_user)
         ? tx.created_by_user[0]
@@ -308,7 +272,7 @@ export async function fetchKasRtTransactions(
         attachments: (tx.kas_rt_attachments ?? []).map((att: any) => ({
           id: att.id,
           file_name: att.file_name,
-          url: signedUrlByAttId.get(att.id) ?? "",
+          url: getPublicUrl(att.storage_path),
           mime_type: att.mime_type,
         })),
         transaction_details: tx.kas_rt_transaction_details ?? [],

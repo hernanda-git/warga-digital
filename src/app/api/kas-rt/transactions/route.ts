@@ -9,7 +9,7 @@ import {
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
 import { notifyAllActiveUsers } from "@/lib/notifications";
-import { serverUpload, generateSignedGetUrl } from "@/lib/r2";
+import { serverUpload, getPublicUrl } from "@/lib/r2";
 
 export async function POST(request: Request) {
   try {
@@ -348,17 +348,10 @@ export async function POST(request: Request) {
       mime_type: string | null;
     }[] = [];
     if (files.length > 0 && attachmentsToInsert.length > 0) {
-      const signedUrlExpiresIn = 3600;
-      const signedResults = await Promise.all(
-        attachmentsToInsert.map((att) =>
-          generateSignedGetUrl(att.storage_path, signedUrlExpiresIn),
-        ),
-      );
-      for (let i = 0; i < attachmentsToInsert.length; i++) {
-        const att = attachmentsToInsert[i];
+      for (const att of attachmentsToInsert) {
         attachmentPayload.push({
           file_name: att.file_name,
-          url: signedResults[i],
+          url: getPublicUrl(att.storage_path),
           mime_type: att.mime_type,
         });
       }
@@ -482,9 +475,6 @@ export async function GET(request: Request) {
 
     const { count: totalCount, error: countError } = await countQuery;
 
-    if (countError) {
-    }
-
     // ── Fetch paginated transactions with filters ──────────────────────────
     let query = supabase
       .from("kas_rt_transactions")
@@ -523,47 +513,11 @@ export async function GET(request: Request) {
       );
     }
 
-    // ── Process attachments: generate signed URLs in parallel ─────────────
-    const signedUrlExpiresIn = 3600;
-
-    const allAttachmentRefs: {
-      txId: string;
-      attId: string;
-      file_name: string;
-      storage_path: string;
-      mime_type: string | null;
-    }[] = [];
-    for (const tx of transactions ?? []) {
-      for (const att of tx.kas_rt_attachments ?? []) {
-        allAttachmentRefs.push({
-          txId: tx.id,
-          attId: att.id,
-          file_name: att.file_name,
-          storage_path: att.storage_path,
-          mime_type: att.mime_type,
-        });
-      }
-    }
-
-    const signedResults = await Promise.all(
-      allAttachmentRefs.map((ref) =>
-        generateSignedGetUrl(ref.storage_path, signedUrlExpiresIn),
-      ),
-    );
-
-    const signedUrlByAttId = new Map<string, string>();
-    for (let i = 0; i < allAttachmentRefs.length; i++) {
-      signedUrlByAttId.set(
-        allAttachmentRefs[i].attId,
-        signedResults[i],
-      );
-    }
-
     const processedTransactions = (transactions ?? []).map((tx) => {
       const attachmentPayload = (tx.kas_rt_attachments ?? []).map((att) => ({
         id: att.id,
         file_name: att.file_name,
-        url: signedUrlByAttId.get(att.id) ?? "",
+        url: getPublicUrl(att.storage_path),
         mime_type: att.mime_type,
       }));
 

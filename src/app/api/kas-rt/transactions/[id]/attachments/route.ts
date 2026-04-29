@@ -8,7 +8,7 @@ import {
   DEFAULT_COMMUNITY_ID,
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
-import { serverUpload, generateSignedGetUrl, deleteObjects } from "@/lib/r2";
+import { serverUpload, getPublicUrl, deleteObjects } from "@/lib/r2";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -177,17 +177,10 @@ export async function POST(
     }
   }
 
-  const signedUrlExpiresIn = 3600;
-  const signedResults = await Promise.all(
-    attachmentsToInsert.map((att) =>
-      generateSignedGetUrl(att.storage_path, signedUrlExpiresIn),
-    ),
-  );
-  for (let i = 0; i < attachmentsToInsert.length; i++) {
-    const att = attachmentsToInsert[i];
+  for (const att of attachmentsToInsert) {
     uploadedAttachments.push({
       file_name: att.file_name,
-      url: signedResults[i],
+      url: getPublicUrl(att.storage_path),
       mime_type: att.mime_type,
     });
   }
