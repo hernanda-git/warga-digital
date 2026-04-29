@@ -365,7 +365,7 @@ export function KasRtTransactionForm(props: KasRtTransactionFormProps) {
                                 key={att.id || att.url}
                                 className="flex items-center gap-2 rounded-xl bg-app-surface-alt p-2"
                               >
-                                {isImage ? (
+                                {isImage && att.url ? (
                                   <img
                                     src={att.url}
                                     alt={att.file_name}
@@ -901,7 +901,7 @@ export function KasRtTransactionForm(props: KasRtTransactionFormProps) {
                                 key={att.id || att.url}
                                 className="flex items-center gap-2 rounded-xl bg-app-surface-alt p-2"
                               >
-                                {isImage ? (
+                                {isImage && att.url ? (
                                   <img
                                     src={att.url}
                                     alt={att.file_name}

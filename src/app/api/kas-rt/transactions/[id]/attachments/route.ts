@@ -8,7 +8,7 @@ import {
   DEFAULT_COMMUNITY_ID,
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
-import { serverUpload, getPublicUrl, deleteObjects } from "@/lib/r2";
+import { serverUpload, getPublicUrl, getPublicUrlSafe, deleteObjects } from "@/lib/r2";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -157,6 +157,7 @@ export async function POST(
         size_bytes: file.size,
       });
     } catch (err) {
+      console.error(`[kas-rt/attachments] Upload failed for "${file.name}":`, err);
       return NextResponse.json(
         { message: `Terjadi kesalahan saat mengunggah file ${file.name}.` },
         { status: 500 },
@@ -180,7 +181,7 @@ export async function POST(
   for (const att of attachmentsToInsert) {
     uploadedAttachments.push({
       file_name: att.file_name,
-      url: getPublicUrl(att.storage_path),
+      url: getPublicUrlSafe(att.storage_path),
       mime_type: att.mime_type,
     });
   }

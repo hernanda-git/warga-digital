@@ -9,7 +9,7 @@ import {
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
 import { notifyAllActiveUsers } from "@/lib/notifications";
-import { serverUpload, getPublicUrl } from "@/lib/r2";
+import { serverUpload, getPublicUrl, getPublicUrlSafe } from "@/lib/r2";
 
 export async function POST(request: Request) {
   try {
@@ -351,7 +351,7 @@ export async function POST(request: Request) {
       for (const att of attachmentsToInsert) {
         attachmentPayload.push({
           file_name: att.file_name,
-          url: getPublicUrl(att.storage_path),
+          url: getPublicUrlSafe(att.storage_path),
           mime_type: att.mime_type,
         });
       }
@@ -406,6 +406,7 @@ export async function POST(request: Request) {
       transaction_details: savedTransactionDetails,
     });
   } catch (error) {
+    console.error("[kas-rt/transactions] POST failed:", error);
     return NextResponse.json(
       { message: "Terjadi kesalahan saat menyimpan transaksi." },
       { status: 500 },
@@ -474,6 +475,9 @@ export async function GET(request: Request) {
     }
 
     const { count: totalCount, error: countError } = await countQuery;
+    if (countError) {
+      console.error("[kas-rt/transactions] Count query failed:", countError);
+    }
 
     // ── Fetch paginated transactions with filters ──────────────────────────
     let query = supabase
@@ -565,6 +569,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
+    console.error("[kas-rt/transactions] GET failed:", error);
     return NextResponse.json(
       { message: "Terjadi kesalahan saat mengambil data transaksi." },
       { status: 500 },

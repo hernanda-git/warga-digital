@@ -7,7 +7,7 @@ export type TransactionType = "income" | "expense";
 export interface TransactionAttachment {
   id?: string;
   file_name: string;
-  url: string;
+  url: string | null;
   mime_type: string | null;
 }
 

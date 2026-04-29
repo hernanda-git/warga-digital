@@ -264,6 +264,9 @@ function AttachmentCard({
     }
 
     // Document attachment (full-width)
+    if (!attachment.url) {
+      return null;
+    }
     return (
       <a
         href={attachment.url}
@@ -343,6 +346,9 @@ function AttachmentCard({
   }
 
   // Compact document attachment
+  if (!attachment.url) {
+    return null;
+  }
   return (
     <a
       href={attachment.url}

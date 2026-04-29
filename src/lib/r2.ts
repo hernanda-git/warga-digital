@@ -153,6 +153,22 @@ export function getPublicUrl(objectKey: string): string {
 }
 
 /**
+ * Safe version of getPublicUrl that returns null instead of throwing when
+ * R2_PUBLIC_BASE_URL is not configured. Logs the error for debugging.
+ */
+export function getPublicUrlSafe(objectKey: string): string | null {
+  if (!R2_PUBLIC_BASE_URL) {
+    console.error(
+      "[R2] getPublicUrlSafe: R2_PUBLIC_BASE_URL environment variable is not set. " +
+      "Add it to Vercel project settings → Environment Variables. " +
+      `Called with objectKey="${objectKey}"`,
+    );
+    return null;
+  }
+  return `${R2_PUBLIC_BASE_URL}/${objectKey}`;
+}
+
+/**
  * Extracts the R2 object key from a public URL
  */
 export function extractObjectKey(publicUrl: string): string | null {

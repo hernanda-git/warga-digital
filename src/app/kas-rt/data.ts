@@ -8,7 +8,7 @@
 import { redirect } from "next/navigation";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
-import { getPublicUrl } from "@/lib/r2";
+import { getPublicUrl, getPublicUrlSafe } from "@/lib/r2";
 import {
   DEFAULT_TENANT_ID,
   DEFAULT_COMMUNITY_ID,
@@ -272,13 +272,14 @@ export async function fetchKasRtTransactions(
         attachments: (tx.kas_rt_attachments ?? []).map((att: any) => ({
           id: att.id,
           file_name: att.file_name,
-          url: getPublicUrl(att.storage_path),
+          url: getPublicUrlSafe(att.storage_path),
           mime_type: att.mime_type,
         })),
         transaction_details: tx.kas_rt_transaction_details ?? [],
       };
     });
   } catch (err) {
+    console.error("[kas-rt/data] fetchKasRtTransactions failed:", err);
     return [];
   }
 }

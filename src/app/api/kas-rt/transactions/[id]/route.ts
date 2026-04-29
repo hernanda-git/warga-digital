@@ -8,7 +8,7 @@ import {
   DEFAULT_COMMUNITY_ID,
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
-import { serverUpload, getPublicUrl } from "@/lib/r2";
+import { serverUpload, getPublicUrl, getPublicUrlSafe } from "@/lib/r2";
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
 
@@ -433,7 +433,7 @@ export async function PATCH(
       savedAttachments.push({
         id: att.id,
         file_name: att.file_name,
-        url: getPublicUrl(att.storage_path),
+        url: getPublicUrlSafe(att.storage_path),
         mime_type: att.mime_type,
       });
     }
@@ -494,7 +494,7 @@ export async function PATCH(
           savedAttachments.push({
             id: att.id,
             file_name: att.file_name,
-            url: getPublicUrl(att.storage_path),
+            url: getPublicUrlSafe(att.storage_path),
             mime_type: att.mime_type,
           });
         }
