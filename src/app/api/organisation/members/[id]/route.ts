@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
+import { getPublicUrlSafe } from "@/lib/r2";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { requireCanManageOrganisation } from "../../require-manage";
 import { notifyAllActiveUsers } from "@/lib/notifications";
@@ -26,11 +27,7 @@ async function getUserDisplay(
     .eq("id", userId)
     .single();
   if (uErr || !user) return null;
-  const r2BaseUrl = process.env.R2_PUBLIC_BASE_URL;
-  const profilePictureUrl =
-    user.avatar_path && r2BaseUrl
-      ? `${r2BaseUrl}/${user.avatar_path}`
-      : null;
+  const profilePictureUrl = getPublicUrlSafe(user.avatar_path);
 
   const { data: primaryLink } = await supabase
     .from("user_houses")

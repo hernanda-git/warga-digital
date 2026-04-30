@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
+import { getPublicUrlSafe } from "@/lib/r2";
 import { requireCanManageOrganisation } from "@/app/api/organisation/require-manage";
 
 /**
@@ -61,16 +62,12 @@ export async function GET() {
       if (blok) userToBlock[l.user_id] = blok;
     });
 
-    const r2BaseUrl = process.env.R2_PUBLIC_BASE_URL;
     const list = users.map((u) => ({
       id: u.id,
       fullName: u.full_name,
       blockName: userToBlock[u.id] ?? "",
       whatsappNumber: u.wa_number ?? "",
-      profilePictureUrl:
-        u.avatar_path && r2BaseUrl
-          ? `${r2BaseUrl}/${u.avatar_path}`
-          : null,
+      profilePictureUrl: getPublicUrlSafe(u.avatar_path),
     }));
 
     return NextResponse.json(list);

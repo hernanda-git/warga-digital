@@ -9,17 +9,11 @@ import { redirect } from "next/navigation";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
+import { getPublicUrlSafe } from "@/lib/r2";
 import type { HeaderProfile } from "@/types/landing";
 import type { ResidentPostItem } from "@/components/landing/ResidentPostsSection";
 import type { JualanGoodsWithMedia } from "@/types/jualan";
 import type { JasaServiceWithMedia } from "@/types/database";
-
-const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL;
-
-function getAvatarUrl(avatarPath: string | null): string | null {
-  if (!avatarPath || !R2_PUBLIC_BASE_URL) return null;
-  return `${R2_PUBLIC_BASE_URL}/${avatarPath}`;
-}
 
 function formatRupiah(amount: number): string {
   if (amount >= 1_000_000_000) {
@@ -85,7 +79,7 @@ export async function fetchLandingProfile(userId: string): Promise<LandingProfil
   return {
     headerProfile: {
       name: user?.full_name || "Warga",
-      profilePictureUrl: getAvatarUrl(user?.avatar_path ?? null),
+      profilePictureUrl: getPublicUrlSafe(user?.avatar_path ?? null),
       blokRumah: blokRumah ? `Blok - ${blokRumah}` : "Blok —",
     },
     walletBalance: formatRupiah(Math.max(balance, 0)),
@@ -147,7 +141,7 @@ export async function fetchLandingArticles(): Promise<{
         excerpt: article.excerpt ?? undefined,
         imageUrl: article.featured_image_url ?? null,
         author: article.users?.full_name ?? "Anonim",
-        authorAvatar: getAvatarUrl(article.users?.avatar_path) ?? null,
+        authorAvatar: getPublicUrlSafe(article.users?.avatar_path) ?? null,
         authorBlock: blokRumah,
         createdAt: article.created_at,
       };
@@ -210,7 +204,7 @@ export async function fetchLandingJualan(userId: string): Promise<JualanGoodsWit
       wa_number: item.wa_number,
       owner_display_name: item.owner?.[0]?.full_name || item.owner_display_name,
       owner_blok_rumah: item.owner_blok_rumah,
-      owner_avatar_url: getAvatarUrl(item.owner?.[0]?.avatar_path) || null,
+      owner_avatar_url: getPublicUrlSafe(item.owner?.[0]?.avatar_path) || null,
       category_name: item.category?.[0]?.name || "Lainnya",
       category_icon: item.category?.[0]?.icon || "📦",
       primary_image_url:
@@ -227,6 +221,7 @@ export async function fetchLandingJualan(userId: string): Promise<JualanGoodsWit
 // ─── Jasa Services ──────────────────────────────────────────────────────────
 
 export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithMedia[]> {
+  console.log("[DEBUG jasa SSR] fetchLandingJasa — userId:", userId);
   try {
     const supabase = createServerClient();
 
@@ -236,7 +231,10 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
       .eq("user_id", userId)
       .single();
 
-    if (!tenantUser) return [];
+    if (!tenantUser) {
+      console.log("[DEBUG jasa SSR] No tenant user found");
+      return [];
+    }
 
     const { data: services, error } = await supabase
       .from("jasa_services")
@@ -259,8 +257,10 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
       .order("created_at", { ascending: false })
       .range(0, 9);
 
+    console.log("[DEBUG jasa SSR] Services query — count:", services?.length ?? 0, "error:", error);
     if (error || !services?.length) {
       if (error)
+      console.log("[DEBUG jasa SSR] Services query error:", error);
       return [];
     }
 
@@ -307,9 +307,9 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
 
     const mediaMap = new Map((media || []).map((m) => [m.service_id, m.url]));
 
-    return services.map((service) => {
+    const result = services.map((service) => {
       const owner = ownerMap.get(service.owner_user_id);
-      return {
+      const mapped = {
         ...service,
         owner_display_name: owner?.name?.trim() || "Unknown",
         owner_blok_rumah: owner?.blok ?? null,
@@ -317,8 +317,13 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
         category_icon: categoryMap.get(service.category_id)?.icon || null,
         primary_image_url: mediaMap.get(service.id) || null,
       };
+      return mapped;
     });
+
+    console.log("[DEBUG jasa SSR] Final result count:", result.length);
+    return result;
   } catch (err) {
+    console.log("[DEBUG jasa SSR] Catch error:", err);
     return [];
   }
 }

@@ -1,19 +1,13 @@
 import { NextRequest } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
+import { getPublicUrlSafe } from "@/lib/r2";
 import {
   successResponse,
   errorResponse,
   badRequestResponse,
   unauthorizedResponse,
 } from "@/lib/api-response";
-
-const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL;
-
-function getAvatarUrl(avatarPath: string | null): string | null {
-  if (!avatarPath || !R2_PUBLIC_BASE_URL) return null;
-  return `${R2_PUBLIC_BASE_URL}/${avatarPath}`;
-}
 
 /**
  * GET /api/jualan
@@ -145,7 +139,7 @@ export async function GET(request: NextRequest) {
       wa_number: item.wa_number,
       owner_display_name: item.owner?.[0]?.full_name || item.owner_display_name,
       owner_blok_rumah: item.owner_blok_rumah,
-      owner_avatar_url: getAvatarUrl(item.owner?.[0]?.avatar_path) || null,
+      owner_avatar_url: getPublicUrlSafe(item.owner?.[0]?.avatar_path) || null,
       category_name: item.category?.[0]?.name || "Lainnya",
       category_icon: item.category?.[0]?.icon || "📦",
       primary_image_url:

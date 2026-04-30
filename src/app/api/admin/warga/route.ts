@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
+import { getPublicUrlSafe } from "@/lib/r2";
 import { requireAdmin } from "@/lib/auth/admin-guard";
 
 /**
@@ -159,8 +160,6 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const r2BaseUrl = process.env.R2_PUBLIC_BASE_URL;
-
   const allWarga = rows.map((r) => {
     const avatarPath = r.users?.avatar_path ?? null;
     return {
@@ -176,10 +175,7 @@ export async function GET(request: NextRequest) {
       last_active_at: lastActiveMap[r.user_id] ?? null,
       status: r.users?.status ?? "INACTIVE",
       avatar_path: avatarPath,
-      profile_picture_url:
-        avatarPath && r2BaseUrl
-          ? `${r2BaseUrl}/${avatarPath}`
-          : null,
+      profile_picture_url: getPublicUrlSafe(avatarPath),
     };
   });
 

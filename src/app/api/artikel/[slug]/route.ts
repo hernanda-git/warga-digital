@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
+import { getPublicUrlSafe } from "@/lib/r2";
 import type { ArticleImage } from "@/types/article-image";
-
-const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL;
-
-function getAvatarUrl(avatarPath: string | null): string | null {
-  if (!avatarPath || !R2_PUBLIC_BASE_URL) return null;
-  return `${R2_PUBLIC_BASE_URL}/${avatarPath}`;
-}
 
 type RouteContext = { params: Promise<{ slug: string }> };
 
@@ -70,7 +64,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       author: {
         id: article.users?.id ?? article.author_id,
         name: article.users?.full_name ?? "Anonim",
-        avatar_url: getAvatarUrl(article.users?.avatar_path),
+        avatar_url: getPublicUrlSafe(article.users?.avatar_path),
       },
       images: article.article_images?.sort(
         (a: ArticleImage, b: ArticleImage) => (a.sort_order || 0) - (b.sort_order || 0),

@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-
-const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL;
-
-function getAvatarUrl(avatarPath: string | null): string | null {
-  if (!avatarPath || !R2_PUBLIC_BASE_URL) return null;
-  return `${R2_PUBLIC_BASE_URL}/${avatarPath}`;
-}
+import { getPublicUrlSafe } from "@/lib/r2";
 
 /**
  * GET /api/artikel
@@ -81,7 +75,7 @@ export async function GET(request: NextRequest) {
         author: {
           id: article.users?.id ?? article.author_id,
           name: article.users?.full_name ?? "Anonim",
-          avatar_url: getAvatarUrl(article.users?.avatar_path),
+          avatar_url: getPublicUrlSafe(article.users?.avatar_path),
           blok_rumah: blokRumah,
         },
       };

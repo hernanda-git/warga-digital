@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
+import { getPublicUrlSafe } from "@/lib/r2";
 import { THEMES } from "@/lib/themes";
 import {
   normalizeWaNumber,
@@ -386,11 +387,7 @@ export async function GET() {
       }
     }
 
-    const r2BaseUrl = process.env.R2_PUBLIC_BASE_URL;
-    const profilePictureUrl =
-      user.avatar_path && r2BaseUrl
-        ? `${r2BaseUrl}/${user.avatar_path}`
-        : null;
+    const profilePictureUrl = getPublicUrlSafe(user.avatar_path);
 
     const themeId = (user as { theme_id?: string }).theme_id ?? "green";
 

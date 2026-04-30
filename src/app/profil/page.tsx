@@ -1095,6 +1095,8 @@ export default function ProfilePage() {
                       alt={profile?.fullName ?? "Warga"}
                       fill
                       className="object-cover"
+                      unoptimized
+                      referrerPolicy="no-referrer"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-app-primary-muted">
