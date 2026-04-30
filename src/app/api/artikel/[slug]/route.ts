@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { getPublicUrlSafe } from "@/lib/r2";
+
 import type { ArticleImage } from "@/types/article-image";
 
 type RouteContext = { params: Promise<{ slug: string }> };
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       author: {
         id: article.users?.id ?? article.author_id,
         name: article.users?.full_name ?? "Anonim",
-        avatar_url: getPublicUrlSafe(article.users?.avatar_path),
+        avatar_url: article.users?.avatar_path ?? null,
       },
       images: article.article_images?.sort(
         (a: ArticleImage, b: ArticleImage) => (a.sort_order || 0) - (b.sort_order || 0),

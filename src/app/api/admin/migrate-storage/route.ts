@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/admin-guard";
-import { serverUpload, getR2Client } from "@/lib/r2";
+import { serverUpload, getR2Client, extractObjectKey, getPublicUrl } from "@/lib/r2";
 import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import { clearLog, debug, info, warn, logError, LOG_FILE } from "@/lib/debug-logger";
 
@@ -111,7 +111,13 @@ export async function GET() {
       debug(`Found ${users?.length || 0} users with avatars`);
       let needsMigration = 0;
       for (const user of users || []) {
-        const existsInR2 = await checkFileExistsInR2(user.avatar_path);
+        const isFullUrl = user.avatar_path?.startsWith("https://");
+        const objectKey = isFullUrl ? extractObjectKey(user.avatar_path) : user.avatar_path;
+        if (!objectKey) {
+          debug(`Cannot determine object key for user ${user.id}, skipping scan`);
+          continue;
+        }
+        const existsInR2 = await checkFileExistsInR2(objectKey);
         if (!existsInR2) {
           needsMigration++;
           debug(`Avatar needs migration: user ${user.id}, path ${user.avatar_path}`);
@@ -284,7 +290,16 @@ async function migrateAvatars(supabase: ReturnType<typeof createServerClient>): 
   debug("Users to migrate", users.map(u => ({ id: u.id, path: u.avatar_path })));
 
   for (const user of users) {
-    const objectKey = user.avatar_path;
+    // avatar_path may be a relative path (pre-migration) or full URL (post-migration)
+    const isFullUrl = user.avatar_path?.startsWith("https://");
+    const objectKey = isFullUrl ? extractObjectKey(user.avatar_path) : user.avatar_path;
+    if (!objectKey) {
+      warn(`Could not extract object key for user ${user.id}: ${user.avatar_path}`);
+      result.skipped++;
+      result.items.push({ id: user.id, status: "skipped", detail: "Invalid avatar_path" });
+      continue;
+    }
+
     const supabaseUrl = `${SUPABASE_URL}/storage/v1/object/public/avatars/${objectKey}`;
 
     debug(`Processing avatar: user ${user.id}`, { objectKey, supabaseUrl });
@@ -292,6 +307,13 @@ async function migrateAvatars(supabase: ReturnType<typeof createServerClient>): 
     // Check if already exists in R2
     const existsInR2 = await checkFileExistsInR2(objectKey);
     if (existsInR2) {
+      // If already in R2 but avatar_path is not yet a full URL, update it
+      if (!isFullUrl) {
+        await supabase
+          .from("users")
+          .update({ avatar_path: getPublicUrl(objectKey) })
+          .eq("id", user.id);
+      }
       debug(`Avatar already exists in R2, skipping: user ${user.id}`);
       result.skipped++;
       result.items.push({ id: user.id, status: "skipped", detail: "Already in R2" });
@@ -310,6 +332,13 @@ async function migrateAvatars(supabase: ReturnType<typeof createServerClient>): 
       info(`Uploading avatar to R2: user ${user.id}`);
       await serverUpload(new Uint8Array(buffer), objectKey, "application/octet-stream");
       
+      // Update to full URL
+      const fullUrl = getPublicUrl(objectKey);
+      await supabase
+        .from("users")
+        .update({ avatar_path: fullUrl })
+        .eq("id", user.id);
+
       // Verify upload
       const verifyExists = await checkFileExistsInR2(objectKey);
       if (verifyExists) {

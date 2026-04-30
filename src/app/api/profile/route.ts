@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
-import { getPublicUrlSafe } from "@/lib/r2";
+
 import { THEMES } from "@/lib/themes";
 import {
   normalizeWaNumber,
@@ -387,7 +387,7 @@ export async function GET() {
       }
     }
 
-    const profilePictureUrl = getPublicUrlSafe(user.avatar_path);
+    const profilePictureUrl = user.avatar_path;
 
     const themeId = (user as { theme_id?: string }).theme_id ?? "green";
 

@@ -109,7 +109,7 @@ CREATE TABLE users (
   theme_id      VARCHAR(20) NOT NULL DEFAULT 'green'
 );
 
-COMMENT ON COLUMN users.avatar_path IS 'Path in avatars bucket, e.g. {user_id}/avatar.jpg. Null = use initials.';
+COMMENT ON COLUMN users.avatar_path IS 'Full R2 URL to profile picture (e.g. https://oo.warga-digital.com/{user_id}/avatar.jpg). Null = use initials.';
 COMMENT ON COLUMN users.theme_id IS 'App theme/appearance: green, blue, purple, orange, teal, rose.';
 
 -- Tenants

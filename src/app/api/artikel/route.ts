@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { getPublicUrlSafe } from "@/lib/r2";
+
 
 /**
  * GET /api/artikel
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
         author: {
           id: article.users?.id ?? article.author_id,
           name: article.users?.full_name ?? "Anonim",
-          avatar_url: getPublicUrlSafe(article.users?.avatar_path),
+          avatar_url: article.users?.avatar_path ?? null,
           blok_rumah: blokRumah,
         },
       };

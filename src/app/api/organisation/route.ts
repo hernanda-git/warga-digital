@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
-import { getPublicUrlSafe } from "@/lib/r2";
+
 import type { OrganisationTreeApi, OrganisationRoleApi, OrganisationMemberApi } from "@/lib/organisation-api";
 
 /**
@@ -53,7 +53,7 @@ export async function GET() {
         .select("id, avatar_path")
         .in("id", userIds);
       userAvatarMap = (users ?? []).reduce<Record<string, string | null>>((acc, u) => {
-        acc[u.id] = getPublicUrlSafe(u.avatar_path);
+        acc[u.id] = u.avatar_path;
         return acc;
       }, {});
     }

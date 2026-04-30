@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/admin-guard";
-import { serverUpload, deleteObject, getPublicUrl } from "@/lib/r2";
+import { serverUpload, deleteObject, getPublicUrl, extractObjectKey } from "@/lib/r2";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 
@@ -49,13 +49,14 @@ export async function POST(request: NextRequest) {
       ? ext
       : "jpg";
     const path = `${userId}/avatar.${safeExt}`;
+    const fullUrl = getPublicUrl(path);
 
     await serverUpload(new Uint8Array(await file.arrayBuffer()), path, file.type);
 
     const { error: updateError } = await supabase
       .from("users")
       .update({
-        avatar_path: path,
+        avatar_path: fullUrl,
         updated_at: new Date().toISOString(),
         updated_by: session.userId,
       })
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, profilePictureUrl: getPublicUrl(path) });
+    return NextResponse.json({ success: true, profilePictureUrl: fullUrl });
   } catch {
     return NextResponse.json(
       { error: "Gagal mengunggah foto profil." },
@@ -113,7 +114,14 @@ export async function DELETE(request: NextRequest) {
       });
     }
 
-    await deleteObject(user.avatar_path);
+    const objectKey = extractObjectKey(user.avatar_path);
+    if (!objectKey) {
+      return NextResponse.json(
+        { error: "Path foto profil tidak valid." },
+        { status: 400 },
+      );
+    }
+    await deleteObject(objectKey);
 
     const { error: updateError } = await supabase
       .from("users")

@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       ? ext
       : "jpg";
     const path = `${session.userId}/avatar.${safeExt}`;
+    const fullUrl = getPublicUrl(path);
 
     const supabase = createServerClient();
 
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from("users")
       .update({
-        avatar_path: path,
+        avatar_path: fullUrl,
         updated_at: new Date().toISOString(),
         updated_by: session.userId,
       })
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      profilePictureUrl: getPublicUrl(path),
+      profilePictureUrl: fullUrl,
     });
   } catch (err) {
     return NextResponse.json(

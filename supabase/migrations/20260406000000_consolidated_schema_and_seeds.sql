@@ -113,7 +113,7 @@ CREATE TABLE users (
 
 COMMENT ON COLUMN users.pin_hash IS 'Scrypt hash of 4-digit PIN, format salt_hex:hash_hex. Null until user sets PIN.';
 COMMENT ON COLUMN users.username IS 'Optional; used for login when user has no WhatsApp. Stored as-is; lookup by LOWER(username).';
-COMMENT ON COLUMN users.avatar_path IS 'Path in avatars bucket, e.g. {user_id}/avatar.jpg. Null = use initials.';
+COMMENT ON COLUMN users.avatar_path IS 'Full R2 URL to profile picture (e.g. https://oo.warga-digital.com/{user_id}/avatar.jpg). Null = use initials.';
 COMMENT ON COLUMN users.theme_id IS 'App theme/appearance: green, blue, purple, orange, teal, rose.';
 
 -- Tenants

@@ -9,7 +9,7 @@ import { redirect } from "next/navigation";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
-import { getPublicUrlSafe } from "@/lib/r2";
+
 import type { HeaderProfile } from "@/types/landing";
 import type { ResidentPostItem } from "@/components/landing/ResidentPostsSection";
 import type { JualanGoodsWithMedia } from "@/types/jualan";
@@ -79,7 +79,7 @@ export async function fetchLandingProfile(userId: string): Promise<LandingProfil
   return {
     headerProfile: {
       name: user?.full_name || "Warga",
-      profilePictureUrl: getPublicUrlSafe(user?.avatar_path ?? null),
+      profilePictureUrl: user?.avatar_path ?? null,
       blokRumah: blokRumah ? `Blok - ${blokRumah}` : "Blok —",
     },
     walletBalance: formatRupiah(Math.max(balance, 0)),
@@ -143,7 +143,7 @@ export async function fetchLandingArticles(): Promise<{
         content: article.content ?? undefined,
         imageUrl: article.featured_image_url ?? null,
         author: article.users?.full_name ?? "Anonim",
-        authorAvatar: getPublicUrlSafe(article.users?.avatar_path) ?? null,
+        authorAvatar: article.users?.avatar_path ?? null,
         authorBlock: blokRumah,
         createdAt: article.created_at,
       };
@@ -206,7 +206,7 @@ export async function fetchLandingJualan(userId: string): Promise<JualanGoodsWit
       wa_number: item.wa_number,
       owner_display_name: item.owner?.[0]?.full_name || item.owner_display_name,
       owner_blok_rumah: item.owner_blok_rumah,
-      owner_avatar_url: getPublicUrlSafe(item.owner?.[0]?.avatar_path) || null,
+      owner_avatar_url: item.owner?.[0]?.avatar_path ?? null,
       category_name: item.category?.[0]?.name || "Lainnya",
       category_icon: item.category?.[0]?.icon || "📦",
       primary_image_url:
