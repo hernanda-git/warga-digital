@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { CalendarDaysIcon, UserCircleIcon, ChevronLeftIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import {
+  CalendarDaysIcon,
+  UserCircleIcon,
+  ChevronLeftIcon,
+  ArrowPathIcon,
+} from "@heroicons/react/24/outline";
 import { PageLoader } from "@/components/ui";
 
 interface Article {
@@ -33,8 +38,32 @@ interface ArticlesResponse {
   };
 }
 
-function generateExcerpt(content: string, maxLength: number = 160): string {
-  const plainText = content.replace(/<[^>]*>/g, "");
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/<[^>]*>/g, "")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/~~(.+?)~~/g, "$1")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/_(.+?)_/g, "$1")
+    .replace(/`(.+?)`/g, "$1")
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+    .replace(/\[([^\]]*)\]\([^)]+\)/g, "$1")
+    .replace(/^###\s+/gm, "")
+    .replace(/^##\s+/gm, "")
+    .replace(/^#\s+/gm, "")
+    .replace(/^>\s+/gm, "")
+    .replace(/^[-*+]\s+/gm, "")
+    .replace(/^\d+\.\s+/gm, "")
+    .replace(/^---+$/gm, "")
+    .replace(/^={3,}$/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function generateExcerpt(content: string, maxLength: number = 300): string {
+  const plainText = stripMarkdown(content);
   if (plainText.length <= maxLength) return plainText;
   return plainText.substring(0, maxLength) + "...";
 }
@@ -65,11 +94,11 @@ export default function ArtikelPage() {
       setArticles(data.articles);
       setTotalPages(data.meta.totalPages);
       setTotalArticles(data.meta.total);
-      
+
       // Calculate articles this week
       const now = new Date();
-      const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-      const newArticles = data.articles.filter(article => {
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const newArticles = data.articles.filter((article) => {
         const createdDate = new Date(article.created_at);
         return createdDate >= oneWeekAgo;
       });
@@ -146,7 +175,7 @@ export default function ArtikelPage() {
               >
                 <ChevronLeftIcon className="h-4 w-4 text-white" />
               </button>
-              
+
               {/* Title Block */}
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">
@@ -157,7 +186,7 @@ export default function ArtikelPage() {
                 </h1>
               </div>
             </div>
-            
+
             {/* Right: Refresh Button */}
             <button
               type="button"
@@ -166,17 +195,19 @@ export default function ArtikelPage() {
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 disabled:opacity-50"
               aria-label="Muat ulang"
             >
-              <ArrowPathIcon className={`h-4 w-4 text-white ${loading || isRefreshing ? 'animate-spin' : ''}`} />
+              <ArrowPathIcon
+                className={`h-4 w-4 text-white ${loading || isRefreshing ? "animate-spin" : ""}`}
+              />
             </button>
           </div>
-          
+
           {/* Dynamic Subtitle */}
           <p className="mt-3 text-[13px] font-medium text-white/80 leading-relaxed">
-            {totalArticles === 0 
+            {totalArticles === 0
               ? `Daftar lengkap seluruh artikel yang berisi berita, acara, panduan, dan informasi dari pengurus ${communityName || "Warga Digital"}. Belum ada artikel yang telah di publish.`
               : `Daftar lengkap seluruh artikel yang berisi berita, acara, panduan, dan informasi dari pengurus ${communityName || "Warga Digital"}. Berikut tersedia ${totalArticles} artikel yang telah di publish.`}
           </p>
-          
+
           {/* Stats Pills */}
           <div className="mt-4 grid grid-cols-2 gap-2">
             {/* Total Articles */}
@@ -188,7 +219,7 @@ export default function ArtikelPage() {
                 {loading ? "—" : totalArticles}
               </p>
             </div>
-            
+
             {/* This Week */}
             <div className="rounded-xl bg-white/15 px-3 py-2.5 text-center backdrop-blur-sm">
               <p className="text-[9px] font-semibold uppercase tracking-wider text-white/60">
@@ -221,7 +252,7 @@ export default function ArtikelPage() {
             {/* Articles Vertical List */}
             <div className="space-y-6">
               {articles.map((article) => {
-                const displayExcerpt = article.excerpt || (article.content ? generateExcerpt(article.content) : "");
+                const displayExcerpt = article.content ? generateExcerpt(article.content) : "";
 
                 return (
                   <article
@@ -255,45 +286,47 @@ export default function ArtikelPage() {
 
                       {/* Excerpt */}
                       {displayExcerpt && (
-                        <p className="text-sm text-[var(--color-body-muted)] leading-relaxed mb-3 line-clamp-3">
+                        <p className="text-sm text-[var(--color-body-muted)] leading-relaxed mb-3 line-clamp-5">
                           {displayExcerpt}
                         </p>
                       )}
 
-                      {/* Date - Right aligned below excerpt */}
-                      <div className="flex items-center justify-end gap-1.5 text-[var(--color-body-muted)] mb-4">
-                        <CalendarDaysIcon className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-medium whitespace-nowrap">
-                          {formatDate(article.created_at)}
-                        </span>
-                      </div>
-
                       {/* Meta Row - Author Info */}
                       <div className="pt-4 border-t border-[var(--color-input-border)]/20">
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-2">
                           {article.author.avatar_url ? (
                             <Image
                               src={article.author.avatar_url}
                               alt={article.author.name}
-                              className="w-8 h-8 rounded-full object-cover shrink-0"
-                              width={32}
-                              height={32}
+                              className="w-6 h-6 rounded-full object-cover shrink-0"
+                              width={24}
+                              height={24}
                             />
                           ) : (
-                            <UserCircleIcon className="w-8 h-8 text-[var(--color-body-muted)] shrink-0" />
+                            <UserCircleIcon className="w-6 h-6 text-[var(--color-body-muted)] shrink-0" />
                           )}
                           <div className="flex flex-col min-w-0">
-                            <p className="text-[10px] font-medium text-[var(--color-body-muted)] mb-0.5">
-                              Dipublikasikan oleh:
-                            </p>
-                            <span className="text-xs font-bold text-[var(--color-body)] truncate">
-                              {article.author.name}
-                            </span>
-                            {article.author.blok_rumah && (
-                              <span className="text-[10px] font-medium text-[var(--color-primary)]">
-                                {article.author.blok_rumah}
+                            <p className="text-[11px] font-medium text-[var(--color-body-muted)] truncate">
+                              Dipublish oleh:{" "}
+                              <span className="font-semibold text-[var(--color-body)]">
+                                {article.author.name}
                               </span>
-                            )}
+                              {article.author.blok_rumah && (
+                                <>
+                                  {" "}
+                                  -{" "}
+                                  <span className="font-medium text-[var(--color-primary)]">
+                                    {article.author.blok_rumah}
+                                  </span>
+                                </>
+                              )}
+                            </p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <CalendarDaysIcon className="w-3 h-3 text-[var(--color-body-muted)]" />
+                              <span className="text-[10px] font-medium text-[var(--color-body-muted)]">
+                                {formatDate(article.created_at)}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -324,7 +357,9 @@ export default function ArtikelPage() {
                 </span>
 
                 <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
                   disabled={currentPage === totalPages}
                   className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-40"
                   style={{

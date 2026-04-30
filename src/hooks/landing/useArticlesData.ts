@@ -28,6 +28,7 @@ interface Article {
   title: string;
   slug: string;
   excerpt: string | null;
+  content: string | null;
   featured_image_url: string | null;
   published_at: string;
   created_at: string;
@@ -76,6 +77,7 @@ function transformArticleToPost(article: Article): ResidentPostItem {
     id: article.slug,
     title: article.title,
     excerpt: article.excerpt ?? undefined,
+    content: article.content ?? undefined,
     imageUrl: article.featured_image_url ?? null,
     author: article.author?.name ?? "Anonim",
     authorAvatar: article.author?.avatar_url ?? null,

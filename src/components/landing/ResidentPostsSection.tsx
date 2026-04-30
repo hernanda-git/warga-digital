@@ -8,6 +8,7 @@ export interface ResidentPostItem {
   id: string;
   title: string;
   excerpt?: string;
+  content?: string;
   imageUrl?: string | null;
   author?: string;
   authorAvatar?: string | null;
@@ -21,19 +22,28 @@ interface ResidentPostsSectionProps {
   detailHref?: (id: string) => string;
 }
 
-function PostPlaceholder() {
-  return (
-    <div
-      className="h-full w-full bg-gradient-to-br from-[var(--color-primary-muted)] to-[color:color-mix(in_oklab,var(--color-primary),transparent_80%)]"
-      aria-hidden
-    >
-      <div className="px-6 pt-10">
-        <div className="h-3 w-[55%] rounded bg-white/90" />
-        <div className="mt-3 h-2 w-[76%] rounded bg-white/60" />
-        <div className="mt-2 h-2 w-[64%] rounded bg-white/60" />
-      </div>
-    </div>
-  );
+function stripMarkdown(md: string): string {
+  return md
+    .replace(/<[^>]*>/g, "")
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/~~(.+?)~~/g, "$1")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/_(.+?)_/g, "$1")
+    .replace(/`(.+?)`/g, "$1")
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
+    .replace(/\[([^\]]*)\]\([^)]+\)/g, "$1")
+    .replace(/^###\s+/gm, "")
+    .replace(/^##\s+/gm, "")
+    .replace(/^#\s+/gm, "")
+    .replace(/^>\s+/gm, "")
+    .replace(/^[-*+]\s+/gm, "")
+    .replace(/^\d+\.\s+/gm, "")
+    .replace(/^---+$/gm, "")
+    .replace(/^={3,}$/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function PostCard({ item, href }: { item: ResidentPostItem; href: string }) {
@@ -41,66 +51,84 @@ function PostCard({ item, href }: { item: ResidentPostItem; href: string }) {
     if (!dateString) return "";
     return new Date(dateString).toLocaleDateString("id-ID", {
       day: "numeric",
-      month: "short",
+      month: "long",
       year: "numeric",
     });
   };
 
+  const displayContent = item.content
+    ? stripMarkdown(item.content)
+    : item.excerpt;
+
   return (
     <Link
       href={href}
-      className="block overflow-hidden rounded-xl bg-app-surface shadow-sm transition-shadow active:opacity-95 hover:shadow-md"
+      className="block bg-app-surface rounded-2xl shadow-sm overflow-hidden group transition-all duration-300 active:scale-[0.98]"
     >
-      <article className="flex flex-col">
-        <div className="relative h-32 w-full shrink-0 overflow-hidden">
-          {item.imageUrl ? (
-          <Image
-            src={item.imageUrl}
-            alt={item.title}
-            className="h-full w-full object-cover"
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-          />
-          ) : (
-            <PostPlaceholder />
-          )}
-        </div>
-        <div className="min-w-0 flex-1 px-3 py-2.5">
-          <h3 className="truncate text-[13px] font-semibold text-app-title leading-tight">
+      <article>
+        {item.imageUrl ? (
+          <div className="relative h-56 w-full">
+            <Image
+              src={item.imageUrl}
+              alt={item.title}
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, 430px"
+            />
+          </div>
+        ) : (
+          <div className="relative h-56 w-full bg-app-primary-muted flex items-center justify-center">
+            <UserCircleIcon className="w-20 h-20 text-app-primary opacity-50" />
+          </div>
+        )}
+
+        <div className="p-6">
+          <h3 className="text-xl font-bold text-[var(--color-title)] leading-tight mb-3 line-clamp-2 group-hover:text-app-primary transition-colors">
             {item.title}
           </h3>
-          {item.excerpt && (
-            <p className="mt-1 line-clamp-2 text-[11px] text-app-body-muted leading-relaxed">
-              {item.excerpt}
+
+          {displayContent && (
+            <p className="text-sm text-[var(--color-body-muted)] leading-relaxed mb-3 line-clamp-5">
+              {displayContent}
             </p>
           )}
-          <div className="mt-2 flex items-center justify-between">
-            <div className="flex items-center gap-1 text-[10px] text-app-body-muted">
-              <CalendarDaysIcon className="w-3 h-3" />
-              <span className="font-medium">{formatDate(item.createdAt)}</span>
-            </div>
-          </div>
-          <div className="mt-2 flex items-center gap-2 pt-2 border-t border-[var(--color-input-border)]/20">
-            {item.authorAvatar ? (
-              <Image
-                src={item.authorAvatar}
-                alt=""
-                className="w-5 h-5 rounded-full object-cover shrink-0"
-                width={20}
-                height={20}
-              />
-            ) : (
-              <UserCircleIcon className="w-5 h-5 text-app-body-muted shrink-0" />
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-medium text-app-body-muted truncate">
-                {item.author || "Admin"}
-              </p>
-              {item.authorBlock && (
-                <p className="text-[9px] font-semibold text-[var(--color-primary)] truncate">
-                  {item.authorBlock}
-                </p>
+
+          <div className="pt-4 border-t border-[var(--color-input-border)]/20">
+            <div className="flex items-center gap-2">
+              {item.authorAvatar ? (
+                <Image
+                  src={item.authorAvatar}
+                  alt={item.author ?? ""}
+                  className="w-6 h-6 rounded-full object-cover shrink-0"
+                  width={24}
+                  height={24}
+                />
+              ) : (
+                <UserCircleIcon className="w-6 h-6 text-[var(--color-body-muted)] shrink-0" />
               )}
+              <div className="flex flex-col min-w-0">
+                <p className="text-[11px] font-medium text-[var(--color-body-muted)] truncate">
+                  Dipublish oleh:{" "}
+                  <span className="font-semibold text-[var(--color-body)]">
+                    {item.author || "Admin"}
+                  </span>
+                  {item.authorBlock && (
+                    <>
+                      {" "}
+                      -{" "}
+                      <span className="font-medium text-[var(--color-primary)]">
+                        {item.authorBlock}
+                      </span>
+                    </>
+                  )}
+                </p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <CalendarDaysIcon className="w-3 h-3 text-[var(--color-body-muted)]" />
+                  <span className="text-[10px] font-medium text-[var(--color-body-muted)]">
+                    {formatDate(item.createdAt)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
