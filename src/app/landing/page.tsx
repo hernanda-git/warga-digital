@@ -17,7 +17,7 @@ import LandingPageClient from "./LandingPageClient";
 export default async function LandingPage() {
   const session = await requireAuth();
 
-  const [{ headerProfile, walletBalance }, { articles, error: articlesError }, jualanGoods, jasaServices] =
+  const [{ headerProfile }, { articles, error: articlesError }, jualanGoods, jasaServices] =
     await Promise.all([
       fetchLandingProfile(session.userId),
       fetchLandingArticles(),
@@ -28,7 +28,6 @@ export default async function LandingPage() {
   return (
     <LandingPageClient
       headerProfile={headerProfile}
-      walletBalance={walletBalance}
       articles={articles}
       articlesError={articlesError}
       jualanGoods={jualanGoods}

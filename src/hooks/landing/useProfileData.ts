@@ -20,7 +20,6 @@ import { useAuthStore } from "@/stores/auth-store";
 import { fetchProfile } from "@/services/landing/api.service";
 import {
   transformProfileToHeader,
-  extractWalletBalance,
   extractCommunityInfo,
   isValidProfile,
 } from "@/services/landing/transformers";
@@ -29,7 +28,7 @@ import {
   getHeaderProfileCookie,
   setHeaderProfileCookie,
 } from "@/lib/header-profile-cookie";
-import { FEATURE_FLAGS, UI_CONFIG } from "@/config/landing";
+import { FEATURE_FLAGS } from "@/config/landing";
 import type { HeaderProfile } from "@/types/landing";
 
 // ─── Hook Return Type ─────────────────────────────────────────────────────────
@@ -37,8 +36,6 @@ import type { HeaderProfile } from "@/types/landing";
 export interface UseProfileDataReturn {
   /** Header profile display data (name, avatar, blok) */
   headerProfile: HeaderProfile | null;
-  /** Formatted wallet balance string */
-  walletBalance: string;
   /** Whether profile data is currently loading */
   isLoading: boolean;
   /** Whether initial profile is ready (either from cache or API) */
@@ -58,13 +55,13 @@ export interface UseProfileDataReturn {
  *
  * @example
  * function LandingPage() {
- *   const { headerProfile, walletBalance, isReady } = useProfileData();
+ *   const { headerProfile, isReady } = useProfileData();
  *
  *   if (!isReady) {
  *     return <PageLoader />;
  *   }
  *
- *   return <LandingHeader {...headerProfile} saldo={walletBalance} />;
+ *   return <LandingHeader {...headerProfile} />;
  * }
  */
 export function useProfileData(): UseProfileDataReturn {
@@ -74,9 +71,6 @@ export function useProfileData(): UseProfileDataReturn {
   // ── State ──────────────────────────────────────────────────────────────────
   const [headerProfile, setHeaderProfile] = useState<HeaderProfile | null>(
     null,
-  );
-  const [walletBalance, setWalletBalance] = useState<string>(
-    UI_CONFIG.DEFAULT_WALLET_BALANCE,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -129,9 +123,6 @@ export function useProfileData(): UseProfileDataReturn {
       setHeaderProfileCookie(transformedProfile);
     }
 
-    const balance = extractWalletBalance(profile);
-    setWalletBalance(balance);
-
     if (FEATURE_FLAGS.ENABLE_COMMUNITY_COOKIES) {
       const communityInfo = extractCommunityInfo(profile);
       updateCommunityCookies(communityInfo);
@@ -144,7 +135,6 @@ export function useProfileData(): UseProfileDataReturn {
   useEffect(() => {
     if (!isAuthenticated) {
       setHeaderProfile(null);
-      setWalletBalance(UI_CONFIG.DEFAULT_WALLET_BALANCE);
       setIsReady(false);
       setError(null);
       return;
@@ -162,7 +152,6 @@ export function useProfileData(): UseProfileDataReturn {
   // ── Return Hook API ───────────────────────────────────────────────────────
   return {
     headerProfile,
-    walletBalance,
     isLoading,
     isReady,
     error,

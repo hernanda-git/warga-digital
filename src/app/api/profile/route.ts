@@ -10,17 +10,6 @@ import {
 } from "@/lib/phone-utils";
 import { notifyAdmins } from "@/lib/notifications";
 
-/** Format IDR amount as "Rp X.XXX" / "Rp X,XJt" / "Rp X,XM" */
-function formatRupiah(amount: number): string {
-  if (amount >= 1_000_000_000) {
-    return `Rp ${(amount / 1_000_000_000).toFixed(1).replace(".", ",")} M`;
-  }
-  if (amount >= 1_000_000) {
-    return `Rp ${(amount / 1_000_000).toFixed(1).replace(".", ",")} Jt`;
-  }
-  return `Rp ${amount.toLocaleString("id-ID")}`;
-}
-
 /** Mask WA number for display (e.g. +62 812-****-5678) */
 function maskWaNumber(wa: string | null): string | null {
   if (!wa || wa.length < 6) return wa;
@@ -391,23 +380,6 @@ export async function GET() {
 
     const themeId = (user as { theme_id?: string }).theme_id ?? "green";
 
-    /* ── Wallet balance (sum of income − expense from wallet_transactions) ── */
-    const { data: walletRows } = await supabase
-      .from("wallet_transactions")
-      .select("amount, type")
-      .eq("user_id", session.userId)
-      .eq("tenant_id", DEFAULT_TENANT_ID)
-      .in("type", ["income", "expense"]);
-
-    let walletIncome = 0;
-    let walletExpense = 0;
-    for (const row of walletRows ?? []) {
-      const val = Number(row.amount ?? 0);
-      if (row.type === "income") walletIncome += val;
-      else if (row.type === "expense") walletExpense += val;
-    }
-    const walletBalance = walletIncome - walletExpense;
-
     return NextResponse.json({
       id: user.id,
       fullName: user.full_name,
@@ -428,8 +400,6 @@ export async function GET() {
       residences,
       pendingJoinRequests,
       pendingJoinRequest,
-      walletBalance,
-      walletBalanceFormatted: formatRupiah(Math.max(walletBalance, 0)),
     });
   } catch (err) {
     return NextResponse.json({ error: "Gagal memuat profil" }, { status: 500 });

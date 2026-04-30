@@ -15,11 +15,11 @@ import { formatRupiah } from "@/lib/constants/marketplace-catalog";
 import { UI_CONFIG } from "@/config/landing";
 import type {
   ProfileApiResponse,
-  HeaderProfile,
   MarketplaceCategorySummary,
   AnnouncementApiItem,
   CommunityInfo,
 } from "@/types/landing";
+import type { HeaderProfile } from "@/types/landing";
 import type { HorizontalCardItem } from "@/components/landing/HorizontalCardStrip";
 import type { ResidentPostItem } from "@/components/landing/ResidentPostsSection";
 
@@ -89,16 +89,6 @@ export function extractCommunityInfo(
     id: profile.community.id,
     name: profile.community.name,
   };
-}
-
-/**
- * Extracts wallet balance from profile response
- *
- * @param profile - Raw profile data from API
- * @returns Formatted wallet balance string
- */
-export function extractWalletBalance(profile: ProfileApiResponse): string {
-  return profile.walletBalanceFormatted ?? UI_CONFIG.DEFAULT_WALLET_BALANCE;
 }
 
 // ─── Marketplace Transformers ─────────────────────────────────────────────────

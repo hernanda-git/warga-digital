@@ -8,22 +8,10 @@
 import { redirect } from "next/navigation";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
-import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
-
 import type { HeaderProfile } from "@/types/landing";
 import type { ResidentPostItem } from "@/components/landing/ResidentPostsSection";
 import type { JualanGoodsWithMedia } from "@/types/jualan";
 import type { JasaServiceWithMedia } from "@/types/database";
-
-function formatRupiah(amount: number): string {
-  if (amount >= 1_000_000_000) {
-    return `Rp ${(amount / 1_000_000_000).toFixed(1).replace(".", ",")} M`;
-  }
-  if (amount >= 1_000_000) {
-    return `Rp ${(amount / 1_000_000).toFixed(1).replace(".", ",")} Jt`;
-  }
-  return `Rp ${amount.toLocaleString("id-ID")}`;
-}
 
 // ─── Auth Guard ─────────────────────────────────────────────────────────────
 
@@ -39,7 +27,6 @@ export async function requireAuth() {
 
 export interface LandingProfile {
   headerProfile: HeaderProfile;
-  walletBalance: string;
 }
 
 export async function fetchLandingProfile(userId: string): Promise<LandingProfile> {
@@ -58,22 +45,6 @@ export async function fetchLandingProfile(userId: string): Promise<LandingProfil
     .eq("is_primary", true)
     .maybeSingle();
 
-  const { data: walletRows } = await supabase
-    .from("wallet_transactions")
-    .select("amount, type")
-    .eq("user_id", userId)
-    .eq("tenant_id", DEFAULT_TENANT_ID)
-    .in("type", ["income", "expense"]);
-
-  let income = 0;
-  let expense = 0;
-  for (const row of walletRows ?? []) {
-    const val = Number(row.amount ?? 0);
-    if (row.type === "income") income += val;
-    else if (row.type === "expense") expense += val;
-  }
-  const balance = income - expense;
-
   const blokRumah = (houseLink?.houses as any)?.blok_rumah ?? null;
 
   return {
@@ -82,7 +53,6 @@ export async function fetchLandingProfile(userId: string): Promise<LandingProfil
       profilePictureUrl: user?.avatar_path ?? null,
       blokRumah: blokRumah ? `Blok - ${blokRumah}` : "Blok —",
     },
-    walletBalance: formatRupiah(Math.max(balance, 0)),
   };
 }
 

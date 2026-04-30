@@ -36,7 +36,6 @@ export const COOKIE_CONFIG = {
 // ─── UI Configuration ─────────────────────────────────────────────────────────
 
 export const UI_CONFIG = {
-  DEFAULT_WALLET_BALANCE: 'Rp 0',
   DEFAULT_USER_NAME: 'Warga',
   DEFAULT_BLOK_LABEL: 'Blok —',
   LOADING_MESSAGE: 'Memuat...',

@@ -21,7 +21,6 @@ import type { JualanGoodsDetail } from "@/types/jualan";
 
 interface LandingPageClientProps {
   headerProfile: HeaderProfile;
-  walletBalance: string;
   articles: ResidentPostItem[];
   articlesError: string | null;
   jualanGoods: JualanGoodsWithMedia[];
@@ -30,7 +29,6 @@ interface LandingPageClientProps {
 
 export default function LandingPageClient({
   headerProfile,
-  walletBalance,
   articles,
   articlesError,
   jualanGoods,
@@ -114,7 +112,6 @@ export default function LandingPageClient({
         name={headerProfile.name}
         profilePictureUrl={headerProfile.profilePictureUrl}
         blokRumah={headerProfile.blokRumah}
-        saldo={walletBalance}
         notificationCount={notificationCount}
         onNotificationPress={() => router.push(ROUTES.NOTIFICATIONS)}
       />

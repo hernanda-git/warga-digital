@@ -10,8 +10,6 @@ interface LandingHeaderProps {
   profilePictureUrl?: string | null;
   /** Blok / rumah label, e.g. "Blok A - 12" */
   blokRumah?: string;
-  /** Balance to show, e.g. "Rp 0" or formatted saldo */
-  saldo?: string;
   /** Number of unread notifications; if > 0, shows badge */
   notificationCount?: number;
   onNotificationPress?: () => void;
@@ -21,7 +19,6 @@ export function LandingHeader({
   name = "Warga",
   profilePictureUrl,
   blokRumah = "Blok —",
-  saldo = "Rp 0",
   notificationCount = 0,
   onNotificationPress,
 }: LandingHeaderProps) {
@@ -38,9 +35,6 @@ export function LandingHeader({
         <div className="min-w-0 flex-1">
           <p className="truncate text-base font-bold text-app-title">{name}</p>
           <p className="truncate text-xs text-app-body-muted">{blokRumah}</p>
-          <p className="mt-0.5 text-sm font-semibold text-app-primary">
-            {saldo}
-          </p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">

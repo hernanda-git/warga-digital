@@ -17,7 +17,6 @@ export interface ProfileApiResponse {
     blok_rumah?: string | null;
     name?: string;
   } | null;
-  walletBalanceFormatted?: string;
   community?: {
     id: string;
     name: string | null;
