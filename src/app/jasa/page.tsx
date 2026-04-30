@@ -127,6 +127,7 @@ export default function JasaPage() {
   }, []);
 
   const fetchServices = useCallback(async () => {
+    console.log("[DEBUG jasa page] fetchServices — page:", page, "filters:", { selectedCategory, selectedStatus, searchQuery, communityId });
     setIsLoading(true);
 
     setError(null);
@@ -163,13 +164,19 @@ export default function JasaPage() {
 
       const queryString = params.toString();
 
+      console.log("[DEBUG jasa page] Fetching /api/jasa?", queryString);
       const response = await apiFetch(`/api/jasa?${queryString}`);
       const data: JasaListApiResponse = await response.json();
 
+      console.log("[DEBUG jasa page] Response status:", response.status, "ok:", response.ok);
+      console.log("[DEBUG jasa page] Response data:", data);
+
       if (!response.ok || !data.success) {
+        console.log("[DEBUG jasa page] Fetch failed:", data.error || "Gagal memuat layanan");
         throw new Error(data.error || "Gagal memuat layanan");
       }
 
+      console.log("[DEBUG jasa page] Services loaded:", data.data.services?.length ?? 0, "totalPages:", data.data.pagination.total_pages);
       setServices(data.data.services);
 
       setTotalPages(data.data.pagination.total_pages);
@@ -182,6 +189,7 @@ export default function JasaPage() {
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Gagal memuat layanan";
+      console.log("[DEBUG jasa page] Fetch error:", message);
       setError(message);
     } finally {
       setIsLoading(false);

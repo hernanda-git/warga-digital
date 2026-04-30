@@ -1,0 +1,52 @@
+=== Log started at 2026-04-28T07:36:54.921Z ===
+[2026-04-28T07:36:54.921Z] [INFO] === SCAN START (Request ID: f6bdea4f-963b-4d56-99a8-606ff15368e8) ===
+[2026-04-28T07:36:54.921Z] [DEBUG] Environment check | {
+  "R2_PUBLIC_BASE_URL": "SET",
+  "SUPABASE_URL": "SET",
+  "R2_BUCKET_NAME": "SET"
+}
+[2026-04-28T07:36:55.143Z] [INFO] Admin user 019ccc29-d853-7f0f-9d35-82c747badbef initiated scan
+[2026-04-28T07:36:55.143Z] [INFO] Scanning avatars...
+[2026-04-28T07:36:55.211Z] [DEBUG] Found 12 users with avatars
+[2026-04-28T07:36:55.415Z] [DEBUG] Avatar already in R2: user 019cdb3d-21e5-7ff8-9530-4b03ec3b6e51, path 019cdb3d-21e5-7ff8-9530-4b03ec3b6e51/avatar.jpg
+[2026-04-28T07:36:55.581Z] [DEBUG] Avatar already in R2: user 019d2e2a-da76-7a10-9cc4-93c5a18d9aa9, path 019d2e2a-da76-7a10-9cc4-93c5a18d9aa9/avatar.jpeg
+[2026-04-28T07:36:55.754Z] [DEBUG] Avatar already in R2: user 019d3e6e-40b9-7b05-9542-645061a738ed, path 019d3e6e-40b9-7b05-9542-645061a738ed/avatar.jpeg
+[2026-04-28T07:36:55.913Z] [DEBUG] Avatar already in R2: user 019d32db-c5da-7681-be63-9ce2efeee78f, path 019d32db-c5da-7681-be63-9ce2efeee78f/avatar.jpg
+[2026-04-28T07:36:56.379Z] [DEBUG] Avatar already in R2: user 019dc4ec-a40e-776d-9c29-492d6c231821, path 019dc4ec-a40e-776d-9c29-492d6c231821/avatar.jpeg
+[2026-04-28T07:36:56.552Z] [DEBUG] Avatar already in R2: user 019dc4ea-c7e3-7a0c-8d5c-fa75d7f94ce4, path 019dc4ea-c7e3-7a0c-8d5c-fa75d7f94ce4/avatar.jpg
+[2026-04-28T07:36:56.730Z] [DEBUG] Avatar already in R2: user 019dc4ec-f6b0-7a27-9063-a485c52f6d85, path 019dc4ec-f6b0-7a27-9063-a485c52f6d85/avatar.jpg
+[2026-04-28T07:36:56.943Z] [DEBUG] Avatar already in R2: user 019dc5c8-ee7b-73a5-99ca-b37dae8e897d, path 019dc5c8-ee7b-73a5-99ca-b37dae8e897d/avatar.jpeg
+[2026-04-28T07:36:57.123Z] [DEBUG] Avatar already in R2: user 019dc657-1b54-781c-a0ee-902c414cdb5f, path 019dc657-1b54-781c-a0ee-902c414cdb5f/avatar.jpg
+[2026-04-28T07:36:57.285Z] [DEBUG] Avatar already in R2: user 019dc673-fc54-7e35-a71d-b43aebeedff1, path 019dc673-fc54-7e35-a71d-b43aebeedff1/avatar.jpg
+[2026-04-28T07:36:57.532Z] [DEBUG] Avatar already in R2: user 019dcd50-6441-77d9-a1d7-0fca44422ab5, path 019dcd50-6441-77d9-a1d7-0fca44422ab5/avatar.jpg
+[2026-04-28T07:36:57.685Z] [DEBUG] Avatar already in R2: user 019ccc29-d853-7f0f-9d35-82c747badbef, path 019ccc29-d853-7f0f-9d35-82c747badbef/avatar.jpg
+[2026-04-28T07:36:57.686Z] [INFO] Avatars scan complete: 0/12 need migration
+[2026-04-28T07:36:57.686Z] [INFO] Scanning jasa images...
+[2026-04-28T07:36:57.838Z] [INFO] Jasa images scan: 0/2 need migration
+[2026-04-28T07:36:57.838Z] [INFO] Scanning kas-rt attachments...
+[2026-04-28T07:36:58.145Z] [INFO] Kas RT attachments scan: 0/23 need migration
+[2026-04-28T07:36:58.146Z] [INFO] Scanning related data...
+[2026-04-28T07:36:58.481Z] [INFO] Related data scan: 0 records need URL updates
+[2026-04-28T07:36:58.481Z] [INFO] === SCAN COMPLETE (Request ID: f6bdea4f-963b-4d56-99a8-606ff15368e8) ===
+[2026-04-28T07:36:58.482Z] [DEBUG] Scan results | [
+  {
+    "bucket": "avatars",
+    "total": 12,
+    "needsMigration": 0
+  },
+  {
+    "bucket": "jasa-images",
+    "total": 2,
+    "needsMigration": 0
+  },
+  {
+    "bucket": "kas-rt-attachments",
+    "total": 23,
+    "needsMigration": 0
+  },
+  {
+    "bucket": "related-data",
+    "total": 0,
+    "needsMigration": 0
+  }
+]

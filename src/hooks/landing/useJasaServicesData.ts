@@ -86,17 +86,23 @@ export function useJasaServicesData(): UseJasaServicesDataReturn {
     setError(null);
 
     try {
+      console.log("[DEBUG jasa] Fetching from endpoint:", LANDING_API_ENDPOINTS.JASA_SERVICES);
       const response = await apiFetch(LANDING_API_ENDPOINTS.JASA_SERVICES);
       const data = await response.json();
+
+      console.log("[DEBUG jasa] Response status:", response.status, "ok:", response.ok);
+      console.log("[DEBUG jasa] Response data:", data);
 
       if (getCancelled?.()) {
         return;
       }
 
       if (!response.ok || !data.success) {
+        console.log("[DEBUG jasa] Fetch failed:", data.error || "Gagal memuat layanan");
         throw new Error(data.error || "Gagal memuat layanan");
       }
 
+      console.log("[DEBUG jasa] Services loaded:", data.data.services?.length ?? 0);
       setJasaServices(data.data.services);
       setIsLoading(false);
       setIsLoaded(true);
@@ -106,6 +112,7 @@ export function useJasaServicesData(): UseJasaServicesDataReturn {
       }
       const message =
         err instanceof Error ? err.message : "Gagal memuat layanan";
+      console.log("[DEBUG jasa] Fetch error:", message);
       setError(message);
       setIsLoading(false);
       setIsLoaded(true);
