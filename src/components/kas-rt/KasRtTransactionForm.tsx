@@ -212,7 +212,7 @@ export function KasRtTransactionForm(props: KasRtTransactionFormProps) {
               ))}
             </div>
           )}
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
             {editingTxId ? (
               <>
                 {formStep === 1 && (
@@ -476,8 +476,12 @@ export function KasRtTransactionForm(props: KasRtTransactionFormProps) {
                     </button>
                   ) : (
                     <button
-                      type="submit"
+                      type="button"
                       disabled={!isStep2Valid || isSubmitting}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
+                      }}
                       className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                       style={actionButtonStyle(!isStep2Valid || isSubmitting)}
                     >
@@ -971,8 +975,12 @@ export function KasRtTransactionForm(props: KasRtTransactionFormProps) {
                     </button>
                   ) : (
                     <button
-                      type="submit"
+                      type="button"
                       disabled={!isFormValid || isSubmitting}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
+                      }}
                       className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                       style={actionButtonStyle(!isFormValid || isSubmitting)}
                     >
