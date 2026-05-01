@@ -212,7 +212,7 @@ export function KasRtTransactionForm(props: KasRtTransactionFormProps) {
               ))}
             </div>
           )}
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-4" onSubmit={handleSubmit}>
             {editingTxId ? (
               <>
                 {formStep === 1 && (
@@ -400,34 +400,34 @@ export function KasRtTransactionForm(props: KasRtTransactionFormProps) {
                       )}
                     </div>
                     <div>
-                      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
-                        Tambah Lampiran Baru
-                      </p>
-                      <div className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          multiple
-                          onChange={(e) => {
-                            const files = e.target.files;
-                            if (!files?.length) {
-                              setAttachmentLabel("Belum ada file dipilih");
-                              setHasAttachment(false);
-                            } else if (files.length === 1) {
-                              setAttachmentLabel(files[0].name);
-                              setHasAttachment(true);
-                            } else {
-                              setAttachmentLabel(
-                                `${files.length} file dipilih`,
-                              );
-                              setHasAttachment(true);
-                            }
-                          }}
-                          className="absolute h-0 w-0 opacity-0"
-                          id="kas-rt-attachment-input"
-                        />
-                        <label
-                          htmlFor="kas-rt-attachment-input"
+                       <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
+                         Tambah Lampiran Baru
+                       </p>
+                       <div className="flex items-center gap-3 rounded-2xl border bg-white px-4 py-3">
+                         <input
+                           ref={fileInputRef}
+                           type="file"
+                           multiple
+                           onChange={(e) => {
+                             const files = e.target.files;
+                             if (!files?.length) {
+                               setAttachmentLabel("Belum ada file dipilih");
+                               setHasAttachment(false);
+                             } else if (files.length === 1) {
+                               setAttachmentLabel(files[0].name);
+                               setHasAttachment(true);
+                             } else {
+                               setAttachmentLabel(
+                                 `${files.length} file dipilih`,
+                               );
+                               setHasAttachment(true);
+                             }
+                           }}
+                           className="absolute h-0 w-0 opacity-0"
+                           id="kas-rt-attachment-input-edit"
+                         />
+                         <label
+                           htmlFor="kas-rt-attachment-input-edit"
                           className="shrink-0 cursor-pointer rounded-xl px-3 py-1.5 text-xs font-bold text-white transition active:scale-90"
                           style={{ background: "var(--color-primary)" }}
                         >
@@ -476,14 +476,8 @@ export function KasRtTransactionForm(props: KasRtTransactionFormProps) {
                     </button>
                   ) : (
                     <button
-                      type="button"
+                      type="submit"
                       disabled={!isStep2Valid || isSubmitting}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleSubmit(
-                          e as unknown as React.FormEvent<HTMLFormElement>,
-                        );
-                      }}
                       className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                       style={actionButtonStyle(!isStep2Valid || isSubmitting)}
                     >
@@ -977,14 +971,8 @@ export function KasRtTransactionForm(props: KasRtTransactionFormProps) {
                     </button>
                   ) : (
                     <button
-                      type="button"
+                      type="submit"
                       disabled={!isFormValid || isSubmitting}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleSubmit(
-                          e as unknown as React.FormEvent<HTMLFormElement>,
-                        );
-                      }}
                       className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                       style={actionButtonStyle(!isFormValid || isSubmitting)}
                     >

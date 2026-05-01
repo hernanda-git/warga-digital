@@ -215,9 +215,38 @@ export async function fetchKasRtTransactions(
     startDate?: string;
     endDate?: string;
   } = {},
-): Promise<TransactionItem[]> {
+): Promise<{ transactions: TransactionItem[]; total: number }> {
   try {
     const supabase = createServerClient();
+
+    let countQuery = supabase
+      .from("kas_rt_transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", DEFAULT_TENANT_ID)
+      .eq("community_id", DEFAULT_COMMUNITY_ID)
+      .is("deleted_at", null);
+
+    if (filters.typeFilter && filters.typeFilter !== "all") {
+      countQuery = countQuery.eq("type", filters.typeFilter);
+    }
+    if (filters.categoryFilter?.trim()) {
+      countQuery = countQuery.ilike("category", `%${filters.categoryFilter.trim()}%`);
+    }
+    if (filters.blockFilter?.trim()) {
+      countQuery = countQuery.ilike("reference", `%${filters.blockFilter.trim()}%`);
+    }
+    if (filters.startDate) {
+      countQuery = countQuery.gte("date", filters.startDate);
+    }
+    if (filters.endDate) {
+      countQuery = countQuery.lte("date", filters.endDate);
+    }
+
+    const { count: totalCount, error: countError } = await countQuery;
+    if (countError) {
+      console.error("[kas-rt/data] fetchKasRtTransactions count error:", countError);
+    }
+
     let query = supabase
       .from("kas_rt_transactions")
       .select(
@@ -247,12 +276,15 @@ export async function fetchKasRtTransactions(
     }
 
     const { data: transactions, error } = await query;
-    if (error || !transactions?.length) {
-      if (error)
-      return [];
+    if (error) {
+      console.error("[kas-rt/data] fetchKasRtTransactions query error:", error);
+      return { transactions: [], total: 0 };
+    }
+    if (!transactions?.length) {
+      return { transactions: [], total: totalCount ?? 0 };
     }
 
-    return (transactions as any[]).map((tx) => {
+    const mappedTransactions = (transactions as any[]).map((tx) => {
       const createdByUser = Array.isArray(tx.created_by_user)
         ? tx.created_by_user[0]
         : tx.created_by_user;
@@ -278,9 +310,11 @@ export async function fetchKasRtTransactions(
         transaction_details: tx.kas_rt_transaction_details ?? [],
       };
     });
+
+    return { transactions: mappedTransactions, total: totalCount ?? 0 };
   } catch (err) {
     console.error("[kas-rt/data] fetchKasRtTransactions failed:", err);
-    return [];
+    return { transactions: [], total: 0 };
   }
 }
 
@@ -291,16 +325,9 @@ export async function fetchKasRtSummary(
   month: number,
 ): Promise<KasRtSummaryResponse | null> {
   try {
-    // Re-use the existing API route logic by calling it internally
-    // This avoids duplicating the complex aggregation logic
-    const { GET } = await import("@/app/api/kas-rt/summary/route");
-    const request = new Request(
-      `http://localhost/api/kas-rt/summary?year=${year}&month=${month}`,
-    );
-    const response = await GET(request);
-    if (!response.ok) return null;
-    return (await response.json()) as KasRtSummaryResponse;
-  } catch (err) {
+    const { fetchKasRtSummaryData } = await import("@/lib/kas-rt-summary");
+    return fetchKasRtSummaryData({ year, month: month - 1 });
+  } catch {
     return null;
   }
 }
@@ -319,21 +346,25 @@ export async function fetchKasRtHouseStatuses(): Promise<HouseTransactionStatus[
       .eq("is_active", true)
       .order("blok_rumah");
 
-    if (housesError || !houses?.length) {
-      if (housesError)
+    if (housesError) {
+      console.error("[kas-rt/data] fetchKasRtHouseStatuses houses error:", housesError);
+      return [];
+    }
+    if (!houses?.length) {
       return [];
     }
 
     const blokList = houses.map((h) => h.blok_rumah).filter(Boolean);
     if (blokList.length === 0) return [];
 
+    const currentYear = new Date().getFullYear();
     const { data: transactions, error: txError } = await supabase
       .from("kas_rt_transactions")
       .select("amount, date, reference")
       .eq("tenant_id", DEFAULT_TENANT_ID)
       .eq("community_id", DEFAULT_COMMUNITY_ID)
-      .gte("date", "2026-01-01")
-      .lt("date", "2027-01-01")
+      .gte("date", `${currentYear}-01-01`)
+      .lt("date", `${currentYear + 1}-01-01`)
       .in("reference", blokList);
 
     if (txError) {

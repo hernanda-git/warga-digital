@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
 import { findDuplicateTransactions } from "@/lib/kas-rt-utils";
@@ -18,7 +18,7 @@ import {
   KasRtDeleteConfirmDialog,
   KasRtDuplicateWarningDialog,
 } from "@/components/kas-rt";
-import { KasRtTransactionListSkeleton } from "@/components/kas-rt/skeletons";
+import { KasRtPageSkeleton, KasRtTransactionListSkeleton } from "@/components/kas-rt/skeletons";
 import { KasRtBackToTop } from "@/components/kas-rt/KasRtBackToTop";
 import { ROUTES } from "@/config/landing";
 import type {
@@ -26,23 +26,28 @@ import type {
   TransactionItem,
   KasRtCategory,
   KasRtTotals,
+  KasRtFilterState,
 } from "@/types/kas-rt";
 import { toast } from "sonner";
 
 interface KasRtPageClientProps {
   initialTransactions: TransactionItem[];
+  initialTotal: number;
   initialCategories: KasRtCategory[];
   initialCanSubmitTransaction: boolean;
   initialSummary: KasRtTotals | null;
+  initialFilterState: KasRtFilterState;
 }
 
 export default function KasRtPageClient({
   initialTransactions,
+  initialTotal,
   initialCategories,
   initialCanSubmitTransaction,
   initialSummary,
+  initialFilterState,
 }: KasRtPageClientProps) {
-  const now = useMemo(() => new Date(), []);
+  const now = new Date();
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -61,7 +66,6 @@ export default function KasRtPageClient({
     isFilterOpen,
     setIsFilterOpen,
     totals,
-    filteredTransactions,
     allCategoryNames,
     allBlockNames,
     activeAdvancedFilterCount,
@@ -75,9 +79,11 @@ export default function KasRtPageClient({
     now,
     initialData: {
       transactions: initialTransactions,
+      total: initialTotal,
       categories: initialCategories,
       canSubmitTransaction: initialCanSubmitTransaction,
       summary: initialSummary,
+      filterState: initialFilterState,
     },
   });
 
@@ -118,7 +124,8 @@ export default function KasRtPageClient({
     setIsFormOpen(false);
     setEditingTxId(null);
     formHook.resetFormState();
-  }, [formHook]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formHook.isSubmitting, formHook.resetFormState]);
 
   // ── Pull-to-refresh ────────────────────────────────────────────────────────
   const { pullDistance, onTouchStart, onTouchMove, onTouchEnd } =
@@ -197,6 +204,10 @@ export default function KasRtPageClient({
   }, [deletingTx, setTransactions]);
 
   // ── Duplicate check handler ───────────────────────────────────────────────
+  // Note: Expenses skip duplicate detection because expense transactions
+  // typically have unique descriptions and amounts (e.g., vendor payments),
+  // whereas income (IPL payments) often has duplicate entries from different
+  // houses paying the same amount on the same date.
   const handleDuplicateCheck = useCallback(() => {
     if (formHook.form.type === "expense") {
       formHook.setFormStep((s) => (s + 1) as 1 | 2 | 3);
@@ -290,7 +301,7 @@ export default function KasRtPageClient({
   if (isPageLoading) {
     return (
       <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
-        <KasRtTransactionListSkeleton count={5} />
+        <KasRtPageSkeleton />
       </main>
     );
   }
@@ -332,7 +343,6 @@ export default function KasRtPageClient({
         ) : (
           <KasRtTransactionList
             transactions={transactions}
-            filteredTransactions={filteredTransactions}
             canSubmitTransaction={canSubmitTransaction}
             now={now}
             pullDistance={pullDistance}
@@ -431,7 +441,7 @@ export default function KasRtPageClient({
 
       <KasRtBackToTop
         containerRef={scrollContainerRef}
-        visibleItemsCount={filteredTransactions.length}
+        visibleItemsCount={transactions.length}
       />
     </main>
   );

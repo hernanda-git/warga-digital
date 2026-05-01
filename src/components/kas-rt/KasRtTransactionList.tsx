@@ -14,7 +14,6 @@ import type { TransactionItem } from "@/types/kas-rt";
 
 interface KasRtTransactionListProps {
   transactions: TransactionItem[];
-  filteredTransactions: TransactionItem[];
   canSubmitTransaction: boolean;
   now: Date;
   pullDistance: number;
@@ -43,7 +42,6 @@ const touchActionStyle: React.CSSProperties = {
  */
 export function KasRtTransactionList({
   transactions,
-  filteredTransactions,
   canSubmitTransaction,
   now,
   pullDistance,
@@ -91,7 +89,7 @@ export function KasRtTransactionList({
       )}
 
       {/* Empty state */}
-      {filteredTransactions.length === 0 ? (
+      {transactions.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-3xl bg-app-surface px-6 py-10 text-center shadow-[0_4px_16px_rgba(0,40,5,0.05)]">
           <BanknotesIcon
             className="h-10 w-10 text-app-body-muted/30"
@@ -125,7 +123,7 @@ export function KasRtTransactionList({
             const elements: React.ReactNode[] = [];
             let lastMonthYearKey = "";
 
-            filteredTransactions.forEach((tx) => {
+            transactions.forEach((tx) => {
               const txDate = new Date(tx.date);
               const currentMonthYearKey = getMonthYearKey(txDate);
 
@@ -169,7 +167,7 @@ export function KasRtTransactionList({
           {isLoadingMore && <KasRtLoadMoreSkeleton count={3} />}
 
           {/* End of list indicator */}
-          {!hasMore && filteredTransactions.length > 0 && (
+          {!hasMore && transactions.length > 0 && (
             <div className="py-4 text-center">
               <div className="mx-auto mb-2 h-px w-16 bg-app-body-muted/20" />
               <p className="text-[10px] text-app-body-muted/50">
@@ -189,8 +187,8 @@ export function KasRtTransactionList({
         })}
         {" · "}
         {totalCount > 0
-          ? `${filteredTransactions.length} dari ${totalCount} transaksi`
-          : `${filteredTransactions.length} transaksi`}
+          ? `${transactions.length} dari ${totalCount} transaksi`
+          : `${transactions.length} transaksi`}
       </p>
     </div>
   );

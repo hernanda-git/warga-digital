@@ -8,6 +8,8 @@ import {
   PencilSquareIcon,
   TrashIcon,
   UserCircleIcon,
+  ChartBarIcon,
+  PaperClipIcon,
 } from "@heroicons/react/24/outline";
 import { formatRupiah } from "@/lib/kas-rt-utils";
 import type { TransactionItem } from "@/types/kas-rt";
@@ -133,7 +135,7 @@ export function KasRtTransactionCard({
         <details className="mt-3 rounded-xl bg-app-surface-alt">
           <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-xs font-medium text-app-body-muted [&::-webkit-details-marker]:hidden">
             <span className="flex items-center gap-1.5">
-              <span className="text-red-500">📊</span>
+              <ChartBarIcon className="h-3.5 w-3.5 text-red-500" />
               Rincian ({tx.transaction_details.length} item)
             </span>
             <ChevronLeftIcon className="h-3.5 w-3.5 rotate-[-90deg] transition-transform duration-200 [[open]>&]:rotate-90" />
@@ -174,8 +176,9 @@ export function KasRtTransactionCard({
         <div className="mt-3">
           {/* Section header */}
           <div className="mb-2 flex items-center gap-1.5">
+            <PaperClipIcon className="h-3.5 w-3.5 text-app-body-muted" />
             <span className="text-xs font-bold uppercase tracking-wider text-app-body-muted">
-              📎 Lampiran ({tx.attachments.length})
+              Lampiran ({tx.attachments.length})
             </span>
           </div>
 

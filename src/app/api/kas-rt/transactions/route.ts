@@ -9,7 +9,7 @@ import {
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
 import { notifyAllActiveUsers } from "@/lib/notifications";
-import { serverUpload, getPublicUrl, getPublicUrlSafe } from "@/lib/r2";
+import { serverUpload, getPublicUrlSafe } from "@/lib/r2";
 
 export async function POST(request: Request) {
   try {
@@ -254,8 +254,9 @@ export async function POST(request: Request) {
         .in("role_id", ROLE_IDS_CAN_SUBMIT_KAS_RT)
         .is("revoked_at", null);
 
-      if (roleErr) {
-      } else if (roleRows?.length) {
+        if (roleErr) {
+          console.error("[kas-rt/transactions] Role query error for income notification:", roleErr);
+        } else if (roleRows?.length) {
         const authorizedTenantUserIds = roleRows.map((r) => r.tenant_user_id);
 
         const { data: recipientRows, error: recipientErr } = await supabase
@@ -267,6 +268,7 @@ export async function POST(request: Request) {
           .neq("user_id", session.userId);
 
         if (recipientErr) {
+          console.error("[kas-rt/transactions] Recipient query error for income notification:", recipientErr);
         } else if (recipientRows && recipientRows.length > 0) {
           const uniqueRecipients = Array.from(
             new Set(recipientRows.map((row) => row.user_id).filter(Boolean)),
@@ -293,6 +295,7 @@ export async function POST(request: Request) {
             .insert(notificationRows);
 
           if (notifErr) {
+            console.error("[kas-rt/transactions] Failed to insert income notifications:", notifErr);
           }
         }
       }
@@ -330,6 +333,7 @@ export async function POST(request: Request) {
 
           attachmentNames.push(file.name);
         } catch (err) {
+          console.error("[kas-rt/transactions] Failed to upload attachment:", err);
         }
       }
 
@@ -338,6 +342,7 @@ export async function POST(request: Request) {
           .from("kas_rt_attachments")
           .insert(attachmentsToInsert);
         if (attachmentError) {
+          console.error("[kas-rt/transactions] Failed to insert attachment records:", attachmentError);
         }
       }
     }
@@ -386,6 +391,7 @@ export async function POST(request: Request) {
         .select("id, name, rate_per_warga, jumlah_warga, subtotal, sort_order");
 
       if (detailsError) {
+        console.error("[kas-rt/transactions] Failed to insert transaction details:", detailsError);
       } else if (insertedDetails) {
         savedTransactionDetails = insertedDetails;
       }
@@ -419,6 +425,14 @@ export async function POST(request: Request) {
 // Filters: type, category, block (reference), startDate, endDate
 export async function GET(request: Request) {
   try {
+    const session = await getSessionFromCookie();
+    if (!session) {
+      return NextResponse.json(
+        { message: "Anda harus masuk untuk melihat transaksi." },
+        { status: 401 },
+      );
+    }
+
     const tenantId = DEFAULT_TENANT_ID;
     const communityId = DEFAULT_COMMUNITY_ID;
 
@@ -521,7 +535,7 @@ export async function GET(request: Request) {
       const attachmentPayload = (tx.kas_rt_attachments ?? []).map((att) => ({
         id: att.id,
         file_name: att.file_name,
-        url: getPublicUrl(att.storage_path),
+        url: getPublicUrlSafe(att.storage_path) ?? "",
         mime_type: att.mime_type,
       }));
 

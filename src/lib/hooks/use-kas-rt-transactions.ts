@@ -4,10 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiFetch } from "@/lib/api-client";
 
-import { toDateInputValue } from "@/lib/kas-rt-utils";
-
-import { getDefaultFilterDates } from "@/lib/kas-rt-constants";
-
 /**
  * Get community name from cookie (client-side)
  */
@@ -29,9 +25,11 @@ interface UseKasRtTransactionsOptions {
   now: Date;
   initialData?: {
     transactions?: TransactionItem[];
+    total?: number;
     categories?: KasRtCategory[];
     canSubmitTransaction?: boolean;
     summary?: KasRtTotals | null;
+    filterState?: KasRtFilterState;
   };
 }
 
@@ -62,7 +60,6 @@ interface UseKasRtTransactionsReturn {
 
   // Derived data
   totals: KasRtTotals;
-  filteredTransactions: TransactionItem[];
   allCategoryNames: string[];
   allBlockNames: string[];
   activeAdvancedFilterCount: number;
@@ -130,22 +127,26 @@ export function useKasRtTransactions({
     initialData?.summary ?? null,
   );
 
+  const initialTransactionCount = initialData?.transactions?.length ?? 0;
+  const initialTotal = initialData?.total ?? initialTransactionCount;
+
   const [pagination, setPagination] = useState<PaginationState>({
     currentPage: 1,
     pageSize: PAGE_SIZE,
-    hasMore: (initialData?.transactions?.length ?? 0) >= PAGE_SIZE,
-    total: initialData?.transactions?.length ?? 0,
+    hasMore: initialTotal > initialTransactionCount,
+    total: initialTotal,
   });
 
-  // Filter state
-  const defaultDates = getDefaultFilterDates(now);
-  const [filterState, setFilterState] = useState<KasRtFilterState>({
-    typeFilter: "all",
-    categoryFilter: "",
-    blockFilter: "",
-    startDate: defaultDates.startDate,
-    endDate: defaultDates.endDate,
-  });
+  // Filter state — initialize from SSR if provided, otherwise use no filters
+  const [filterState, setFilterState] = useState<KasRtFilterState>(
+    initialData?.filterState ?? {
+      typeFilter: "all",
+      categoryFilter: "",
+      blockFilter: "",
+      startDate: "",
+      endDate: "",
+    },
+  );
 
   // Refs for request cancellation and change tracking
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -319,18 +320,17 @@ export function useKasRtTransactions({
 
   // Reset filters - called when "Reset Filter" is clicked
   const resetFilters = useCallback(async () => {
-    const defaultDates = getDefaultFilterDates(now);
     const newFilterState: KasRtFilterState = {
       typeFilter: "all",
       categoryFilter: "",
       blockFilter: "",
-      startDate: defaultDates.startDate,
-      endDate: defaultDates.endDate,
+      startDate: "",
+      endDate: "",
     };
     setFilterState(newFilterState);
     prevFilterKeyRef.current = buildFilterKey(newFilterState);
     await loadTransactions(newFilterState, 1, false);
-  }, [now, loadTransactions]);
+  }, [loadTransactions]);
 
   const refreshData = useCallback(async () => {
     setIsRefreshing(true);
@@ -349,18 +349,24 @@ export function useKasRtTransactions({
     }
   }, [filterState, loadTransactions, loadSummary, cancelPendingRequests]);
 
+  // Ref to ensure init runs only once when no SSR data
+  const hasInitializedRef = useRef(false);
+
   // ── Initial data loading ───────────────────────────────────────────────
   useEffect(() => {
     if (hasInitialData) {
       // SSR provided initial data; skip client-side initial fetch
       setIsPageLoading(false);
       setIsTransactionsLoading(false);
-      // If initial data has fewer than PAGE_SIZE items, hasMore should be false
-      if ((initialData?.transactions?.length ?? 0) < PAGE_SIZE) {
+      // If SSR total equals the loaded count, there's nothing more to fetch
+      if (initialTotal <= initialTransactionCount) {
         setPagination((prev) => ({ ...prev, hasMore: false }));
       }
       return;
     }
+
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
 
     async function init() {
       // Phase 1: Load essential data (blocking - permissions, info, categories)
@@ -384,8 +390,10 @@ export function useKasRtTransactions({
       await Promise.all([loadTransactions(filterState, 1, false), loadSummary()]);
     }
     void init();
+    // Only depends on hasInitialData; uses hasInitializedRef to prevent re-runs
+    // when no SSR data is provided.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hasInitialData]);
 
   // ── Type filter change triggers immediate reload ───────────────────────
   // Type filter is in the top bar (tabs), not in the filter sheet
@@ -395,14 +403,17 @@ export function useKasRtTransactions({
   useEffect(() => {
     // Skip if this is the initial render or page is still loading
     if (prevTypeFilterRef.current === filterState.typeFilter || isPageLoading) {
+      prevTypeFilterRef.current = filterState.typeFilter;
       return;
     }
 
     // Type filter changed, reload page 1
     prevTypeFilterRef.current = filterState.typeFilter;
-    prevFilterKeyRef.current = buildFilterKey(filterState);
     void loadTransactions(filterState, 1, false);
-  }, [filterState.typeFilter, filterState, isPageLoading, loadTransactions]);
+    // Intentionally excludes filterState from deps; only reacts to typeFilter changes.
+    // Other filter changes are handled by applyFilters/resetFilters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterState.typeFilter, isPageLoading, loadTransactions]);
 
   // ── Advanced filter change detection ───────────────────────────────────
   // When filterState changes (via setFilterState), check if the key changed
@@ -427,17 +438,17 @@ export function useKasRtTransactions({
     deltaFromPrevious: 0,
   };
 
-  // Server already returns filtered and sorted results
-  // No client-side filtering needed - just pass through the transactions
-  const filteredTransactions = useMemo(() => {
-    return transactions;
-  }, [transactions]);
+  // Server already returns filtered and sorted results.
+  // No client-side filtering needed.
 
   const allCategoryNames = useMemo(
     () => Array.from(new Set(categories.map((c) => c.name))).sort(),
     [categories],
   );
 
+  // TODO: allBlockNames only includes blocks from loaded (paginated) transactions.
+  // Blocks that exist only on later pages won't appear in the filter dropdown.
+  // Consider fetching all unique block names from a dedicated endpoint.
   const allBlockNames = useMemo(
     () =>
       Array.from(
@@ -451,15 +462,13 @@ export function useKasRtTransactions({
   );
 
   const activeAdvancedFilterCount = useMemo(() => {
-    const defaultStart = toDateInputValue(
-      new Date(now.getFullYear(), now.getMonth(), 1),
-    );
     return [
       filterState.categoryFilter.trim() !== "",
       filterState.blockFilter.trim() !== "",
-      filterState.startDate !== defaultStart,
+      filterState.startDate !== "",
+      filterState.endDate !== "",
     ].filter(Boolean).length;
-  }, [filterState, now]);
+  }, [filterState]);
 
   return {
     // Data
@@ -481,7 +490,6 @@ export function useKasRtTransactions({
 
     // Derived data
     totals,
-    filteredTransactions,
     allCategoryNames,
     allBlockNames,
     activeAdvancedFilterCount,
