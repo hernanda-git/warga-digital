@@ -19,6 +19,7 @@ import {
   EnvelopeIcon,
   ExclamationTriangleIcon,
   UserCircleIcon,
+  HomeModernIcon,
 } from "@heroicons/react/24/outline";
 import { PageLoader, Avatar } from "@/components/ui";
 import { apiFetch } from "@/lib/api-client";
@@ -96,7 +97,7 @@ export default function AdminManageUsersPage() {
 
   const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
   const [modalView, setModalView] = useState<
-    "main" | "edit" | "avatar" | "delete"
+    "main" | "edit" | "avatar" | "delete" | "house"
   >("main");
   const [confirmResetPin, setConfirmResetPin] = useState(false);
 
@@ -115,6 +116,18 @@ export default function AdminManageUsersPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const [houseList, setHouseList] = useState<
+    Array<{ id: string; blok_rumah: string }>
+  >([]);
+  const [houseInput, setHouseInput] = useState("");
+  const [houseSuggestions, setHouseSuggestions] = useState<
+    Array<{ id: string; blok_rumah: string }>
+  >([]);
+  const [showHouseSuggestions, setShowHouseSuggestions] = useState(false);
+  const [houseSubmitting, setHouseSubmitting] = useState(false);
+  const [houseError, setHouseError] = useState<string | null>(null);
+  const [houseLoading, setHouseLoading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -219,6 +232,10 @@ export default function AdminManageUsersPage() {
     setAvatarPreview(null);
     setDeleteConfirmText("");
     setDeleteError(null);
+    setHouseInput("");
+    setHouseError(null);
+    setShowHouseSuggestions(false);
+    setHouseSuggestions([]);
   }, []);
 
   const closeModal = useCallback(() => {
@@ -379,6 +396,90 @@ export default function AdminManageUsersPage() {
       setDeleteSubmitting(false);
     }
   }, [selectedUser, showSuccess, closeModal, loadUsers]);
+
+  const loadHouseList = useCallback(async () => {
+    if (houseList.length > 0) return;
+    setHouseLoading(true);
+    try {
+      const res = await apiFetch("/api/admin/houses");
+      const body = (await res.json().catch(() => ({}))) as {
+        houses?: Array<{ id: string; blok_rumah: string }>;
+      };
+      if (res.ok && body.houses) {
+        setHouseList(body.houses);
+      }
+    } catch {
+    } finally {
+      setHouseLoading(false);
+    }
+  }, []);
+
+  const handleHouseInputChange = useCallback(
+    (value: string) => {
+      setHouseInput(value);
+      const q = value.toLowerCase().trim();
+      if (q.length === 0) {
+        setHouseSuggestions([]);
+        setShowHouseSuggestions(false);
+      } else {
+        setHouseSuggestions(
+          houseList.filter(
+            (h) =>
+              h.blok_rumah && h.blok_rumah.toLowerCase().includes(q),
+          ),
+        );
+        setShowHouseSuggestions(true);
+      }
+    },
+    [houseList],
+  );
+
+  const selectHouseSuggestion = useCallback((blok: string) => {
+    setHouseInput(blok);
+    setShowHouseSuggestions(false);
+  }, []);
+
+  const handleHouseSubmit = useCallback(async () => {
+    if (!selectedUser || !houseInput.trim()) return;
+    setHouseError(null);
+    setHouseSubmitting(true);
+    try {
+      const res = await apiFetch("/api/admin/users/house", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: selectedUser.user_id,
+          newBlokRumah: houseInput.trim(),
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        success?: boolean;
+        blokRumah?: string;
+        relationship?: string;
+        hadOwner?: boolean;
+      };
+      if (!res.ok) {
+        setHouseError(body.error ?? "Gagal memperbarui blok rumah");
+        return;
+      }
+      const roleLabel =
+        body.relationship === "OWNER" ? "pemilik" : "penghuni";
+      const ownershipNote =
+        body.hadOwner
+          ? ` (rumah sudah memiliki pemilik, user dijadikan ${roleLabel})`
+          : ` (user dijadikan ${roleLabel})`;
+      showSuccess(
+        `Blok rumah diubah ke ${body.blokRumah ?? houseInput.trim()}${ownershipNote}`,
+      );
+      setModalView("main");
+      void loadUsers(true);
+    } catch {
+      setHouseError("Gagal memperbarui blok rumah. Coba lagi.");
+    } finally {
+      setHouseSubmitting(false);
+    }
+  }, [selectedUser, houseInput, showSuccess, loadUsers]);
 
   const handleToggleStatus = useCallback(async () => {
     if (!selectedUser) return;
@@ -692,6 +793,30 @@ export default function AdminManageUsersPage() {
                     <button
                       type="button"
                       onClick={() => {
+                        setModalView("house");
+                        setHouseInput(selectedUser.blok_rumah ?? "");
+                        setHouseError(null);
+                        setShowHouseSuggestions(false);
+                        void loadHouseList();
+                      }}
+                      className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition hover:bg-app-surface-alt active:scale-[0.98]"
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50">
+                        <HomeModernIcon className="h-[18px] w-[18px] text-emerald-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold text-app-title">
+                          Koreksi Blok Rumah
+                        </p>
+                        <p className="text-[11px] text-app-body-muted">
+                          Ubah blok rumah user ke yang benar
+                        </p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
                         setModalView("avatar");
                         setAvatarFile(null);
                         setAvatarPreview(null);
@@ -785,6 +910,173 @@ export default function AdminManageUsersPage() {
                       </div>
                     </div>
                   )}
+                </>
+              )}
+
+              {modalView === "house" && (
+                <>
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-[15px] font-extrabold text-app-title">
+                        Koreksi Blok Rumah
+                      </h2>
+                      <p className="text-[11px] text-app-body-muted">
+                        {selectedUser.full_name}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setModalView("main")}
+                      className="flex h-8 w-8 items-center justify-center rounded-xl transition hover:bg-app-surface-alt active:scale-90"
+                    >
+                      <XMarkIcon className="h-5 w-5 text-app-body-muted" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-widest text-app-body-muted mb-1.5">
+                        Blok Rumah Saat Ini
+                      </label>
+                      <p
+                        className="rounded-xl border px-3.5 py-2.5 text-[13px] font-medium text-app-body-muted bg-app-surface-alt"
+                        style={{ borderColor: "var(--color-input-border)" }}
+                      >
+                        {selectedUser.blok_rumah || "\u2014"}
+                      </p>
+                    </div>
+
+                    <div className="relative">
+                      <label className="block text-[11px] font-bold uppercase tracking-widest text-app-body-muted mb-1.5">
+                        Blok Rumah Baru
+                      </label>
+                      <input
+                        type="text"
+                        value={houseInput}
+                        onChange={(e) =>
+                          handleHouseInputChange(e.target.value)
+                        }
+                        onFocus={() => {
+                          if (
+                            houseInput.trim().length > 0 &&
+                            houseSuggestions.length > 0
+                          ) {
+                            setShowHouseSuggestions(true);
+                          }
+                        }}
+                        onBlur={() => {
+                          setTimeout(
+                            () => setShowHouseSuggestions(false),
+                            200,
+                          );
+                        }}
+                        placeholder="Ketik atau pilih dari daftar..."
+                        className="w-full rounded-xl border px-3.5 py-2.5 text-[13px] font-medium text-app-title focus:outline-none"
+                        style={{ borderColor: "var(--color-input-border)" }}
+                      />
+
+                      {showHouseSuggestions &&
+                        houseSuggestions.length > 0 && (
+                          <div
+                            className="absolute z-10 mt-1 w-full rounded-xl border bg-app-surface shadow-lg max-h-48 overflow-y-auto"
+                            style={{
+                              borderColor: "var(--color-input-border)",
+                            }}
+                          >
+                            {houseSuggestions.map((h) => (
+                              <button
+                                key={h.id}
+                                type="button"
+                                onMouseDown={() =>
+                                  selectHouseSuggestion(h.blok_rumah)
+                                }
+                                className="w-full px-3.5 py-2 text-left text-[12px] text-app-body hover:bg-app-surface-alt transition first:rounded-t-xl last:rounded-b-xl"
+                              >
+                                {h.blok_rumah}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                      {houseLoading && (
+                        <div className="mt-1 flex items-center gap-2 rounded-xl bg-app-surface-alt px-3.5 py-2">
+                          <ArrowPathIcon className="h-3.5 w-3.5 animate-spin text-app-body-muted" />
+                          <span className="text-[11px] text-app-body-muted">
+                            Memuat daftar rumah...
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {(() => {
+                      const inputUpper = houseInput.trim().toUpperCase();
+                      const matchedHouse = houseList.find(
+                        (h) => h.blok_rumah === inputUpper,
+                      );
+                      const isTypedHouseExisting = !!matchedHouse;
+                      return (
+                        <div
+                          className={`rounded-2xl border px-3 py-2.5 ${
+                            isTypedHouseExisting
+                              ? "border-amber-200 bg-amber-50"
+                              : "border-emerald-200 bg-emerald-50"
+                          }`}
+                        >
+                          <p
+                            className={`text-[11px] leading-relaxed ${
+                              isTypedHouseExisting
+                                ? "text-amber-800"
+                                : "text-emerald-800"
+                            }`}
+                          >
+                            {isTypedHouseExisting
+                              ? `"${inputUpper}" sudah terdaftar. User akan dipindahkan. Jika rumah sudah punya pemilik, user otomatis jadi penghuni (FAMILY). Jika belum, user jadi pemilik (OWNER).`
+                              : inputUpper
+                                ? `"${inputUpper}" belum terdaftar. Rumah baru akan dibuat dan user otomatis menjadi pemilik (OWNER).`
+                                : "Ketik blok rumah yang benar untuk user ini."}
+                          </p>
+                        </div>
+                      );
+                    })()}
+
+                    {houseError && (
+                      <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5">
+                        <ExclamationTriangleIcon className="h-4 w-4 shrink-0 mt-0.5 text-red-500" />
+                        <p className="text-[12px] text-red-700">
+                          {houseError}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setModalView("main")}
+                        disabled={houseSubmitting}
+                        className="flex-1 rounded-xl bg-app-surface-alt py-3 text-[12px] font-semibold text-app-body transition active:scale-95 disabled:opacity-50"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleHouseSubmit}
+                        disabled={
+                          houseSubmitting || !houseInput.trim()
+                        }
+                        className="flex-1 rounded-xl py-3 text-[12px] font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                        style={{ background: "var(--color-primary)" }}
+                      >
+                        {houseSubmitting ? (
+                          <span className="flex items-center justify-center gap-1.5">
+                            <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                            Menyimpan...
+                          </span>
+                        ) : (
+                          "Simpan"
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
 

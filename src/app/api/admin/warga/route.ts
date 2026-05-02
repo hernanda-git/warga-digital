@@ -48,14 +48,15 @@ export async function GET(request: NextRequest) {
       user_id,
       status,
       joined_at,
-      users!inner (
+        users!inner (
         id,
         full_name,
         email,
         wa_number,
         username,
         status,
-        avatar_path
+        avatar_path,
+        last_active_at
       )
     `,
     )
@@ -80,6 +81,7 @@ export async function GET(request: NextRequest) {
       wa_number: string | null;
       status: string;
       avatar_path: string | null;
+      last_active_at: string | null;
     };
   };
 
@@ -137,29 +139,6 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // ── 6. Batch-fetch last active session for each user ─────────────────────
-  const lastActiveMap: Record<string, string | null> = {};
-  if (userIds.length > 0) {
-    const { data: sessionRows } = await supabase
-      .from("sessions")
-      .select("user_id, last_active_at")
-      .in("user_id", userIds)
-      .order("last_active_at", { ascending: false });
-
-    type SessionRow = {
-      user_id: string;
-      last_active_at: string;
-    };
-
-    (sessionRows ?? []).forEach((s) => {
-      const row = s as unknown as SessionRow;
-      // Keep only the most-recent entry per user (results are pre-sorted DESC)
-      if (!lastActiveMap[row.user_id]) {
-        lastActiveMap[row.user_id] = row.last_active_at;
-      }
-    });
-  }
-
   const allWarga = rows.map((r) => {
     const avatarPath = r.users?.avatar_path ?? null;
     return {
@@ -172,7 +151,7 @@ export async function GET(request: NextRequest) {
       blok_rumah: blokMap[r.user_id] ?? null,
       joined_at: r.joined_at,
       roles: rolesMap[r.id] ?? [],
-      last_active_at: lastActiveMap[r.user_id] ?? null,
+      last_active_at: r.users?.last_active_at ?? null,
       status: r.users?.status ?? "INACTIVE",
       avatar_path: avatarPath,
       profile_picture_url: avatarPath,

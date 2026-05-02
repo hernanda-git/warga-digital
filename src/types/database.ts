@@ -63,6 +63,7 @@ export interface User {
   community_id: string;
   status: UserStatus;
   avatar_path: string | null;
+  last_active_at: string | null;
   created_at: string;
   created_by: string | null;
   updated_at: string | null;

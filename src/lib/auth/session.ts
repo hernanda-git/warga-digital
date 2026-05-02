@@ -21,17 +21,21 @@ export async function createSession(userId: string): Promise<string> {
   const tokenHash = hashToken(rawToken);
   const expiresAt = new Date(Date.now() + SESSION_MAX_AGE * 1000);
 
+  const now = new Date().toISOString();
+
   const { error } = await supabase.from("sessions").insert({
     id: sessionId,
     user_id: userId,
     token_hash: tokenHash,
     expires_at: expiresAt.toISOString(),
-    last_active_at: new Date().toISOString(),
+    last_active_at: now,
   });
 
   if (error) {
     throw new Error("Failed to create session");
   }
+
+  await supabase.from("users").update({ last_active_at: now }).eq("id", userId);
 
   const jwt = await signSessionToken(sessionId, userId);
   return jwt;
@@ -93,17 +97,20 @@ export async function getSessionFromCookie(): Promise<{
 
     (async (store) => {
       try {
-        const { error } = await supabase
+        const now = new Date().toISOString();
+
+        await supabase
           .from("sessions")
           .update({
-            last_active_at: new Date().toISOString(),
+            last_active_at: now,
             expires_at: newExpiresAt.toISOString(),
           })
           .eq("id", session.id);
 
-        if (error) {
-          return;
-        }
+        await supabase
+          .from("users")
+          .update({ last_active_at: now })
+          .eq("id", session.user_id);
 
         const newJwt = await signSessionToken(session.id, session.user_id);
         store.set(SESSION_COOKIE, newJwt, {
