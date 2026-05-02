@@ -469,7 +469,8 @@ export async function PATCH(
           .toString(36)
           .slice(2)}.${extension}`;
 
-        await serverUpload(file, objectKey, file.type || "application/octet-stream", "public, max-age=3600");
+        const fileBuffer = Buffer.from(await file.arrayBuffer());
+        await serverUpload(fileBuffer, objectKey, file.type || "application/octet-stream", "public, max-age=3600");
 
         attachmentsToInsert.push({
           transaction_id: id,
@@ -479,6 +480,7 @@ export async function PATCH(
           size_bytes: file.size,
         });
       } catch (err) {
+        console.error(`[kas-rt/transactions/${id}] R2 upload failed for "${file.name}":`, err);
       }
     }
 
@@ -489,6 +491,7 @@ export async function PATCH(
         .select("id, file_name, storage_path, mime_type");
 
       if (attachmentError) {
+        console.error(`[kas-rt/transactions/${id}] Failed to insert attachment records:`, JSON.stringify(attachmentError));
       } else if (insertedAttachments) {
         for (const att of insertedAttachments) {
           savedAttachments.push({

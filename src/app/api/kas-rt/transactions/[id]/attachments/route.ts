@@ -147,7 +147,8 @@ export async function POST(
         .toString(36)
         .slice(2)}.${extension}`;
 
-      await serverUpload(file, objectKey, file.type || "application/octet-stream", "public, max-age=3600");
+      const fileBuffer = Buffer.from(await file.arrayBuffer());
+      await serverUpload(fileBuffer, objectKey, file.type || "application/octet-stream", "public, max-age=3600");
 
       attachmentsToInsert.push({
         transaction_id: transactionId,

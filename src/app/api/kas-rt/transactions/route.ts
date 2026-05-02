@@ -321,7 +321,8 @@ export async function POST(request: Request) {
             .toString(36)
             .slice(2)}.${extension}`;
 
-          await serverUpload(file, objectKey, file.type || "application/octet-stream", "public, max-age=3600");
+          const fileBuffer = Buffer.from(await file.arrayBuffer());
+          await serverUpload(fileBuffer, objectKey, file.type || "application/octet-stream", "public, max-age=3600");
 
           attachmentsToInsert.push({
             transaction_id: data.id,
@@ -333,7 +334,7 @@ export async function POST(request: Request) {
 
           attachmentNames.push(file.name);
         } catch (err) {
-          console.error("[kas-rt/transactions] Failed to upload attachment:", err);
+          console.error(`[kas-rt/transactions] Failed to upload attachment "${file.name}":`, err);
         }
       }
 
@@ -342,7 +343,7 @@ export async function POST(request: Request) {
           .from("kas_rt_attachments")
           .insert(attachmentsToInsert);
         if (attachmentError) {
-          console.error("[kas-rt/transactions] Failed to insert attachment records:", attachmentError);
+          console.error("[kas-rt/transactions] Failed to insert attachment records:", JSON.stringify(attachmentError));
         }
       }
     }
