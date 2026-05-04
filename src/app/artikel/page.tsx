@@ -7,9 +7,11 @@ import {
   CalendarDaysIcon,
   UserCircleIcon,
   ChevronLeftIcon,
+  ArrowRightOnRectangleIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { PageLoader } from "@/components/ui";
+import { useAuthStore } from "@/stores/auth-store";
 
 interface Article {
   id: string;
@@ -84,6 +86,8 @@ export default function ArtikelPage() {
   const [articlesThisWeek, setArticlesThisWeek] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [communityName] = useState<string>(getCommunityNameFromCookie());
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const [navigatingSlug, setNavigatingSlug] = useState<string | null>(null);
 
   const fetchArticles = async () => {
     setLoading(true);
@@ -122,6 +126,7 @@ export default function ArtikelPage() {
   };
 
   const handleArticleClick = (slug: string) => {
+    setNavigatingSlug(slug);
     router.push(`/artikel/${slug}`);
   };
 
@@ -166,14 +171,18 @@ export default function ArtikelPage() {
           <div className="flex items-start justify-between gap-3">
             {/* Left: Back Button + Title */}
             <div className="flex items-start gap-3 min-w-0 flex-1">
-              {/* Back Button */}
+              {/* Back / Login Button */}
               <button
                 type="button"
                 onClick={() => router.push("/landing")}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90"
-                aria-label="Kembali ke beranda"
+                aria-label={isAuthenticated ? "Kembali ke beranda" : "Masuk"}
               >
-                <ChevronLeftIcon className="h-4 w-4 text-white" />
+                {isAuthenticated ? (
+                  <ChevronLeftIcon className="h-4 w-4 text-white" />
+                ) : (
+                  <ArrowRightOnRectangleIcon className="h-4 w-4 text-white" />
+                )}
               </button>
 
               {/* Title Block */}
@@ -182,7 +191,7 @@ export default function ArtikelPage() {
                   Warga Digital
                 </p>
                 <h1 className="text-lg font-extrabold leading-tight text-white">
-                  Artikel
+                  {isAuthenticated ? "Artikel" : "Berita & Informasi Terbaru"}
                 </h1>
               </div>
             </div>
@@ -203,33 +212,37 @@ export default function ArtikelPage() {
 
           {/* Dynamic Subtitle */}
           <p className="mt-3 text-[13px] font-medium text-white/80 leading-relaxed">
-            {totalArticles === 0
-              ? `Daftar lengkap seluruh artikel yang berisi berita, acara, panduan, dan informasi dari pengurus ${communityName || "Warga Digital"}. Belum ada artikel yang telah di publish.`
-              : `Daftar lengkap seluruh artikel yang berisi berita, acara, panduan, dan informasi dari pengurus ${communityName || "Warga Digital"}. Berikut tersedia ${totalArticles} artikel yang telah di publish.`}
+            {isAuthenticated
+              ? totalArticles === 0
+                ? `Daftar lengkap seluruh artikel yang berisi berita, acara, panduan, dan informasi dari pengurus ${communityName || "Warga Digital"}. Belum ada artikel yang telah di publish.`
+                : `Daftar lengkap seluruh artikel yang berisi berita, acara, panduan, dan informasi dari pengurus ${communityName || "Warga Digital"}. Berikut tersedia ${totalArticles} artikel yang telah di publish.`
+              : `Akses berita terbaru, informasi kegiatan warga, dan berbagai update penting di lingkungan RT 03 RW 14 Sawangan Regensi dalam satu platform terintegrasi.`}
           </p>
 
           {/* Stats Pills */}
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {/* Total Articles */}
-            <div className="rounded-xl bg-white/15 px-3 py-2.5 text-center backdrop-blur-sm">
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/60">
-                Total
-              </p>
-              <p className="mt-1 text-sm font-extrabold leading-tight text-white">
-                {loading ? "—" : totalArticles}
-              </p>
-            </div>
+          {isAuthenticated && (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {/* Total Articles */}
+              <div className="rounded-xl bg-white/15 px-3 py-2.5 text-center backdrop-blur-sm">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/60">
+                  Total
+                </p>
+                <p className="mt-1 text-sm font-extrabold leading-tight text-white">
+                  {loading ? "—" : totalArticles}
+                </p>
+              </div>
 
-            {/* This Week */}
-            <div className="rounded-xl bg-white/15 px-3 py-2.5 text-center backdrop-blur-sm">
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/60">
-                Baru
-              </p>
-              <p className="mt-1 text-sm font-extrabold leading-tight text-white">
-                {loading ? "—" : articlesThisWeek}
-              </p>
+              {/* This Week */}
+              <div className="rounded-xl bg-white/15 px-3 py-2.5 text-center backdrop-blur-sm">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/60">
+                  Baru
+                </p>
+                <p className="mt-1 text-sm font-extrabold leading-tight text-white">
+                  {loading ? "—" : articlesThisWeek}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -252,14 +265,21 @@ export default function ArtikelPage() {
             {/* Articles Vertical List */}
             <div className="space-y-6">
               {articles.map((article) => {
-                const displayExcerpt = article.content ? generateExcerpt(article.content) : "";
+                const displayExcerpt = article.content
+                  ? generateExcerpt(article.content)
+                  : "";
 
                 return (
                   <article
                     key={article.id}
                     onClick={() => handleArticleClick(article.slug)}
-                    className="bg-app-surface rounded-2xl shadow-sm overflow-hidden group cursor-pointer transition-all duration-300 active:scale-[0.98]"
+                    className="relative bg-app-surface rounded-2xl shadow-sm overflow-hidden group cursor-pointer transition-all duration-300 active:scale-[0.98]"
                   >
+                    {navigatingSlug === article.slug && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
+                        <div className="h-8 w-8 animate-spin rounded-full border-3 border-white/30 border-t-white" />
+                      </div>
+                    )}
                     {/* Featured Image - Full Width */}
                     {article.featured_image_url ? (
                       <div className="relative h-56 w-full">
