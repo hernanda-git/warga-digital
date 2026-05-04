@@ -5,6 +5,7 @@
  * interactivity to the client component.
  */
 
+import type { Metadata } from "next";
 import {
   requireAuth,
   fetchLandingProfile,
@@ -13,6 +14,32 @@ import {
   fetchLandingJasa,
 } from "./data";
 import LandingPageClient from "./LandingPageClient";
+
+export const metadata: Metadata = {
+  title: "Warga Digital",
+  description: "Ekosistem digital Sawangan Regensi RT 03",
+  openGraph: {
+    title: "Warga Digital",
+    description: "Ekosistem digital Sawangan Regensi RT 03",
+    url: "https://warga-digital.com",
+    siteName: "Warga Digital",
+    locale: "id_ID",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Warga Digital",
+    description: "Ekosistem digital Sawangan Regensi RT 03",
+    images: ["/og-image.png"],
+  },
+};
 
 export default async function LandingPage() {
   const session = await requireAuth();

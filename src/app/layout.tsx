@@ -9,6 +9,31 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Warga Digital",
   description: "Ekosistem digital Sawangan Regensi RT 03",
+  metadataBase: new URL("https://warga-digital.com"),
+  openGraph: {
+    title: "Warga Digital",
+    description: "Ekosistem digital Sawangan Regensi RT 03",
+    url: "https://warga-digital.com",
+    siteName: "Warga Digital",
+    locale: "id_ID",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Warga Digital",
+    description: "Ekosistem digital Sawangan Regensi RT 03",
+    images: ["/og-image.png"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
