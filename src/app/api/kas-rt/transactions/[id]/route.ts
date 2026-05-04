@@ -8,7 +8,12 @@ import {
   DEFAULT_COMMUNITY_ID,
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
-import { serverUpload, getPublicUrl, getPublicUrlSafe } from "@/lib/r2";
+import {
+  serverUpload,
+  getPublicUrl,
+  getPublicUrlSafe,
+  ALLOWED_ATTACHMENT_TYPES,
+} from "@/lib/r2";
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
 
@@ -441,14 +446,6 @@ export async function PATCH(
 
   if (body.attachments && body.attachments.length > 0) {
     const MAX_FILE_SIZE = 5 * 1024 * 1024;
-    const attachmentsToInsert: {
-      transaction_id: string;
-      file_name: string;
-      storage_path: string;
-      mime_type: string | null;
-      size_bytes: number;
-    }[] = [];
-
     for (const file of body.attachments) {
       if (file.size > MAX_FILE_SIZE) {
         return NextResponse.json(
@@ -459,8 +456,28 @@ export async function PATCH(
           { status: 400 },
         );
       }
+      if (!(ALLOWED_ATTACHMENT_TYPES as readonly string[]).includes(file.type)) {
+        return NextResponse.json(
+          { message: `Tipe file ${file.name} tidak didukung.` },
+          { status: 400 },
+        );
+      }
+    }
 
-      try {
+    const attachmentsToInsert: {
+      transaction_id: string;
+      file_name: string;
+      storage_path: string;
+      mime_type: string | null;
+      size_bytes: number;
+    }[] = [];
+
+    try {
+      console.log(
+        `[kas-rt/transactions/${id}] Starting upload of ${body.attachments.length} attachment(s)`,
+      );
+
+      for (const file of body.attachments) {
         const extension =
           file.name.includes(".") && file.name.split(".").length > 1
             ? file.name.split(".").pop()
@@ -470,7 +487,15 @@ export async function PATCH(
           .slice(2)}.${extension}`;
 
         const fileBuffer = Buffer.from(await file.arrayBuffer());
-        await serverUpload(fileBuffer, objectKey, file.type || "application/octet-stream", "public, max-age=3600");
+        await serverUpload(
+          fileBuffer,
+          objectKey,
+          file.type || "application/octet-stream",
+          "public, max-age=3600",
+        );
+        console.log(
+          `[kas-rt/transactions/${id}] Uploaded attachment "${file.name}" to ${objectKey}`,
+        );
 
         attachmentsToInsert.push({
           transaction_id: id,
@@ -479,20 +504,32 @@ export async function PATCH(
           mime_type: file.type || null,
           size_bytes: file.size,
         });
-      } catch (err) {
-        console.error(`[kas-rt/transactions/${id}] R2 upload failed for "${file.name}":`, err);
       }
-    }
 
-    if (attachmentsToInsert.length > 0) {
-      const { data: insertedAttachments, error: attachmentError } = await supabase
-        .from("kas_rt_attachments")
-        .insert(attachmentsToInsert)
-        .select("id, file_name, storage_path, mime_type");
+      if (attachmentsToInsert.length > 0) {
+        const { data: insertedAttachments, error: attachmentError } =
+          await supabase
+            .from("kas_rt_attachments")
+            .insert(attachmentsToInsert)
+            .select("id, file_name, storage_path, mime_type");
 
-      if (attachmentError) {
-        console.error(`[kas-rt/transactions/${id}] Failed to insert attachment records:`, JSON.stringify(attachmentError));
-      } else if (insertedAttachments) {
+        if (attachmentError) {
+          console.error(
+            `[kas-rt/transactions/${id}] Failed to insert attachment records:`,
+            JSON.stringify(attachmentError),
+          );
+          return NextResponse.json(
+            {
+              message:
+                "Transaksi diperbarui, tetapi gagal menyimpan data lampiran.",
+            },
+            { status: 500 },
+          );
+        }
+
+        console.log(
+          `[kas-rt/transactions/${id}] Inserted ${insertedAttachments.length} attachment record(s)`,
+        );
         for (const att of insertedAttachments) {
           savedAttachments.push({
             id: att.id,
@@ -502,6 +539,15 @@ export async function PATCH(
           });
         }
       }
+    } catch (err) {
+      console.error(
+        `[kas-rt/transactions/${id}] Attachment upload failed:`,
+        err,
+      );
+      return NextResponse.json(
+        { message: "Gagal mengunggah lampiran. Transaksi tidak diperbarui." },
+        { status: 500 },
+      );
     }
   }
 

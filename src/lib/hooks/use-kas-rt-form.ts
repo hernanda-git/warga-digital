@@ -381,6 +381,32 @@ export function useKasRtForm({
       setIsSubmitting(true);
       setFormError(null);
 
+      // ── Validate attachments before sending ───────────────────────────────
+      const MAX_ATTACHMENT_SIZE = 5 * 1024 * 1024; // 5MB
+      const ALLOWED_ATTACHMENT_TYPES = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "image/heic",
+        "application/pdf",
+      ];
+      const rawFiles = fileInputRef.current?.files;
+      if (rawFiles && rawFiles.length > 0) {
+        for (const file of Array.from(rawFiles)) {
+          if (file.size > MAX_ATTACHMENT_SIZE) {
+            setFormError(`Ukuran file ${file.name} melebihi batas maksimal 5MB.`);
+            setIsSubmitting(false);
+            return;
+          }
+          if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) {
+            setFormError(`Tipe file ${file.name} tidak didukung.`);
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      }
+
       try {
         const selectedCategory = categories.find(
           (c) => c.id === form.categoryId,
@@ -416,6 +442,9 @@ export function useKasRtForm({
         }
 
         let response: Response;
+
+        const filesToUpload = rawFiles ? Array.from(rawFiles) : [];
+        console.log(`[kas-rt/form] Submitting ${editingTxId ? "PATCH" : "POST"} transaction. Attachments:`, filesToUpload.map((f) => ({ name: f.name, size: f.size, type: f.type })));
 
         if (editingTxId) {
           // Use FormData for PATCH to support file uploads

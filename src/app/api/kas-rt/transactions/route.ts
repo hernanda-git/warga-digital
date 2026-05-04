@@ -9,7 +9,11 @@ import {
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
 import { notifyAllActiveUsers } from "@/lib/notifications";
-import { serverUpload, getPublicUrlSafe } from "@/lib/r2";
+import {
+  serverUpload,
+  getPublicUrlSafe,
+  ALLOWED_ATTACHMENT_TYPES,
+} from "@/lib/r2";
 
 export async function POST(request: Request) {
   try {
@@ -311,31 +315,57 @@ export async function POST(request: Request) {
     }[] = [];
 
     if (files.length > 0) {
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
       for (const file of files) {
-        try {
-          const extension =
-            file.name.includes(".") && file.name.split(".").length > 1
-              ? file.name.split(".").pop()
-              : "bin";
-          const objectKey = `kas-rt/${data.id}/${Date.now()}-${Math.random()
-            .toString(36)
-            .slice(2)}.${extension}`;
-
-          const fileBuffer = Buffer.from(await file.arrayBuffer());
-          await serverUpload(fileBuffer, objectKey, file.type || "application/octet-stream", "public, max-age=3600");
-
-          attachmentsToInsert.push({
-            transaction_id: data.id,
-            file_name: file.name,
-            storage_path: objectKey,
-            mime_type: file.type || null,
-            size_bytes: file.size,
-          });
-
-          attachmentNames.push(file.name);
-        } catch (err) {
-          console.error(`[kas-rt/transactions] Failed to upload attachment "${file.name}":`, err);
+        if (file.size > MAX_FILE_SIZE) {
+          return NextResponse.json(
+            {
+              message: `Ukuran file ${file.name} melebihi batas maksimal 5MB.`,
+            },
+            { status: 400 },
+          );
         }
+        if (!(ALLOWED_ATTACHMENT_TYPES as readonly string[]).includes(file.type)) {
+          return NextResponse.json(
+            { message: `Tipe file ${file.name} tidak didukung.` },
+            { status: 400 },
+          );
+        }
+      }
+
+      console.log(
+        `[kas-rt/transactions] Starting upload of ${files.length} attachment(s) for tx ${data.id}`,
+      );
+
+      for (const file of files) {
+        const extension =
+          file.name.includes(".") && file.name.split(".").length > 1
+            ? file.name.split(".").pop()
+            : "bin";
+        const objectKey = `kas-rt/${data.id}/${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}.${extension}`;
+
+        const fileBuffer = Buffer.from(await file.arrayBuffer());
+        await serverUpload(
+          fileBuffer,
+          objectKey,
+          file.type || "application/octet-stream",
+          "public, max-age=3600",
+        );
+        console.log(
+          `[kas-rt/transactions] Uploaded attachment "${file.name}" to ${objectKey}`,
+        );
+
+        attachmentsToInsert.push({
+          transaction_id: data.id,
+          file_name: file.name,
+          storage_path: objectKey,
+          mime_type: file.type || null,
+          size_bytes: file.size,
+        });
+
+        attachmentNames.push(file.name);
       }
 
       if (attachmentsToInsert.length > 0) {
@@ -343,8 +373,21 @@ export async function POST(request: Request) {
           .from("kas_rt_attachments")
           .insert(attachmentsToInsert);
         if (attachmentError) {
-          console.error("[kas-rt/transactions] Failed to insert attachment records:", JSON.stringify(attachmentError));
+          console.error(
+            "[kas-rt/transactions] Failed to insert attachment records:",
+            JSON.stringify(attachmentError),
+          );
+          return NextResponse.json(
+            {
+              message:
+                "Transaksi tersimpan, tetapi gagal menyimpan data lampiran.",
+            },
+            { status: 500 },
+          );
         }
+        console.log(
+          `[kas-rt/transactions] Inserted ${attachmentsToInsert.length} attachment record(s) for tx ${data.id}`,
+        );
       }
     }
 
