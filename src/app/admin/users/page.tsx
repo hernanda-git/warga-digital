@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowPathIcon,
   ChevronLeftIcon,
+  ClockIcon,
   MagnifyingGlassIcon,
   ExclamationCircleIcon,
   CheckCircleIcon,
@@ -68,6 +69,27 @@ function maskWA(wa: string | null): string {
   const digits = wa.replace(/\D/g, "");
   if (digits.length < 8) return wa;
   return `${digits.slice(0, 4)}\u2022\u2022\u2022\u2022${digits.slice(-3)}`;
+}
+
+function formatLastActive(iso: string | null): string {
+  if (!iso) return "Tidak diketahui";
+  const date = new Date(iso);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return "Baru saja";
+  if (diffMin < 60) return `${diffMin} menit lalu`;
+  if (diffHour < 24) return `${diffHour} jam lalu`;
+  if (diffDay < 7) return `${diffDay} hari lalu`;
+  return date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function formatRoleName(name: string): string {
@@ -654,6 +676,7 @@ export default function AdminManageUsersPage() {
                       {user.roles.length > 0 && (
                         <> &middot; {user.roles.map(formatRoleName).join(", ")}</>
                       )}
+                      &nbsp;&middot; Aktif: {formatLastActive(user.last_active_at)}
                     </p>
                   </div>
                 </div>
@@ -730,6 +753,7 @@ export default function AdminManageUsersPage() {
                       </span>
                     </p>
                     <p>Bergabung: {formatJoinedDate(selectedUser.joined_at)}</p>
+                    <p>Aktif: {formatLastActive(selectedUser.last_active_at)}</p>
                     {selectedUser.roles.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-1">
                         {selectedUser.roles.map((role) => (

@@ -18,7 +18,7 @@ export const LANDING_FEATURES = [
     id: "administrasi",
     label: "Administrasi",
     description: "Surat Keterangan, Surat Izin, dll.",
-    href: "#administrasi",
+    href: "/administrasi",
     icon: DocumentTextIcon,
     color: "text-blue-600 dark:text-blue-400",
   },

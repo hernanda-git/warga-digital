@@ -1,0 +1,69 @@
+=== LAYANAN SURAT RT (LENGKAP) ===
+
+[1] KEPENDUDUKAN
+- Surat Pengantar Pembuatan KTP (baru / perpanjangan)
+- Surat Pengantar Kartu Keluarga (KK)
+- Surat Pengantar Pindah Datang
+- Surat Pengantar Pindah Keluar
+- Surat Domisili
+- Surat Keterangan Tempat Tinggal Sementara
+- Surat Pengantar e-KTP (rekam data)
+
+[2] DOMISILI & HUNIAN
+- Surat Keterangan Domisili Warga
+- Surat Keterangan Domisili Usaha
+- Surat Keterangan Kontrak / Sewa Rumah
+- Surat Pengantar Pembuatan IMB/PBG
+- Surat Keterangan Kepemilikan / Penguasaan Rumah (non-legal)
+
+[3] EKONOMI & USAHA
+- Surat Keterangan Usaha (SKU)
+- Surat Pengantar NIB / OSS
+- Surat Keterangan Penghasilan
+- Surat Keterangan Tidak Bekerja
+- Surat Keterangan UMKM aktif
+
+[4] SOSIAL & BANTUAN
+- Surat Keterangan Tidak Mampu (SKTM)
+- Surat Pengantar Bantuan Sosial (PKH, BLT, dll)
+- Surat Keterangan Warga Miskin
+- Surat Rekomendasi Bantuan (pribadi / kelompok)
+
+[5] HUKUM & ADMINISTRATIF
+- Surat Pengantar SKCK
+- Surat Pengantar Catatan Sipil
+- Surat Keterangan Identitas (dokumen hilang)
+- Surat Pengantar Legalisasi Dokumen
+- Surat Kuasa (diketahui RT)
+- Surat Pernyataan (diketahui RT)
+
+[6] PERNIKAHAN & KELUARGA
+- Surat Pengantar Nikah (KUA / Catatan Sipil)
+- Surat Keterangan Belum Menikah
+- Surat Keterangan Status (duda/janda)
+- Surat Izin Orang Tua (diketahui RT)
+
+[7] KEMATIAN
+- Surat Keterangan Kematian
+- Surat Pengantar Akta Kematian
+- Surat Keterangan Pemakaman
+- Surat Pengantar Santunan Kematian
+
+[8] PENDIDIKAN
+- Surat Keterangan Domisili Sekolah
+- Surat Pengantar Beasiswa
+- Surat Keterangan Orang Tua (untuk sekolah)
+
+[9] KEAMANAN & LINGKUNGAN
+- Surat Pengantar Laporan Kehilangan
+- Surat Izin Keramaian / Acara
+- Surat Izin Lingkungan (hajatan, dll)
+- Surat Keterangan Tamu Menginap
+
+[10] LAIN-LAIN (KASUISTIK)
+- Surat Keterangan Ahli Waris (pengantar awal)
+- Surat Pernyataan Hutang Piutang (diketahui RT)
+- Surat Rekomendasi Pribadi (kerja, kontrak, dll)
+- Surat Klarifikasi / Mediasi Konflik
+- Surat Keterangan Kehilangan Dokumen
+- Surat Dukungan Warga (proposal, dll)
