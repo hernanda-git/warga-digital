@@ -177,6 +177,15 @@ export interface KasRtSummaryFilter {
   month: number;
 }
 
+// ==================== House Types ====================
+
+export interface KasRtHouse {
+  id: string;
+  name: string;
+  blok_rumah: string;
+  status: "PRIBADI" | "KONTRAKAN";
+}
+
 // ==================== House Transaction Status Types ====================
 
 export interface HouseTransactionStatus {
