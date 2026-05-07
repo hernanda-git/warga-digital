@@ -18,7 +18,10 @@ import {
   KasRtDeleteConfirmDialog,
   KasRtDuplicateWarningDialog,
 } from "@/components/kas-rt";
-import { KasRtPageSkeleton, KasRtTransactionListSkeleton } from "@/components/kas-rt/skeletons";
+import {
+  KasRtPageSkeleton,
+  KasRtTransactionListSkeleton,
+} from "@/components/kas-rt/skeletons";
 import { KasRtBackToTop } from "@/components/kas-rt/KasRtBackToTop";
 import { ROUTES } from "@/config/landing";
 import type {
@@ -282,7 +285,9 @@ export default function KasRtPageClient({
             t.id === editingTxId
               ? {
                   ...t,
-                  attachments: t.attachments.filter((a) => a.id !== attachmentId),
+                  attachments: t.attachments.filter(
+                    (a) => a.id !== attachmentId,
+                  ),
                 }
               : t,
           ),
@@ -379,6 +384,7 @@ export default function KasRtPageClient({
         downloadState={downloadState}
         setDownloadState={setDownloadState}
         allCategoryNames={allCategoryNames}
+        allBlockNames={allBlockNames}
         isDownloading={isDownloading}
         downloadError={downloadError}
         onDownload={handleDownloadReport}
@@ -390,7 +396,8 @@ export default function KasRtPageClient({
         editingTxId={editingTxId}
         editingTxAttachments={
           editingTxId
-            ? transactions.find((t) => t.id === editingTxId)?.attachments ?? null
+            ? (transactions.find((t) => t.id === editingTxId)?.attachments ??
+              null)
             : null
         }
         form={formHook.form}

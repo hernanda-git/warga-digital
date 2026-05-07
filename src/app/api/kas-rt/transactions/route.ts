@@ -258,9 +258,12 @@ export async function POST(request: Request) {
         .in("role_id", ROLE_IDS_CAN_SUBMIT_KAS_RT)
         .is("revoked_at", null);
 
-        if (roleErr) {
-          console.error("[kas-rt/transactions] Role query error for income notification:", roleErr);
-        } else if (roleRows?.length) {
+      if (roleErr) {
+        console.error(
+          "[kas-rt/transactions] Role query error for income notification:",
+          roleErr,
+        );
+      } else if (roleRows?.length) {
         const authorizedTenantUserIds = roleRows.map((r) => r.tenant_user_id);
 
         const { data: recipientRows, error: recipientErr } = await supabase
@@ -272,7 +275,10 @@ export async function POST(request: Request) {
           .neq("user_id", session.userId);
 
         if (recipientErr) {
-          console.error("[kas-rt/transactions] Recipient query error for income notification:", recipientErr);
+          console.error(
+            "[kas-rt/transactions] Recipient query error for income notification:",
+            recipientErr,
+          );
         } else if (recipientRows && recipientRows.length > 0) {
           const uniqueRecipients = Array.from(
             new Set(recipientRows.map((row) => row.user_id).filter(Boolean)),
@@ -299,7 +305,10 @@ export async function POST(request: Request) {
             .insert(notificationRows);
 
           if (notifErr) {
-            console.error("[kas-rt/transactions] Failed to insert income notifications:", notifErr);
+            console.error(
+              "[kas-rt/transactions] Failed to insert income notifications:",
+              notifErr,
+            );
           }
         }
       }
@@ -325,7 +334,9 @@ export async function POST(request: Request) {
             { status: 400 },
           );
         }
-        if (!(ALLOWED_ATTACHMENT_TYPES as readonly string[]).includes(file.type)) {
+        if (
+          !(ALLOWED_ATTACHMENT_TYPES as readonly string[]).includes(file.type)
+        ) {
           return NextResponse.json(
             { message: `Tipe file ${file.name} tidak didukung.` },
             { status: 400 },
@@ -435,7 +446,10 @@ export async function POST(request: Request) {
         .select("id, name, rate_per_warga, jumlah_warga, subtotal, sort_order");
 
       if (detailsError) {
-        console.error("[kas-rt/transactions] Failed to insert transaction details:", detailsError);
+        console.error(
+          "[kas-rt/transactions] Failed to insert transaction details:",
+          detailsError,
+        );
       } else if (insertedDetails) {
         savedTransactionDetails = insertedDetails;
       }
@@ -523,7 +537,7 @@ export async function GET(request: Request) {
       countQuery = countQuery.ilike("category", `%${categoryFilter}%`);
     }
     if (blockFilter) {
-      countQuery = countQuery.ilike("reference", `%${blockFilter}%`);
+      countQuery = countQuery.eq("reference", blockFilter);
     }
     if (startDate) {
       countQuery = countQuery.gte("date", startDate);
@@ -558,7 +572,7 @@ export async function GET(request: Request) {
       query = query.ilike("category", `%${categoryFilter}%`);
     }
     if (blockFilter) {
-      query = query.ilike("reference", `%${blockFilter}%`);
+      query = query.eq("reference", blockFilter);
     }
     if (startDate) {
       query = query.gte("date", startDate);

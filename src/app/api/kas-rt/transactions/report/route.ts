@@ -1024,7 +1024,7 @@ export async function GET(request: Request) {
       .order("date", { ascending: true });
 
     if (categoryFilter) query = query.ilike("category", `%${categoryFilter}%`);
-    if (blockFilter) query = query.ilike("reference", `%${blockFilter}%`);
+    if (blockFilter) query = query.eq("reference", blockFilter);
 
     const { data, error } = await query;
 

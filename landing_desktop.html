@@ -1,0 +1,1060 @@
+<!doctype html>
+
+<html lang="id">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <title>Warga Digital — RT 03 / RW 014</title>
+        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+            rel="stylesheet"
+        />
+        <script id="tailwind-config">
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            "surface-container-high": "#e5e9e6",
+                            "surface-container-lowest": "#ffffff",
+                            "surface-bright": "#f6faf7",
+                            "primary-fixed": "#98f994",
+                            "on-secondary-container": "#326f34",
+                            "outline-variant": "#bfcab9",
+                            "tertiary-fixed-dim": "#90d792",
+                            primary: "#006b1b",
+                            "on-secondary-fixed": "#002204",
+                            "surface-variant": "#dfe3e1",
+                            "tertiary-container": "#3f8247",
+                            "on-error-container": "#93000a",
+                            secondary: "#2d6b30",
+                            "surface-dim": "#d7dbd8",
+                            "on-tertiary-fixed": "#002107",
+                            "surface-container-low": "#f1f5f2",
+                            "on-surface": "#181d1b",
+                            "inverse-on-surface": "#eef2ef",
+                            "tertiary-fixed": "#abf4ac",
+                            "surface-container": "#ebefec",
+                            "secondary-fixed": "#b0f3a9",
+                            "surface-container-highest": "#dfe3e1",
+                            "error-container": "#ffdad6",
+                            "inverse-primary": "#7ddc7a",
+                            tertiary: "#256931",
+                            "primary-fixed-dim": "#7ddc7a",
+                            "secondary-container": "#adf0a6",
+                            surface: "#f6faf7",
+                            "on-surface-variant": "#3f4a3d",
+                            "on-primary": "#ffffff",
+                            "surface-tint": "#006e1c",
+                            outline: "#6f7a6b",
+                            "on-primary-fixed": "#002204",
+                            background: "#f6faf7",
+                            "on-primary-container": "#f7fff1",
+                            "on-error": "#ffffff",
+                            "on-tertiary": "#ffffff",
+                            "on-tertiary-fixed-variant": "#07521d",
+                            "primary-container": "#268630",
+                            "on-primary-fixed-variant": "#005313",
+                            "secondary-fixed-dim": "#94d78f",
+                            "inverse-surface": "#2d3130",
+                            "on-secondary-fixed-variant": "#12521a",
+                            "on-secondary": "#ffffff",
+                            "on-tertiary-container": "#f7fff2",
+                            "on-background": "#181d1b",
+                            error: "#ba1a1a",
+                        },
+                        borderRadius: {
+                            DEFAULT: "0.25rem",
+                            lg: "0.5rem",
+                            xl: "0.75rem",
+                            "2xl": "1.5rem",
+                            full: "9999px",
+                        },
+                        spacing: {},
+                        fontFamily: {
+                            headline: ["Manrope", "sans-serif"],
+                            display: ["Manrope", "sans-serif"],
+                            body: ["Inter", "sans-serif"],
+                            label: ["Inter", "sans-serif"],
+                        },
+                        fontSize: {},
+                    },
+                },
+            };
+        </script>
+        <style>
+            body {
+                font-family: "Inter", sans-serif;
+                background-color: theme("colors.background");
+                color: theme("colors.on-background");
+            }
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6,
+            .display,
+            .headline {
+                font-family: "Manrope", sans-serif;
+            }
+
+            .glass-panel {
+                background: rgba(255, 255, 255, 0.85);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+            }
+
+            .card-shadow {
+                box-shadow:
+                    0 4px 20px -2px rgba(0, 0, 0, 0.05),
+                    0 0 3px rgba(0, 0, 0, 0.02);
+            }
+
+            .card-hover {
+                transition:
+                    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .card-hover:hover {
+                transform: translateY(-2px);
+                box-shadow:
+                    0 12px 24px -4px rgba(0, 0, 0, 0.08),
+                    0 4px 8px -2px rgba(0, 0, 0, 0.04);
+            }
+
+            /* Custom Scrollbar for Sidebar */
+            .sidebar-scroll::-webkit-scrollbar {
+                width: 4px;
+            }
+            .sidebar-scroll::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .sidebar-scroll::-webkit-scrollbar-thumb {
+                background-color: theme("colors.primary-container");
+                border-radius: 20px;
+            }
+
+            .material-symbols-outlined {
+                font-variation-settings:
+                    "FILL" 1,
+                    "wght" 400,
+                    "GRAD" 0,
+                    "opsz" 24;
+            }
+
+            .nav-item-active {
+                background-color: theme("colors.primary-container");
+                color: theme("colors.on-primary-container");
+            }
+
+            .hero-gradient {
+                background: linear-gradient(
+                    135deg,
+                    theme("colors.primary") 0%,
+                    theme("colors.tertiary") 100%
+                );
+            }
+
+            /* Sidebar Transition Styles */
+            #sidebar {
+                transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            #sidebar.collapsed {
+                align-items: center;
+            }
+
+            #sidebar.collapsed .sidebar-text,
+            #sidebar.collapsed .badge,
+            #sidebar.collapsed .sidebar-section-title {
+                display: none;
+            }
+
+            #sidebar.collapsed .sidebar-profile {
+                background: transparent;
+                padding: 0.5rem;
+                margin: 0;
+                justify-content: center;
+                box-shadow: none;
+            }
+
+            #sidebar.collapsed .sidebar-header {
+                flex-direction: column;
+                padding-left: 0;
+                padding-right: 0;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            #sidebar.collapsed #sidebar-toggle {
+                position: static;
+            }
+
+            #sidebar.collapsed .nav-item {
+                padding-left: 0;
+                padding-right: 0;
+                justify-content: center;
+            }
+
+            #sidebar.collapsed .nav-item .material-symbols-outlined {
+                margin: 0;
+            }
+        </style>
+    </head>
+    <body class="flex h-screen overflow-hidden antialiased">
+        <!-- SIDEBAR -->
+        <aside
+            class="w-72 bg-surface flex flex-col border-r border-outline-variant/30 relative z-20"
+            id="sidebar"
+        >
+            <div
+                class="sidebar-header p-6 pb-4 flex items-center justify-between relative"
+            >
+                <div class="flex items-center gap-3 sidebar-branding">
+                    <div
+                        class="w-10 h-10 shrink-0 rounded-xl bg-primary flex items-center justify-center text-on-primary"
+                    >
+                        <span class="material-symbols-outlined"
+                            >nature_people</span
+                        >
+                    </div>
+                    <div class="sidebar-text">
+                        <h1
+                            class="headline text-xl font-bold text-on-surface leading-tight tracking-tight"
+                        >
+                            Warga Digital
+                        </h1>
+                        <p
+                            class="text-[11px] font-medium text-on-surface-variant uppercase tracking-wider mt-0.5"
+                        >
+                            RT 03 / RW 014
+                        </p>
+                    </div>
+                </div>
+                <button
+                    class="w-8 h-8 rounded-full hover:bg-surface-container-low flex items-center justify-center text-on-surface-variant transition-colors shrink-0 absolute right-4 top-7"
+                    id="sidebar-toggle"
+                >
+                    <span
+                        class="material-symbols-outlined text-[20px]"
+                        id="sidebar-toggle-icon"
+                        >keyboard_double_arrow_left</span
+                    >
+                </button>
+            </div>
+            <div
+                class="sidebar-profile px-6 py-4 mx-3 mb-2 rounded-2xl bg-surface-container-low flex items-center gap-3"
+            >
+                <div
+                    class="w-10 h-10 shrink-0 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-headline font-bold text-sm shadow-sm"
+                >
+                    MH
+                </div>
+                <div class="flex-1 min-w-0 sidebar-text">
+                    <p
+                        class="text-sm font-semibold text-on-surface truncate font-headline"
+                    >
+                        M. Hernanda
+                    </p>
+                    <p class="text-xs text-on-surface-variant truncate">
+                        Blok N2 · Warga
+                    </p>
+                </div>
+            </div>
+            <nav
+                class="flex-1 overflow-y-auto sidebar-scroll px-3 py-2 space-y-6"
+            >
+                <div>
+                    <div
+                        class="sidebar-section-title px-4 text-[11px] font-semibold tracking-wider uppercase text-outline mb-2"
+                    >
+                        Utama
+                    </div>
+                    <div class="space-y-1">
+                        <a
+                            class="nav-item nav-item-active flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                            href="#"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[20px] shrink-0"
+                                >home</span
+                            >
+                            <span class="sidebar-text">Beranda</span>
+                        </a>
+                        <a
+                            class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+                            href="#"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[20px] shrink-0"
+                                >folder_open</span
+                            >
+                            <span class="sidebar-text">Administrasi</span>
+                        </a>
+                        <a
+                            class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors group"
+                            href="#"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[20px] shrink-0"
+                                >account_balance_wallet</span
+                            >
+                            <span class="sidebar-text">Kas RT</span>
+                            <span
+                                class="badge ml-auto bg-tertiary-container text-on-tertiary-container text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                >Baru</span
+                            >
+                        </a>
+                        <a
+                            class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+                            href="#"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[20px] shrink-0"
+                                >receipt_long</span
+                            >
+                            <span class="sidebar-text">IPL</span>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <div
+                        class="sidebar-section-title px-4 text-[11px] font-semibold tracking-wider uppercase text-outline mb-2"
+                    >
+                        Komunitas
+                    </div>
+                    <div class="space-y-1">
+                        <a
+                            class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+                            href="#"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[20px] shrink-0"
+                                >storefront</span
+                            >
+                            <span class="sidebar-text">Jual Beli</span>
+                        </a>
+                        <a
+                            class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+                            href="#"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[20px] shrink-0"
+                                >handyman</span
+                            >
+                            <span class="sidebar-text">Jasa</span>
+                        </a>
+                        <a
+                            class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+                            href="#"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[20px] shrink-0"
+                                >event</span
+                            >
+                            <span class="sidebar-text">Event</span>
+                        </a>
+                        <a
+                            class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+                            href="#"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[20px] shrink-0"
+                                >groups</span
+                            >
+                            <span class="sidebar-text">Organisasi</span>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <div
+                        class="sidebar-section-title px-4 text-[11px] font-semibold tracking-wider uppercase text-outline mb-2"
+                    >
+                        Lainnya
+                    </div>
+                    <div class="space-y-1">
+                        <a
+                            class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"
+                            href="#"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[20px] shrink-0"
+                                >info</span
+                            >
+                            <span class="sidebar-text">Informasi</span>
+                        </a>
+                        <a
+                            class="nav-item flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-error hover:bg-error-container hover:text-on-error-container transition-colors"
+                            href="#"
+                        >
+                            <span
+                                class="material-symbols-outlined text-[20px] shrink-0"
+                                >campaign</span
+                            >
+                            <span class="sidebar-text">Emergency</span>
+                            <span
+                                class="badge ml-auto bg-error text-on-error text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                >!</span
+                            >
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        <!-- MAIN CONTENT -->
+        <main
+            class="flex-1 flex flex-col h-full relative overflow-hidden bg-surface-container-lowest"
+        >
+            <!-- TOP BAR -->
+            <header
+                class="h-20 glass-panel border-b border-outline-variant/30 flex items-center justify-between px-8 z-10 sticky top-0"
+            >
+                <h2
+                    class="headline text-2xl font-bold text-on-surface tracking-tight"
+                >
+                    Beranda
+                </h2>
+                <div class="flex items-center gap-4">
+                    <button
+                        class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors relative"
+                    >
+                        <span class="material-symbols-outlined"
+                            >notifications</span
+                        >
+                        <span
+                            class="absolute top-2 right-2.5 w-2 h-2 bg-error rounded-full border-2 border-surface-container-lowest"
+                        ></span>
+                    </button>
+                </div>
+            </header>
+            <!-- SCROLLABLE CONTENT -->
+            <div class="flex-1 overflow-y-auto p-8 pb-24">
+                <!-- HERO SECTION -->
+                <div
+                    class="hero-gradient rounded-3xl p-8 mb-8 text-on-primary relative overflow-hidden shadow-lg"
+                >
+                    <div
+                        class="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"
+                    ></div>
+                    <div
+                        class="absolute bottom-0 right-1/4 w-64 h-64 bg-white/5 rounded-full blur-2xl translate-y-1/3"
+                    ></div>
+                    <div
+                        class="relative z-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-6"
+                    >
+                        <div>
+                            <div
+                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white/90 text-xs font-semibold tracking-wide uppercase mb-4 backdrop-blur-sm"
+                            >
+                                <span
+                                    class="material-symbols-outlined text-[14px]"
+                                    >location_on</span
+                                >
+                                Sawangan Regency · Depok
+                            </div>
+                            <h1
+                                class="headline text-3xl md:text-4xl font-bold mb-2 tracking-tight"
+                            >
+                                Selamat datang, Hernanda!
+                            </h1>
+                            <p class="text-white/80 font-medium">
+                                Selasa, 5 Mei 2026 · RT 03 / RW 014
+                            </p>
+                        </div>
+                        <div class="flex gap-4">
+                            <div
+                                class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 min-w-[120px] text-center"
+                            >
+                                <div class="headline text-3xl font-bold mb-1">
+                                    42
+                                </div>
+                                <div class="text-xs text-white/80 font-medium">
+                                    Warga Aktif
+                                </div>
+                            </div>
+                            <div
+                                class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 min-w-[120px] text-center"
+                            >
+                                <div class="headline text-3xl font-bold mb-1">
+                                    8
+                                </div>
+                                <div class="text-xs text-white/80 font-medium">
+                                    Info Baru
+                                </div>
+                            </div>
+                            <div
+                                class="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 min-w-[120px] text-center"
+                            >
+                                <div class="headline text-3xl font-bold mb-1">
+                                    3
+                                </div>
+                                <div class="text-xs text-white/80 font-medium">
+                                    Event Bulan Ini
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- ALERT -->
+                <!-- FITUR -->
+                <div class="mb-10">
+                    <div class="flex items-center justify-between mb-5">
+                        <h2 class="headline text-xl font-bold text-on-surface">
+                            Fitur
+                        </h2>
+                    </div>
+                    <div class="grid grid-cols-4 lg:grid-cols-8 gap-4">
+                        <button
+                            class="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl p-4 flex flex-col items-center gap-3 card-hover card-shadow"
+                        >
+                            <div
+                                class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container"
+                            >
+                                <span class="material-symbols-outlined"
+                                    >folder_open</span
+                                >
+                            </div>
+                            <span class="text-xs font-semibold text-on-surface"
+                                >Administrasi</span
+                            >
+                        </button>
+                        <button
+                            class="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl p-4 flex flex-col items-center gap-3 card-hover card-shadow"
+                        >
+                            <div
+                                class="w-12 h-12 rounded-xl bg-secondary-container flex items-center justify-center text-on-secondary-container"
+                            >
+                                <span class="material-symbols-outlined"
+                                    >account_balance_wallet</span
+                                >
+                            </div>
+                            <span class="text-xs font-semibold text-on-surface"
+                                >Kas RT</span
+                            >
+                        </button>
+                        <button
+                            class="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl p-4 flex flex-col items-center gap-3 card-hover card-shadow"
+                        >
+                            <div
+                                class="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center text-on-tertiary-container"
+                            >
+                                <span class="material-symbols-outlined"
+                                    >receipt_long</span
+                                >
+                            </div>
+                            <span class="text-xs font-semibold text-on-surface"
+                                >IPL</span
+                            >
+                        </button>
+                        <button
+                            class="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl p-4 flex flex-col items-center gap-3 card-hover card-shadow"
+                        >
+                            <div
+                                class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container"
+                            >
+                                <span class="material-symbols-outlined"
+                                    >storefront</span
+                                >
+                            </div>
+                            <span class="text-xs font-semibold text-on-surface"
+                                >Jual Beli</span
+                            >
+                        </button>
+                        <button
+                            class="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl p-4 flex flex-col items-center gap-3 card-hover card-shadow"
+                        >
+                            <div
+                                class="w-12 h-12 rounded-xl bg-secondary-container flex items-center justify-center text-on-secondary-container"
+                            >
+                                <span class="material-symbols-outlined"
+                                    >handyman</span
+                                >
+                            </div>
+                            <span class="text-xs font-semibold text-on-surface"
+                                >Jasa</span
+                            >
+                        </button>
+                        <button
+                            class="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl p-4 flex flex-col items-center gap-3 card-hover card-shadow"
+                        >
+                            <div
+                                class="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center text-on-tertiary-container"
+                            >
+                                <span class="material-symbols-outlined"
+                                    >event</span
+                                >
+                            </div>
+                            <span class="text-xs font-semibold text-on-surface"
+                                >Event</span
+                            >
+                        </button>
+                        <button
+                            class="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl p-4 flex flex-col items-center gap-3 card-hover card-shadow"
+                        >
+                            <div
+                                class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center text-on-primary-container"
+                            >
+                                <span class="material-symbols-outlined"
+                                    >groups</span
+                                >
+                            </div>
+                            <span class="text-xs font-semibold text-on-surface"
+                                >Organisasi</span
+                            >
+                        </button>
+                        <button
+                            class="bg-surface-container-lowest border border-outline-variant/50 rounded-2xl p-4 flex flex-col items-center gap-3 card-hover card-shadow"
+                        >
+                            <div
+                                class="w-12 h-12 rounded-xl bg-error-container flex items-center justify-center text-on-error-container"
+                            >
+                                <span class="material-symbols-outlined"
+                                    >campaign</span
+                                >
+                            </div>
+                            <span class="text-xs font-semibold text-on-surface"
+                                >Emergency</span
+                            >
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+                    <!-- LEFT: NEWS FEED -->
+                    <div class="xl:col-span-2 space-y-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h2
+                                class="headline text-xl font-bold text-on-surface"
+                            >
+                                Info Warga
+                            </h2>
+                            <a
+                                class="text-sm font-semibold text-primary hover:text-primary-container transition-colors flex items-center gap-1"
+                                href="#"
+                                >Lihat semua
+                                <span
+                                    class="material-symbols-outlined text-[18px]"
+                                    >arrow_forward</span
+                                ></a
+                            >
+                        </div>
+                        <!-- FEATURED -->
+                        <article
+                            class="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl overflow-hidden card-shadow card-hover group cursor-pointer"
+                        >
+                            <div
+                                class="h-56 bg-surface-variant relative overflow-hidden"
+                            >
+                                <div
+                                    class="absolute inset-0 bg-gradient-to-tr from-error-container to-surface-container-high flex items-center justify-center"
+                                >
+                                    <span
+                                        class="material-symbols-outlined text-[64px] text-error/40"
+                                        >warning</span
+                                    >
+                                </div>
+                            </div>
+                            <div class="p-6">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <span
+                                        class="bg-error-container text-on-error-container text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide flex items-center gap-1"
+                                    >
+                                        <span
+                                            class="material-symbols-outlined text-[14px]"
+                                            >warning</span
+                                        >
+                                        Emergency
+                                    </span>
+                                </div>
+                                <h3
+                                    class="headline text-xl font-bold text-on-surface mb-2 group-hover:text-primary transition-colors leading-snug"
+                                >
+                                    Waspadai Lonjakan Risiko DBD, Posyandu
+                                    Temukan Titik Potensi Penyebaran
+                                </h3>
+                                <p
+                                    class="text-sm text-on-surface-variant leading-relaxed mb-5 line-clamp-2"
+                                >
+                                    Posyandu RT 03 melakukan survei dan
+                                    penyemprotan sampel lingkungan. Ketua RW 14
+                                    Sawangan Regency, Depok, mengimbau warga
+                                    meningkatkan kewaspadaan terhadap potensi
+                                    penyakit yang dipicu oleh perubahan cuaca
+                                    secara drastis.
+                                </p>
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-7 h-7 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-[10px]"
+                                    >
+                                        MH
+                                    </div>
+                                    <p class="text-xs text-on-surface-variant">
+                                        Dipublish oleh
+                                        <strong class="text-on-surface"
+                                            >Muhammad Hernanda · N2</strong
+                                        >
+                                        · 5 Mei 2026
+                                    </p>
+                                </div>
+                            </div>
+                        </article>
+                        <!-- REGULAR LIST -->
+                        <div class="space-y-4">
+                            <article
+                                class="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl overflow-hidden card-shadow card-hover flex group cursor-pointer h-36"
+                            >
+                                <div
+                                    class="w-48 bg-surface-variant shrink-0 relative overflow-hidden"
+                                >
+                                    <div
+                                        class="absolute inset-0 bg-gradient-to-br from-tertiary-container to-primary flex items-center justify-center"
+                                    >
+                                        <span
+                                            class="material-symbols-outlined text-[40px] text-white/40"
+                                            >cleaning_services</span
+                                        >
+                                    </div>
+                                </div>
+                                <div
+                                    class="p-5 flex flex-col justify-between flex-1 min-w-0"
+                                >
+                                    <div>
+                                        <div class="mb-2">
+                                            <span
+                                                class="bg-tertiary-container/10 text-tertiary text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide"
+                                                >Kerja Bakti</span
+                                            >
+                                        </div>
+                                        <h3
+                                            class="headline text-base font-bold text-on-surface mb-1 truncate group-hover:text-primary transition-colors"
+                                        >
+                                            Kerja Bakti 03 Mei 2026 — Bersihkan
+                                            Area Terdampak Pascabanjir
+                                        </h3>
+                                        <p
+                                            class="text-xs text-on-surface-variant line-clamp-1"
+                                        >
+                                            Satgas Warga RT 03 Sawangan Regency
+                                            bergotong royong membersihkan
+                                            lingkungan pasca banjir yang melanda
+                                            wilayah Depok awal bulan ini.
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-2">
+                                        <div
+                                            class="w-5 h-5 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-[8px]"
+                                        >
+                                            MH
+                                        </div>
+                                        <p
+                                            class="text-[11px] text-on-surface-variant"
+                                        >
+                                            Muhammad Hernanda ·
+                                            <strong class="text-on-surface"
+                                                >5 Mei 2026</strong
+                                            >
+                                        </p>
+                                    </div>
+                                </div>
+                            </article>
+                            <article
+                                class="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl overflow-hidden card-shadow card-hover flex group cursor-pointer h-36"
+                            >
+                                <div
+                                    class="w-48 bg-surface-variant shrink-0 relative overflow-hidden"
+                                >
+                                    <div
+                                        class="absolute inset-0 bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center"
+                                    >
+                                        <span
+                                            class="material-symbols-outlined text-[40px] text-white/40"
+                                            >water_drop</span
+                                        >
+                                    </div>
+                                </div>
+                                <div
+                                    class="p-5 flex flex-col justify-between flex-1 min-w-0"
+                                >
+                                    <div>
+                                        <div class="mb-2">
+                                            <span
+                                                class="bg-error-container/50 text-error text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide"
+                                                >Banjir</span
+                                            >
+                                        </div>
+                                        <h3
+                                            class="headline text-base font-bold text-on-surface mb-1 truncate group-hover:text-primary transition-colors"
+                                        >
+                                            Laporan Kejadian Banjir RT 03 — 30
+                                            April 2026
+                                        </h3>
+                                        <p
+                                            class="text-xs text-on-surface-variant line-clamp-1"
+                                        >
+                                            Sejumlah wilayah di Kota Depok,
+                                            khususnya kawasan Sawangan,
+                                            terdampak banjir yang merendam
+                                            beberapa jalan dan fasilitas umum.
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-2">
+                                        <div
+                                            class="w-5 h-5 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-[8px]"
+                                        >
+                                            MH
+                                        </div>
+                                        <p
+                                            class="text-[11px] text-on-surface-variant"
+                                        >
+                                            Muhammad Hernanda ·
+                                            <strong class="text-on-surface"
+                                                >4 Mei 2026</strong
+                                            >
+                                        </p>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <!-- RIGHT PANEL -->
+                    <div class="space-y-6">
+                        <!-- STATS -->
+                        <div
+                            class="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl p-6 card-shadow"
+                        >
+                            <h3
+                                class="headline text-base font-bold text-on-surface mb-5"
+                            >
+                                Statistik RT 03
+                            </h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div
+                                    class="bg-surface-container-low rounded-2xl p-4 text-center"
+                                >
+                                    <div
+                                        class="headline text-2xl font-bold text-primary mb-1"
+                                    >
+                                        124
+                                    </div>
+                                    <div
+                                        class="text-[11px] font-medium text-on-surface-variant"
+                                    >
+                                        Warga
+                                    </div>
+                                </div>
+                                <div
+                                    class="bg-surface-container-low rounded-2xl p-4 text-center"
+                                >
+                                    <div
+                                        class="headline text-2xl font-bold text-secondary mb-1"
+                                    >
+                                        38
+                                    </div>
+                                    <div
+                                        class="text-[11px] font-medium text-on-surface-variant"
+                                    >
+                                        KK Terdaftar
+                                    </div>
+                                </div>
+                                <div
+                                    class="bg-surface-container-low rounded-2xl p-4 text-center col-span-2"
+                                >
+                                    <div
+                                        class="headline text-2xl font-bold text-tertiary mb-1"
+                                    >
+                                        12
+                                    </div>
+                                    <div
+                                        class="text-[11px] font-medium text-on-surface-variant"
+                                    >
+                                        Blok Aktif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- JUAL BELI -->
+                        <div
+                            class="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl card-shadow overflow-hidden"
+                        >
+                            <div
+                                class="p-5 border-b border-outline-variant/20 flex items-center justify-between bg-surface-container-low/50"
+                            >
+                                <h3
+                                    class="headline text-base font-bold text-on-surface"
+                                >
+                                    Jual Beli RT 03
+                                </h3>
+                                <a
+                                    class="text-xs font-semibold text-primary hover:text-primary-container transition-colors"
+                                    href="#"
+                                    >Lihat semua</a
+                                >
+                            </div>
+                            <div class="p-2">
+                                <a
+                                    class="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-container-low transition-colors group"
+                                    href="#"
+                                >
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-container to-primary flex items-center justify-center text-white shrink-0 shadow-sm"
+                                    >
+                                        <span class="material-symbols-outlined"
+                                            >directions_car</span
+                                        >
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4
+                                            class="text-sm font-semibold text-on-surface truncate group-hover:text-primary transition-colors"
+                                        >
+                                            Gocar Luxe — Grab Premium
+                                        </h4>
+                                        <p
+                                            class="text-[11px] text-on-surface-variant truncate mb-0.5"
+                                        >
+                                            Amir skilik · L16
+                                        </p>
+                                        <p
+                                            class="text-xs font-bold text-tertiary"
+                                        >
+                                            Rp 200.000
+                                        </p>
+                                    </div>
+                                </a>
+                                <a
+                                    class="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-container-low transition-colors group"
+                                    href="#"
+                                >
+                                    <div
+                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-200 to-blue-500 flex items-center justify-center text-white shrink-0 shadow-sm"
+                                    >
+                                        <span class="material-symbols-outlined"
+                                            >health_and_safety</span
+                                        >
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4
+                                            class="text-sm font-semibold text-on-surface truncate group-hover:text-primary transition-colors"
+                                        >
+                                            Consultant Claim Insurance
+                                        </h4>
+                                        <p
+                                            class="text-[11px] text-on-surface-variant truncate mb-0.5"
+                                        >
+                                            Abdul Azis · O18
+                                        </p>
+                                        <p
+                                            class="text-xs font-bold text-tertiary"
+                                        >
+                                            Rp 250.000
+                                        </p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- JASA -->
+                        <div
+                            class="bg-surface-container-lowest border border-outline-variant/40 rounded-3xl card-shadow overflow-hidden"
+                        >
+                            <div
+                                class="p-5 border-b border-outline-variant/20 flex items-center justify-between bg-surface-container-low/50"
+                            >
+                                <h3
+                                    class="headline text-base font-bold text-on-surface"
+                                >
+                                    Jasa RT 03
+                                </h3>
+                                <a
+                                    class="text-xs font-semibold text-primary hover:text-primary-container transition-colors"
+                                    href="#"
+                                    >Lihat semua</a
+                                >
+                            </div>
+                            <div class="p-2">
+                                <a
+                                    class="flex items-start gap-3 p-3 rounded-xl hover:bg-surface-container-low transition-colors group"
+                                    href="#"
+                                >
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center text-on-secondary-container shrink-0 mt-0.5"
+                                    >
+                                        <span
+                                            class="material-symbols-outlined text-[20px]"
+                                            >local_taxi</span
+                                        >
+                                    </div>
+                                    <div>
+                                        <h4
+                                            class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors mb-0.5"
+                                        >
+                                            Gocar Luxe · Transportasi
+                                        </h4>
+                                        <p
+                                            class="text-xs text-on-surface-variant leading-snug"
+                                        >
+                                            Jasa antar-jemput premium area Depok
+                                            &amp; sekitarnya
+                                        </p>
+                                    </div>
+                                </a>
+                                <a
+                                    class="flex items-start gap-3 p-3 rounded-xl hover:bg-surface-container-low transition-colors group"
+                                    href="#"
+                                >
+                                    <div
+                                        class="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center text-on-secondary-container shrink-0 mt-0.5"
+                                    >
+                                        <span
+                                            class="material-symbols-outlined text-[20px]"
+                                            >support_agent</span
+                                        >
+                                    </div>
+                                    <div>
+                                        <h4
+                                            class="text-sm font-semibold text-on-surface group-hover:text-primary transition-colors mb-0.5"
+                                        >
+                                            Konsultasi Klaim Asuransi
+                                        </h4>
+                                        <p
+                                            class="text-xs text-on-surface-variant leading-snug"
+                                        >
+                                            Kerusakan kendaraan bermotor,
+                                            properti, dll.
+                                        </p>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const sidebar = document.getElementById("sidebar");
+                const toggleBtn = document.getElementById("sidebar-toggle");
+                const toggleIcon = document.getElementById(
+                    "sidebar-toggle-icon",
+                );
+
+                toggleBtn.addEventListener("click", () => {
+                    sidebar.classList.toggle("w-72");
+                    sidebar.classList.toggle("w-20");
+                    sidebar.classList.toggle("collapsed");
+
+                    if (sidebar.classList.contains("collapsed")) {
+                        toggleIcon.textContent = "keyboard_double_arrow_right";
+                    } else {
+                        toggleIcon.textContent = "keyboard_double_arrow_left";
+                    }
+                });
+            });
+        </script>
+    </body>
+</html>

@@ -7,6 +7,7 @@ import {
   TableCellsIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import { applyFocusRing, clearFocusRing } from "@/lib/kas-rt-utils";
 import { DOWNLOAD_FORMAT_OPTIONS } from "@/lib/kas-rt-constants";
 import type { KasRtDownloadState } from "@/types/kas-rt";
@@ -17,6 +18,7 @@ interface KasRtDownloadSheetProps {
   downloadState: KasRtDownloadState;
   setDownloadState: React.Dispatch<React.SetStateAction<KasRtDownloadState>>;
   allCategoryNames: string[];
+  allBlockNames: string[];
   isDownloading: boolean;
   downloadError: string | null;
   onDownload: () => Promise<void>;
@@ -31,11 +33,24 @@ export function KasRtDownloadSheet({
   downloadState,
   setDownloadState,
   allCategoryNames,
+  allBlockNames,
   isDownloading,
   downloadError,
   onDownload,
 }: KasRtDownloadSheetProps) {
   if (!isOpen) return null;
+
+  const autocompleteClassNames = {
+    label:
+      "text-app-body-muted text-[11px] font-bold uppercase tracking-widest",
+    base: "w-full",
+    input:
+      "text-sm font-semibold text-app-title placeholder:text-app-body-muted/50",
+    clearButton: "text-app-body-muted hover:text-app-body",
+    popoverContent: "rounded-2xl border shadow-lg",
+    listbox: "text-sm font-semibold text-app-title",
+    selectorButton: "text-app-body-muted",
+  };
 
   return (
     <>
@@ -205,34 +220,31 @@ export function KasRtDownloadSheet({
               </select>
             </div>
 
-            {/* Block */}
-            <div>
-              <label
-                htmlFor="download-block"
-                className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted"
-              >
-                Blok{" "}
-                <span className="font-normal normal-case text-app-body-muted/70">
-                  (opsional)
-                </span>
-              </label>
-              <input
-                id="download-block"
-                type="text"
-                value={downloadState.block}
-                onChange={(e) =>
-                  setDownloadState((prev) => ({
-                    ...prev,
-                    block: e.target.value,
-                  }))
-                }
-                placeholder="Biarkan kosong untuk semua blok"
-                className="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-app-title placeholder:text-app-body-muted/50 focus:outline-none"
-                style={{ borderColor: "var(--color-input-border)" }}
-                onFocus={(e) => applyFocusRing(e.currentTarget)}
-                onBlur={(e) => clearFocusRing(e.currentTarget)}
-              />
-            </div>
+            {/* Block — searchable select */}
+            <Autocomplete
+              label="Blok"
+              labelPlacement="outside"
+              placeholder="Ketik untuk mencari..."
+              variant="bordered"
+              size="lg"
+              selectedKey={downloadState.block || null}
+              onSelectionChange={(key) =>
+                setDownloadState((prev) => ({
+                  ...prev,
+                  block: String(key ?? ""),
+                }))
+              }
+              allowsCustomValue={false}
+              defaultItems={allBlockNames.map((name) => ({
+                key: name,
+                label: name,
+              }))}
+              classNames={autocompleteClassNames}
+            >
+              {(item) => (
+                <AutocompleteItem key={item.key}>{item.label}</AutocompleteItem>
+              )}
+            </Autocomplete>
 
             {/* Error banner */}
             {downloadError && (
@@ -256,15 +268,23 @@ export function KasRtDownloadSheet({
             <button
               type="button"
               onClick={() => void onDownload()}
-              disabled={isDownloading || !downloadState.startDate || !downloadState.endDate}
+              disabled={
+                isDownloading ||
+                !downloadState.startDate ||
+                !downloadState.endDate
+              }
               className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
               style={{
                 background:
-                  isDownloading || !downloadState.startDate || !downloadState.endDate
+                  isDownloading ||
+                  !downloadState.startDate ||
+                  !downloadState.endDate
                     ? "var(--color-body-muted)"
                     : "var(--color-primary)",
                 boxShadow:
-                  isDownloading || !downloadState.startDate || !downloadState.endDate
+                  isDownloading ||
+                  !downloadState.startDate ||
+                  !downloadState.endDate
                     ? "none"
                     : "0 8px 22px -12px var(--color-primary-shadow)",
               }}

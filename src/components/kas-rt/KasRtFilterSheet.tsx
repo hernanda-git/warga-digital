@@ -1,6 +1,7 @@
 "use client";
 
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import { toDateInputValue } from "@/lib/kas-rt-utils";
 import { applyFocusRing, clearFocusRing } from "@/lib/kas-rt-utils";
 import type { KasRtFilterState } from "@/types/kas-rt";
@@ -15,6 +16,17 @@ interface KasRtFilterSheetProps {
   now: Date;
   onApply: () => void;
 }
+
+const autocompleteClassNames = {
+  label: "text-app-body-muted text-[11px] font-bold uppercase tracking-widest",
+  base: "w-full",
+  input:
+    "text-sm font-semibold text-app-title placeholder:text-app-body-muted/50",
+  clearButton: "text-app-body-muted hover:text-app-body",
+  popoverContent: "rounded-2xl border shadow-lg",
+  listbox: "text-sm font-semibold text-app-title",
+  selectorButton: "text-app-body-muted",
+};
 
 /**
  * Advanced filter bottom sheet
@@ -119,32 +131,31 @@ export function KasRtFilterSheet({
               </select>
             </div>
 
-            {/* Block */}
-            <div>
-              <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
-                Blok
-              </label>
-              <select
-                value={filterState.blockFilter}
-                onChange={(e) =>
-                  setFilterState((prev) => ({
-                    ...prev,
-                    blockFilter: e.target.value,
-                  }))
-                }
-                className="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-app-title focus:outline-none"
-                style={{ borderColor: "var(--color-input-border)" }}
-                onFocus={(e) => applyFocusRing(e.currentTarget)}
-                onBlur={(e) => clearFocusRing(e.currentTarget)}
-              >
-                <option value="">Semua blok</option>
-                {allBlockNames.map((blok) => (
-                  <option key={blok} value={blok}>
-                    {blok}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Block — searchable select */}
+            <Autocomplete
+              label="Blok"
+              labelPlacement="outside"
+              placeholder="Ketik untuk mencari..."
+              variant="bordered"
+              size="lg"
+              selectedKey={filterState.blockFilter || null}
+              onSelectionChange={(key) =>
+                setFilterState((prev) => ({
+                  ...prev,
+                  blockFilter: String(key ?? ""),
+                }))
+              }
+              allowsCustomValue={false}
+              defaultItems={allBlockNames.map((name) => ({
+                key: name,
+                label: name,
+              }))}
+              classNames={autocompleteClassNames}
+            >
+              {(item) => (
+                <AutocompleteItem key={item.key}>{item.label}</AutocompleteItem>
+              )}
+            </Autocomplete>
 
             {/* Date range */}
             <div className="grid grid-cols-2 gap-3">
