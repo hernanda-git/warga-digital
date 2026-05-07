@@ -1,7 +1,7 @@
 export type TenantStatus = "ACTIVE" | "SUSPENDED" | "ARCHIVED";
 export type TenantType = "PERUMAHAN" | "DESA" | "KOPERASI";
 export type CommunityLevel = "RT" | "RW" | "OTHER";
-export type HouseStatus = "PRIBADI" | "KONTRAKAN" | "KANTOR";
+export type HouseStatus = "PRIBADI" | "KONTRAKAN" | "KOSONG";
 export type UserStatus = "ACTIVE" | "INACTIVE" | "BANNED";
 export type TenantUserStatus = "ACTIVE" | "SUSPENDED" | "BANNED";
 export type RelationshipType = "OWNER" | "FAMILY" | "TENANT" | "CARETAKER";

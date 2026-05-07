@@ -4,12 +4,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowPathIcon,
-  BuildingOffice2Icon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronUpIcon,
+  ExclamationTriangleIcon,
   HomeModernIcon,
   MagnifyingGlassIcon,
+  PencilSquareIcon,
   UserGroupIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
@@ -44,8 +45,14 @@ interface HouseItem {
 
 function statusLabel(status: string): string {
   if (status === "KONTRAKAN") return "Kontrakan";
-  if (status === "KANTOR") return "Kantor";
+  if (status === "KOSONG") return "Kosong";
   return "Pribadi";
+}
+
+function toTitleCase(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/(?:^|\s|-)\S/g, (c) => c.toUpperCase());
 }
 
 type OccupancyFilter = "ALL" | "KONTRAKAN" | "PRIBADI" | "KOSONG" | "TERISI";
@@ -64,6 +71,11 @@ export default function AdminBlokRumahPage() {
   const [occupancyFilter, setOccupancyFilter] = useState<OccupancyFilter>("ALL");
   const [houses, setHouses] = useState<HouseItem[]>([]);
   const [expandedHouseIds, setExpandedHouseIds] = useState<Record<string, boolean>>({});
+  const [editingHouse, setEditingHouse] = useState<HouseItem | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editStatus, setEditStatus] = useState("");
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
     setHasMounted(true);
@@ -137,6 +149,58 @@ export default function AdminBlokRumahPage() {
   const toggleExpandedHouse = useCallback((houseId: string) => {
     setExpandedHouseIds((prev) => ({ ...prev, [houseId]: !prev[houseId] }));
   }, []);
+
+  const openEditModal = useCallback((house: HouseItem) => {
+    setEditingHouse(house);
+    setEditName(house.name);
+    setEditStatus(house.status);
+    setEditError(null);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    if (editSubmitting) return;
+    setEditingHouse(null);
+  }, [editSubmitting]);
+
+  const handleEditSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!editingHouse) return;
+      setEditError(null);
+      setEditSubmitting(true);
+      try {
+        const res = await apiFetch(`/api/admin/houses/${editingHouse.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: editName.trim(),
+            status: editStatus,
+          }),
+        });
+        const body = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          house?: HouseItem;
+        };
+        if (!res.ok) {
+          setEditError(body.error ?? "Gagal menyimpan perubahan");
+          return;
+        }
+        setEditingHouse(null);
+        setHouses((prev) =>
+          prev.map((h) =>
+            h.id === editingHouse.id
+              ? { ...h, name: editName.trim(), status: editStatus }
+              : h,
+          ),
+        );
+      } catch {
+        setEditError("Gagal menyimpan perubahan. Coba lagi.");
+      } finally {
+        setEditSubmitting(false);
+      }
+    },
+    [editingHouse, editName, editStatus],
+  );
 
   useEffect(() => {
     if (!checkingAccess && isAuthenticated) {
@@ -348,13 +412,17 @@ export default function AdminBlokRumahPage() {
                   className="rounded-2xl bg-app-surface p-4 shadow-[0_8px_24px_rgba(0,40,5,0.06)]"
                 >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-app-body-muted">
-                      Blok Rumah
-                    </p>
+                  <div className="min-w-0 flex-1">
                     <h2 className="truncate text-base font-extrabold text-app-title">
                       {house.blok_rumah ?? "-"}
                     </h2>
+                    {house.name ? (
+                      <p className="mt-0.5 truncate text-sm font-semibold text-app-body">
+                        {toTitleCase(house.name)}
+                      </p>
+                    ) : (
+                      <p className="mt-0.5 text-sm text-app-body-muted/60">Tanpa nama</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="rounded-full bg-app-primary-muted px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-app-primary">
@@ -362,7 +430,16 @@ export default function AdminBlokRumahPage() {
                     </span>
                     <button
                       type="button"
-                      onClick={() => toggleExpandedHouse(house.id)}
+                      onClick={(e) => { e.stopPropagation(); openEditModal(house); }}
+                      className="rounded-full border border-[var(--color-input-border)] p-1 text-app-body-muted transition hover:bg-app-surface-alt"
+                      aria-label="Edit blok rumah"
+                      title="Edit blok rumah"
+                    >
+                      <PencilSquareIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleExpandedHouse(house.id); }}
                       className="rounded-full border border-[var(--color-input-border)] p-1 text-app-body-muted transition hover:bg-app-surface-alt"
                       aria-label={isExpanded ? "Sembunyikan daftar warga" : "Lihat daftar warga"}
                       title={isExpanded ? "Sembunyikan daftar warga" : "Lihat daftar warga"}
@@ -376,15 +453,9 @@ export default function AdminBlokRumahPage() {
                   </div>
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-app-body-muted">
-                  <div className="flex items-center gap-1.5">
-                    <BuildingOffice2Icon className="h-4 w-4" />
-                    <span className="truncate">{house.name || "Belum ada pemilik"}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <UserGroupIcon className="h-4 w-4" />
-                    <span>{house.total_residents ?? 0} warga</span>
-                  </div>
+                <div className="mt-3 flex items-center gap-1.5 text-xs text-app-body-muted">
+                  <UserGroupIcon className="h-4 w-4" />
+                  <span>{house.total_residents ?? 0} warga</span>
                 </div>
 
                 {house.address && (
@@ -423,6 +494,130 @@ export default function AdminBlokRumahPage() {
           </div>
         )}
       </div>
+
+      {editingHouse && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+            onClick={!editSubmitting ? closeModal : undefined}
+            aria-hidden
+            style={{ animation: "fadeIn 0.2s ease" }}
+          />
+          <div
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 flex max-h-[90vh] w-[calc(100%-2.5rem)] flex-col rounded-3xl bg-app-surface shadow-[0_32px_64px_rgba(0,0,0,0.18)]"
+            style={{
+              maxWidth: "400px",
+              animation: "dialogIn 0.25s cubic-bezier(0.34,1.56,0.64,1)",
+            }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="overflow-y-auto overscroll-contain p-5">
+              <div className="mb-4 flex items-start justify-between">
+                <div className="min-w-0">
+                  <h2 className="text-[15px] font-extrabold text-app-title">
+                    Edit Blok Rumah
+                  </h2>
+                  <p className="mt-0.5 text-[12px] font-semibold text-app-body-muted">
+                    {editingHouse.blok_rumah ?? "-"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  disabled={editSubmitting}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition hover:bg-app-surface-alt active:scale-90 disabled:opacity-50"
+                >
+                  <XMarkIcon className="h-5 w-5 text-app-body-muted" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditSubmit} className="space-y-3">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-widest text-app-body-muted mb-1.5">
+                    Nama Rumah
+                  </label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full rounded-xl border px-3.5 py-2.5 text-[13px] font-medium text-app-title focus:outline-none"
+                    style={{ borderColor: "var(--color-input-border)" }}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-widest text-app-body-muted mb-1.5">
+                    Status
+                  </label>
+                  <div className="flex gap-2">
+                    {(["PRIBADI", "KONTRAKAN", "KOSONG"] as const).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setEditStatus(s)}
+                        className={`flex-1 rounded-xl py-2 text-[11px] font-bold transition active:scale-95 ${
+                          editStatus === s
+                            ? "text-white shadow-sm"
+                            : "bg-app-surface-alt text-app-body-muted"
+                        }`}
+                        style={
+                          editStatus === s
+                            ? {
+                                background:
+                                  s === "PRIBADI"
+                                    ? "var(--color-primary)"
+                                    : s === "KONTRAKAN"
+                                      ? "#d97706"
+                                      : "#6b7280",
+                              }
+                            : undefined
+                        }
+                      >
+                        {statusLabel(s)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {editError && (
+                  <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5">
+                    <ExclamationTriangleIcon className="h-4 w-4 shrink-0 mt-0.5 text-red-500" />
+                    <p className="text-[12px] text-red-700">{editError}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    disabled={editSubmitting}
+                    className="flex-1 rounded-xl bg-app-surface-alt py-3 text-[12px] font-semibold text-app-body transition active:scale-95 disabled:opacity-50"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editSubmitting || !editName.trim()}
+                    className="flex-1 rounded-xl py-3 text-[12px] font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ background: "var(--color-primary)" }}
+                  >
+                    {editSubmitting ? (
+                      <span className="flex items-center justify-center gap-1.5">
+                        <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                        Menyimpan...
+                      </span>
+                    ) : (
+                      "Simpan"
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 }

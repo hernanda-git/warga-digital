@@ -126,7 +126,7 @@ export async function GET() {
     return {
       id: row.id,
       blok_rumah: row.blok_rumah,
-      name: ownerFullName ?? sourceFullName ?? "",
+      name: row.name ?? "",
       address: row.address,
       total_residents: totalResidents,
       residents,
