@@ -11,6 +11,7 @@ import {
   fetchKasRtCategories,
   fetchKasRtTransactions,
   fetchKasRtHero,
+  fetchKasRtBlockNames,
 } from "./data";
 import KasRtPageClient from "./KasRtPageClient";
 import type { KasRtFilterState } from "@/types/kas-rt";
@@ -37,18 +38,20 @@ export default async function KasRTPage({ searchParams }: KasRTPageProps) {
     endDate: params.endDate ?? "",
   };
 
-  const [permissions, categories, { transactions, total }, hero] = await Promise.all([
-    fetchKasRtPermissions(session.userId),
-    fetchKasRtCategories(),
-    fetchKasRtTransactions({
-      typeFilter: filters.typeFilter !== "all" ? filters.typeFilter : undefined,
-      categoryFilter: filters.categoryFilter || undefined,
-      blockFilter: filters.blockFilter || undefined,
-      startDate: filters.startDate || undefined,
-      endDate: filters.endDate || undefined,
-    }),
-    fetchKasRtHero(),
-  ]);
+  const [permissions, categories, { transactions, total }, hero, blockNames] =
+    await Promise.all([
+      fetchKasRtPermissions(session.userId),
+      fetchKasRtCategories(),
+      fetchKasRtTransactions({
+        typeFilter: filters.typeFilter !== "all" ? filters.typeFilter : undefined,
+        categoryFilter: filters.categoryFilter || undefined,
+        blockFilter: filters.blockFilter || undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+      }),
+      fetchKasRtHero(),
+      fetchKasRtBlockNames(),
+    ]);
 
   return (
     <KasRtPageClient
@@ -58,6 +61,7 @@ export default async function KasRTPage({ searchParams }: KasRTPageProps) {
       initialCanSubmitTransaction={permissions.canSubmitTransaction}
       initialSummary={hero}
       initialFilterState={filters}
+      initialBlockNames={blockNames}
     />
   );
 }

@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { getPublicUrl, getPublicUrlSafe } from "@/lib/r2";
+import { sortBlokRumah } from "@/lib/blok-rumah";
 import {
   DEFAULT_TENANT_ID,
   DEFAULT_COMMUNITY_ID,
@@ -397,6 +398,33 @@ export async function fetchKasRtHouseStatuses(): Promise<HouseTransactionStatus[
       a.blokRumah.localeCompare(b.blokRumah),
     );
   } catch (err) {
+    return [];
+  }
+}
+
+// ─── Block Names ────────────────────────────────────────────────────────────
+
+export async function fetchKasRtBlockNames(): Promise<string[]> {
+  try {
+    const supabase = createServerClient();
+
+    const { data, error } = await supabase
+      .from("houses")
+      .select("blok_rumah")
+      .eq("tenant_id", DEFAULT_TENANT_ID)
+      .eq("community_id", DEFAULT_COMMUNITY_ID)
+      .eq("is_active", true)
+      .not("blok_rumah", "is", null);
+
+    if (error) {
+      console.error("[kas-rt/data] fetchKasRtBlockNames error:", error);
+      return [];
+    }
+
+    return data
+      .map((h) => h.blok_rumah as string)
+      .sort(sortBlokRumah);
+  } catch {
     return [];
   }
 }

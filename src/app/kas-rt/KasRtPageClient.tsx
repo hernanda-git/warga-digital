@@ -40,6 +40,7 @@ interface KasRtPageClientProps {
   initialCanSubmitTransaction: boolean;
   initialSummary: KasRtTotals | null;
   initialFilterState: KasRtFilterState;
+  initialBlockNames: string[];
 }
 
 export default function KasRtPageClient({
@@ -49,6 +50,7 @@ export default function KasRtPageClient({
   initialCanSubmitTransaction,
   initialSummary,
   initialFilterState,
+  initialBlockNames,
 }: KasRtPageClientProps) {
   const now = new Date();
   const router = useRouter();
@@ -87,6 +89,7 @@ export default function KasRtPageClient({
       canSubmitTransaction: initialCanSubmitTransaction,
       summary: initialSummary,
       filterState: initialFilterState,
+      blockNames: initialBlockNames,
     },
   });
 

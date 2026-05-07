@@ -6,6 +6,10 @@
 /** Canonical pattern: 1–3 letters, 1–4 digits, optional 1 letter (unit) */
 const BLOK_RUMAH_CANONICAL_REGEX = /^[A-Z]{1,3}\d{1,4}[A-Z]?$/;
 
+export function sortBlokRumah(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+}
+
 /**
  * Normalize user input to a single stored format.
  * Strips spaces, dots, slashes; uppercases; produces BLOCK+NUMBER or BLOCK+NUMBER+UNIT.

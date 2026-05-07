@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { apiFetch } from "@/lib/api-client";
+import { sortBlokRumah } from "@/lib/blok-rumah";
 
 /**
  * Get community name from cookie (client-side)
@@ -30,6 +31,7 @@ interface UseKasRtTransactionsOptions {
     canSubmitTransaction?: boolean;
     summary?: KasRtTotals | null;
     filterState?: KasRtFilterState;
+    blockNames?: string[];
   };
 }
 
@@ -111,6 +113,9 @@ export function useKasRtTransactions({
   );
   const [communityName, setCommunityName] = useState(
     getCommunityNameFromCookie(),
+  );
+  const [blockNames, setBlockNames] = useState<string[]>(
+    initialData?.blockNames ?? [],
   );
   const [canSubmitTransaction, setCanSubmitTransaction] = useState(
     initialData?.canSubmitTransaction ?? false,
@@ -288,6 +293,22 @@ export function useKasRtTransactions({
     }
   }, []);
 
+  const loadBlockNames = useCallback(async () => {
+    try {
+      const response = await apiFetch("/api/kas-rt/houses");
+      if (!response.ok) return;
+      const data = (await response.json()) as { blok_rumah: string | null }[];
+      setBlockNames(
+        data
+          .map((h) => h.blok_rumah)
+          .filter((b): b is string => b !== null)
+          .sort(sortBlokRumah),
+      );
+    } catch {
+      // silently ignore
+    }
+  }, []);
+
   const loadSummary = useCallback(async () => {
     try {
       const response = await apiFetch("/api/kas-rt/hero");
@@ -383,6 +404,7 @@ export function useKasRtTransactions({
       }
 
       await loadCategories();
+      await loadBlockNames();
 
       setIsPageLoading(false);
 
@@ -446,20 +468,7 @@ export function useKasRtTransactions({
     [categories],
   );
 
-  // TODO: allBlockNames only includes blocks from loaded (paginated) transactions.
-  // Blocks that exist only on later pages won't appear in the filter dropdown.
-  // Consider fetching all unique block names from a dedicated endpoint.
-  const allBlockNames = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          transactions
-            .map((t) => t.reference?.trim())
-            .filter((r): r is string => Boolean(r)),
-        ),
-      ).sort(),
-    [transactions],
-  );
+  const allBlockNames = useMemo(() => blockNames, [blockNames]);
 
   const activeAdvancedFilterCount = useMemo(() => {
     return [
