@@ -1,5 +1,10 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { RequestChecksumCalculation } from "@aws-sdk/middleware-flexible-checksums";
 
 // R2 Configuration
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
@@ -107,6 +112,10 @@ export function getR2Client(): S3Client {
         accessKeyId: R2_ACCESS_KEY_ID!,
         secretAccessKey: R2_SECRET_ACCESS_KEY!,
       },
+      // Prevent the SDK from auto-adding CRC32 checksum params to presigned URLs.
+      // Cloudflare R2 does not expect these, and since the payload isn't available
+      // at signing time, the placeholder CRC (AAAAAA==) causes a 403 mismatch.
+      requestChecksumCalculation: RequestChecksumCalculation.WHEN_REQUIRED,
     });
   }
 
@@ -156,7 +165,9 @@ export function getPublicUrl(objectKey: string): string {
  * Safe version of getPublicUrl that returns null instead of throwing when
  * R2_PUBLIC_BASE_URL is not configured. Logs the error for debugging.
  */
-export function getPublicUrlSafe(objectKey: string | null | undefined): string | null {
+export function getPublicUrlSafe(
+  objectKey: string | null | undefined,
+): string | null {
   if (!objectKey || !R2_PUBLIC_BASE_URL) {
     return null;
   }
