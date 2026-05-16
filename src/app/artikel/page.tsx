@@ -280,9 +280,9 @@ export default function ArtikelPage() {
                         <div className="h-8 w-8 animate-spin rounded-full border-3 border-white/30 border-t-white" />
                       </div>
                     )}
-                    {/* Featured Image - Full Width */}
+                    {/* Featured Image - 16:9 Full Width, No Padding */}
                     {article.featured_image_url ? (
-                      <div className="relative h-56 w-full">
+                      <div className="relative w-full aspect-video">
                         <Image
                           src={article.featured_image_url}
                           alt={article.title}
@@ -292,15 +292,16 @@ export default function ArtikelPage() {
                         />
                       </div>
                     ) : (
-                      <div className="relative h-56 w-full bg-app-primary-muted flex items-center justify-center">
+                      <div className="relative w-full aspect-video bg-app-primary-muted flex items-center justify-center">
                         <UserCircleIcon className="w-20 h-20 text-app-primary opacity-50" />
                       </div>
                     )}
 
                     {/* Content */}
                     <div className="p-6">
+                      {/* Spacer for optimal gap between image and title */}
                       {/* Title */}
-                      <h2 className="text-xl font-bold text-[var(--color-title)] leading-tight mb-3 line-clamp-2 group-hover:text-app-primary transition-colors">
+                      <h2 className="text-xl font-bold text-[var(--color-title)] leading-tight mb-4 line-clamp-2 group-hover:text-app-primary transition-colors">
                         {article.title}
                       </h2>
 

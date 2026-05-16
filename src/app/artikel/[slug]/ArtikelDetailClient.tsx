@@ -104,20 +104,21 @@ export function ArtikelDetailClient({ article }: { article: Article }) {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {article.featured_image_url && (
-          <div className="relative w-full h-64 sm:h-96 mb-8 rounded-xl overflow-hidden">
-            <Image
-              src={article.featured_image_url}
-              alt={article.title}
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 50vw"
-            />
-          </div>
-        )}
+      {/* Featured image — full width edge-to-edge, 16:9, no rounded corners */}
+      {article.featured_image_url && (
+        <div className="relative w-full aspect-video">
+          <Image
+            src={article.featured_image_url}
+            alt={article.title}
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+          />
+        </div>
+      )}
 
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
           {article.title}
         </h1>
