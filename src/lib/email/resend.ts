@@ -505,7 +505,7 @@ function generateResetPinEmailHtml(params: SendResetPinEmailParams): string {
                         "
                     >
                         <p style="font-size: 12px; color: #aaa; margin: 0">
-                            © 2025 Warga Digital · Semua hak dilindungi
+                            © ${new Date().getFullYear()} Warga Digital · Semua hak dilindungi
                         </p>
                     </div>
                 </div>
@@ -526,7 +526,9 @@ function generateResetPinEmailHtml(params: SendResetPinEmailParams): string {
 </html>`;
 }
 
-export async function sendResetPinEmail(params: SendResetPinEmailParams): Promise<void> {
+export async function sendResetPinEmail(
+  params: SendResetPinEmailParams,
+): Promise<void> {
   const resend = getResendClient();
   const from = getFromEmail();
 
