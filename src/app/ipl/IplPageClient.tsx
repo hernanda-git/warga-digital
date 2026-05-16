@@ -2,7 +2,11 @@
 
 import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
-import { formatRupiah, getMonthYearKey, getMonthYearSeparator } from "@/lib/kas-rt-utils";
+import {
+  formatRupiah,
+  getMonthYearKey,
+  getMonthYearSeparator,
+} from "@/lib/kas-rt-utils";
 import type { TransactionItem } from "@/types/kas-rt";
 
 interface MonthStatus {
@@ -45,17 +49,15 @@ export default function IplPageClient({
             </span>
             <div className="h-px flex-1 bg-gradient-to-l from-transparent to-app-body-muted/20" />
           </div>
-        </div>
+        </div>,
       );
       lastMonthKey = currentKey;
     }
-    txElements.push(
-      <IplTransactionCard key={tx.id} transaction={tx} />
-    );
+    txElements.push(<IplTransactionCard key={tx.id} transaction={tx} />);
   });
 
   return (
-    <main className="h-full overflow-y-auto bg-app-surface-alt">
+    <main className="h-full overflow-y-auto bg-app-surface-alt lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
       {/* Hero */}
       <section
         className="relative overflow-hidden px-4 pb-5 pt-5 text-white"
@@ -72,7 +74,7 @@ export default function IplPageClient({
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 lg:hidden"
               aria-label="Kembali"
             >
               <ChevronLeftIcon className="h-5 w-5 text-white" />
@@ -89,13 +91,17 @@ export default function IplPageClient({
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur-sm">
-              <p className="text-[10px] text-white/70 font-medium">Total Dibayar</p>
+              <p className="text-[10px] text-white/70 font-medium">
+                Total Dibayar
+              </p>
               <p className="text-base font-extrabold text-white leading-tight">
                 {formatRupiah(totalPaid)}
               </p>
             </div>
             <div className="rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur-sm">
-              <p className="text-[10px] text-white/70 font-medium">Bulan Lunas</p>
+              <p className="text-[10px] text-white/70 font-medium">
+                Bulan Lunas
+              </p>
               <p className="text-base font-extrabold text-white leading-tight">
                 {paidCount}/12
               </p>
@@ -190,7 +196,11 @@ export default function IplPageClient({
 /**
  * Lightweight transaction card for IPL page.
  */
-function IplTransactionCard({ transaction: tx }: { transaction: TransactionItem }) {
+function IplTransactionCard({
+  transaction: tx,
+}: {
+  transaction: TransactionItem;
+}) {
   return (
     <article className="rounded-2xl bg-app-surface p-4 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
       <div className="flex items-start justify-between gap-2">

@@ -34,7 +34,7 @@ interface KasRtTransactionListProps {
 
 // Touch action style to prevent browser default gestures
 const touchActionStyle: React.CSSProperties = {
-  touchAction: 'pan-y', // Allow vertical scrolling, handle horizontal in JS
+  touchAction: "pan-y", // Allow vertical scrolling, handle horizontal in JS
 };
 
 /**
@@ -67,7 +67,7 @@ export function KasRtTransactionList({
 
   return (
     <div
-      className="px-4 pb-8 pt-3"
+      className="px-4 pb-8 pt-3 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:pb-8 lg:pt-6"
       style={touchActionStyle}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}

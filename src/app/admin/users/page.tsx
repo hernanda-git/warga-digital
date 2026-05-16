@@ -321,7 +321,16 @@ export default function AdminManageUsersPage() {
         setEditSubmitting(false);
       }
     },
-    [selectedUser, editName, editEmail, editWa, editUsername, editStatus, showSuccess, loadUsers],
+    [
+      selectedUser,
+      editName,
+      editEmail,
+      editWa,
+      editUsername,
+      editStatus,
+      showSuccess,
+      loadUsers,
+    ],
   );
 
   const handleAvatarSelect = useCallback(
@@ -424,8 +433,7 @@ export default function AdminManageUsersPage() {
       } else {
         setHouseSuggestions(
           houseList.filter(
-            (h) =>
-              h.blok_rumah && h.blok_rumah.toLowerCase().includes(q),
+            (h) => h.blok_rumah && h.blok_rumah.toLowerCase().includes(q),
           ),
         );
         setShowHouseSuggestions(true);
@@ -463,12 +471,10 @@ export default function AdminManageUsersPage() {
         setHouseError(body.error ?? "Gagal memperbarui blok rumah");
         return;
       }
-      const roleLabel =
-        body.relationship === "OWNER" ? "pemilik" : "penghuni";
-      const ownershipNote =
-        body.hadOwner
-          ? ` (rumah sudah memiliki pemilik, user dijadikan ${roleLabel})`
-          : ` (user dijadikan ${roleLabel})`;
+      const roleLabel = body.relationship === "OWNER" ? "pemilik" : "penghuni";
+      const ownershipNote = body.hadOwner
+        ? ` (rumah sudah memiliki pemilik, user dijadikan ${roleLabel})`
+        : ` (user dijadikan ${roleLabel})`;
       showSuccess(
         `Blok rumah diubah ke ${body.blokRumah ?? houseInput.trim()}${ownershipNote}`,
       );
@@ -483,8 +489,7 @@ export default function AdminManageUsersPage() {
 
   const handleToggleStatus = useCallback(async () => {
     if (!selectedUser) return;
-    const newStatus =
-      selectedUser.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
+    const newStatus = selectedUser.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE";
     setActingUserId(selectedUser.user_id);
     setActionError(null);
     try {
@@ -507,9 +512,7 @@ export default function AdminManageUsersPage() {
       showSuccess(
         `User ${selectedUser.full_name} ${newStatus === "ACTIVE" ? "diaktifkan" : "dinonaktifkan"}`,
       );
-      setSelectedUser((prev) =>
-        prev ? { ...prev, status: newStatus } : prev,
-      );
+      setSelectedUser((prev) => (prev ? { ...prev, status: newStatus } : prev));
       setEditStatus(newStatus);
       void loadUsers(true);
     } catch {
@@ -528,7 +531,7 @@ export default function AdminManageUsersPage() {
 
   return (
     <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
-      <header className="flex shrink-0 items-center justify-between border-b border-[var(--color-input-border)] bg-app-surface/90 px-4 py-3 backdrop-blur-sm">
+      <header className="flex shrink-0 items-center justify-between border-b border-[var(--color-input-border)] bg-app-surface/90 px-4 py-3 backdrop-blur-sm lg:hidden">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -561,7 +564,7 @@ export default function AdminManageUsersPage() {
       </header>
 
       {(actionError || successMessage) && (
-        <div className="shrink-0 px-4 pt-3">
+        <div className="shrink-0 px-4 pt-3 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6">
           {actionError && (
             <div className="mb-2 flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-[12px] text-red-700">
               <ExclamationCircleIcon className="h-4 w-4 shrink-0" />
@@ -577,7 +580,7 @@ export default function AdminManageUsersPage() {
         </div>
       )}
 
-      <div className="shrink-0 border-b border-[var(--color-input-border)] bg-app-surface px-4 py-3">
+      <div className="shrink-0 border-b border-[var(--color-input-border)] bg-app-surface px-4 py-3 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6">
         <div className="relative">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-app-body-muted" />
           <input
@@ -590,7 +593,7 @@ export default function AdminManageUsersPage() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className="flex-1 overflow-y-auto px-4 py-3 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <ArrowPathIcon className="h-6 w-6 animate-spin text-app-primary-muted" />
@@ -606,9 +609,7 @@ export default function AdminManageUsersPage() {
         ) : filteredUsers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <p className="text-[12px] text-app-body-muted">
-              {hasActiveFilter
-                ? "Tidak ada user yang cocok"
-                : "Tidak ada user"}
+              {hasActiveFilter ? "Tidak ada user yang cocok" : "Tidak ada user"}
             </p>
           </div>
         ) : (
@@ -643,16 +644,17 @@ export default function AdminManageUsersPage() {
                         <EnvelopeIcon className="h-3 w-3" />
                         {maskEmail(user.email)}
                       </span>
-                      {user.username && (
-                        <span>@{user.username}</span>
-                      )}
+                      {user.username && <span>@{user.username}</span>}
                       <span>{maskWA(user.wa_number)}</span>
                       <span>{user.blok_rumah || "No blok"}</span>
                     </div>
                     <p className="mt-1 text-[10px] text-app-body-muted/70">
                       Bergabung: {formatJoinedDate(user.joined_at)}
                       {user.roles.length > 0 && (
-                        <> &middot; {user.roles.map(formatRoleName).join(", ")}</>
+                        <>
+                          {" "}
+                          &middot; {user.roles.map(formatRoleName).join(", ")}
+                        </>
                       )}
                     </p>
                   </div>
@@ -667,7 +669,14 @@ export default function AdminManageUsersPage() {
         <>
           <div
             className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-            onClick={!acting && !editSubmitting && !avatarUploading && !deleteSubmitting ? closeModal : undefined}
+            onClick={
+              !acting &&
+              !editSubmitting &&
+              !avatarUploading &&
+              !deleteSubmitting
+                ? closeModal
+                : undefined
+            }
             aria-hidden
             style={{ animation: "fadeIn 0.2s ease" }}
           />
@@ -714,9 +723,7 @@ export default function AdminManageUsersPage() {
                   <div className="mt-3 space-y-1 text-[12px] text-app-body-muted">
                     <p>Email: {maskEmail(selectedUser.email)}</p>
                     <p>WA: {maskWA(selectedUser.wa_number)}</p>
-                    <p>
-                      Blok: {selectedUser.blok_rumah || "\u2014"}
-                    </p>
+                    <p>Blok: {selectedUser.blok_rumah || "\u2014"}</p>
                     <p>
                       Status:{" "}
                       <span
@@ -887,8 +894,8 @@ export default function AdminManageUsersPage() {
                   {confirmResetPin && (
                     <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
                       <p className="text-[12px] font-semibold text-amber-800">
-                        Kirim email reset PIN ke{" "}
-                        {maskEmail(selectedUser.email)}?
+                        Kirim email reset PIN ke {maskEmail(selectedUser.email)}
+                        ?
                       </p>
                       <div className="mt-3 flex gap-2">
                         <button
@@ -953,9 +960,7 @@ export default function AdminManageUsersPage() {
                       <input
                         type="text"
                         value={houseInput}
-                        onChange={(e) =>
-                          handleHouseInputChange(e.target.value)
-                        }
+                        onChange={(e) => handleHouseInputChange(e.target.value)}
                         onFocus={() => {
                           if (
                             houseInput.trim().length > 0 &&
@@ -965,38 +970,34 @@ export default function AdminManageUsersPage() {
                           }
                         }}
                         onBlur={() => {
-                          setTimeout(
-                            () => setShowHouseSuggestions(false),
-                            200,
-                          );
+                          setTimeout(() => setShowHouseSuggestions(false), 200);
                         }}
                         placeholder="Ketik atau pilih dari daftar..."
                         className="w-full rounded-xl border px-3.5 py-2.5 text-[13px] font-medium text-app-title focus:outline-none"
                         style={{ borderColor: "var(--color-input-border)" }}
                       />
 
-                      {showHouseSuggestions &&
-                        houseSuggestions.length > 0 && (
-                          <div
-                            className="absolute z-10 mt-1 w-full rounded-xl border bg-app-surface shadow-lg max-h-48 overflow-y-auto"
-                            style={{
-                              borderColor: "var(--color-input-border)",
-                            }}
-                          >
-                            {houseSuggestions.map((h) => (
-                              <button
-                                key={h.id}
-                                type="button"
-                                onMouseDown={() =>
-                                  selectHouseSuggestion(h.blok_rumah)
-                                }
-                                className="w-full px-3.5 py-2 text-left text-[12px] text-app-body hover:bg-app-surface-alt transition first:rounded-t-xl last:rounded-b-xl"
-                              >
-                                {h.blok_rumah}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                      {showHouseSuggestions && houseSuggestions.length > 0 && (
+                        <div
+                          className="absolute z-10 mt-1 w-full rounded-xl border bg-app-surface shadow-lg max-h-48 overflow-y-auto"
+                          style={{
+                            borderColor: "var(--color-input-border)",
+                          }}
+                        >
+                          {houseSuggestions.map((h) => (
+                            <button
+                              key={h.id}
+                              type="button"
+                              onMouseDown={() =>
+                                selectHouseSuggestion(h.blok_rumah)
+                              }
+                              className="w-full px-3.5 py-2 text-left text-[12px] text-app-body hover:bg-app-surface-alt transition first:rounded-t-xl last:rounded-b-xl"
+                            >
+                              {h.blok_rumah}
+                            </button>
+                          ))}
+                        </div>
+                      )}
 
                       {houseLoading && (
                         <div className="mt-1 flex items-center gap-2 rounded-xl bg-app-surface-alt px-3.5 py-2">
@@ -1042,9 +1043,7 @@ export default function AdminManageUsersPage() {
                     {houseError && (
                       <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5">
                         <ExclamationTriangleIcon className="h-4 w-4 shrink-0 mt-0.5 text-red-500" />
-                        <p className="text-[12px] text-red-700">
-                          {houseError}
-                        </p>
+                        <p className="text-[12px] text-red-700">{houseError}</p>
                       </div>
                     )}
 
@@ -1060,9 +1059,7 @@ export default function AdminManageUsersPage() {
                       <button
                         type="button"
                         onClick={handleHouseSubmit}
-                        disabled={
-                          houseSubmitting || !houseInput.trim()
-                        }
+                        disabled={houseSubmitting || !houseInput.trim()}
                         className="flex-1 rounded-xl py-3 text-[12px] font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                         style={{ background: "var(--color-primary)" }}
                       >

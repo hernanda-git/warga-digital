@@ -6,7 +6,7 @@ import {
   BoltIcon,
   BuildingOffice2Icon,
   CalendarDaysIcon,
-  DocumentTextIcon,
+  ClipboardDocumentListIcon,
   ExclamationTriangleIcon,
   InformationCircleIcon,
   ShoppingCartIcon,
@@ -15,11 +15,11 @@ import {
 
 export const LANDING_FEATURES = [
   {
-    id: "administrasi",
-    label: "Administrasi",
-    description: "Surat Keterangan, Surat Izin, dll.",
-    href: "#administrasi",
-    icon: DocumentTextIcon,
+    id: "asset-rt",
+    label: "Asset RT",
+    description: "Monitoring aset milik warga & RT",
+    href: "#asset-rt",
+    icon: ClipboardDocumentListIcon,
     color: "text-blue-600 dark:text-blue-400",
   },
   {
@@ -101,14 +101,14 @@ interface FeatureGridProps {
 
 export function FeatureGrid({ title = "Fitur" }: FeatureGridProps) {
   return (
-    <section className="px-4 py-4" aria-labelledby="feature-grid-title">
+    <section className="px-4 py-4 lg:px-6" aria-labelledby="feature-grid-title">
       <h2
         id="feature-grid-title"
-        className="mb-3 text-lg font-bold text-app-title"
+        className="mb-3 text-lg font-bold text-app-title lg:text-xl"
       >
         {title}
       </h2>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3 lg:grid-cols-4 lg:gap-4 xl:grid-cols-6">
         {LANDING_FEATURES.map((feature) => {
           const Icon = feature.icon;
           const isRoute = feature.href.startsWith("/");
@@ -117,19 +117,19 @@ export function FeatureGrid({ title = "Fitur" }: FeatureGridProps) {
             ? { href: feature.href as string }
             : { href: feature.href };
           return (
-          <Wrapper
-               key={feature.id}
-               {...wrapperProps}
-               aria-label={`${feature.label}: ${feature.description}`}
-               className="flex flex-col items-center gap-2 rounded-2xl bg-app-surface p-4 shadow-sm transition-shadow hover:shadow-md active:opacity-90"
-             >
-               <Icon className={`h-9 w-9 ${feature.color}`} aria-hidden />
-               <span
-                 className={`text-center text-sm font-semibold ${feature.color}`}
-               >
-                 {feature.label}
-               </span>
-             </Wrapper>
+            <Wrapper
+              key={feature.id}
+              {...wrapperProps}
+              aria-label={`${feature.label}: ${feature.description}`}
+              className="flex flex-col items-center gap-2 rounded-2xl bg-app-surface p-4 shadow-sm transition-shadow hover:shadow-md active:opacity-90"
+            >
+              <Icon className={`h-9 w-9 ${feature.color}`} aria-hidden />
+              <span
+                className={`text-center text-sm font-semibold ${feature.color}`}
+              >
+                {feature.label}
+              </span>
+            </Wrapper>
           );
         })}
       </div>

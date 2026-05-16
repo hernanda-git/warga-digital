@@ -92,13 +92,37 @@ interface LogEntry {
 const PHASES_META: { id: number; label: string; description: string }[] = [
   { id: 1, label: "Ekstensi", description: "pgcrypto, pg_cron" },
   { id: 2, label: "Enum Types", description: "Tipe data tetap" },
-  { id: 3, label: "Tabel Inti", description: "users, tenants, communities, houses, dll" },
-  { id: 4, label: "Tabel Fitur", description: "Marketplace, kas RT, notifikasi, organisasi, badges" },
-  { id: 5, label: "Tabel Tambahan", description: "Jasa, jualan, artikel, audit log" },
-  { id: 6, label: "Fungsi & Trigger", description: "Fungsi PostgreSQL dan trigger" },
+  {
+    id: 3,
+    label: "Tabel Inti",
+    description: "users, tenants, communities, houses, dll",
+  },
+  {
+    id: 4,
+    label: "Tabel Fitur",
+    description: "Marketplace, kas RT, notifikasi, organisasi, badges",
+  },
+  {
+    id: 5,
+    label: "Tabel Tambahan",
+    description: "Jasa, jualan, artikel, audit log",
+  },
+  {
+    id: 6,
+    label: "Fungsi & Trigger",
+    description: "Fungsi PostgreSQL dan trigger",
+  },
   { id: 7, label: "Index", description: "Index optimasi query" },
-  { id: 8, label: "RLS & Kebijakan", description: "Row Level Security dan policies" },
-  { id: 9, label: "Data Awal (Seed)", description: "Data awal tenant, roles, marketplace" },
+  {
+    id: 8,
+    label: "RLS & Kebijakan",
+    description: "Row Level Security dan policies",
+  },
+  {
+    id: 9,
+    label: "Data Awal (Seed)",
+    description: "Data awal tenant, roles, marketplace",
+  },
   { id: 10, label: "Verifikasi", description: "Hitung baris per tabel" },
 ];
 
@@ -116,11 +140,13 @@ export default function AdminMigrateDatabasePage() {
   const [targetUrl, setTargetUrl] = useState("");
   const [targetKey, setTargetKey] = useState("");
   const [targetConnectionString, setTargetConnectionString] = useState("");
-  const [connectionResult, setConnectionResult] = useState<ConnectionResult | null>(null);
+  const [connectionResult, setConnectionResult] =
+    useState<ConnectionResult | null>(null);
   const [checkingConnection, setCheckingConnection] = useState(false);
 
   // Validation
-  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [validationResult, setValidationResult] =
+    useState<ValidationResult | null>(null);
   const [validating, setValidating] = useState(false);
 
   // Migration
@@ -136,7 +162,9 @@ export default function AdminMigrateDatabasePage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [expandedPhases, setExpandedPhases] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
-  const [tableCounts, setTableCounts] = useState<Record<string, number> | null>(null);
+  const [tableCounts, setTableCounts] = useState<Record<string, number> | null>(
+    null,
+  );
 
   const logRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -176,7 +204,8 @@ export default function AdminMigrateDatabasePage() {
       const data = await res.json();
       if (data.targetUrl) setTargetUrl(data.targetUrl);
       if (data.targetKey) setTargetKey(data.targetKey);
-      if (data.targetConnectionString) setTargetConnectionString(data.targetConnectionString);
+      if (data.targetConnectionString)
+        setTargetConnectionString(data.targetConnectionString);
     } catch {}
   }
 
@@ -267,7 +296,9 @@ export default function AdminMigrateDatabasePage() {
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Migration failed" }));
+        const err = await res
+          .json()
+          .catch(() => ({ error: "Migration failed" }));
         setError(err.error ?? "Migrasi gagal");
         setMigrating(false);
         return;
@@ -327,7 +358,10 @@ export default function AdminMigrateDatabasePage() {
       if (msg.type === "phase-end" && msg.phase) {
         const idx = next.findIndex((p) => p.id === msg.phase);
         if (idx >= 0) {
-          next[idx] = { ...next[idx], status: msg.status === "done" ? "done" : "error" };
+          next[idx] = {
+            ...next[idx],
+            status: msg.status === "done" ? "done" : "error",
+          };
         }
 
         if (msg.tableCounts) {
@@ -340,10 +374,7 @@ export default function AdminMigrateDatabasePage() {
         if (idx >= 0) {
           next[idx] = {
             ...next[idx],
-            steps: [
-              ...next[idx].steps,
-              { id: msg.step, status: "running" },
-            ],
+            steps: [...next[idx].steps, { id: msg.step, status: "running" }],
           };
         }
         addLog(msg.phase, msg.step, `Memulai: ${msg.step}`, "info");
@@ -364,18 +395,33 @@ export default function AdminMigrateDatabasePage() {
           next[idx] = { ...next[idx], steps };
         }
         const status = msg.status === "done" ? "success" : "error";
-        addLog(msg.phase, msg.step, `${msg.step}: ${msg.status === "done" ? "Berhasil" : "Gagal"}`, status);
+        addLog(
+          msg.phase,
+          msg.step,
+          `${msg.step}: ${msg.status === "done" ? "Berhasil" : "Gagal"}`,
+          status,
+        );
       }
 
       if (msg.type === "step-error" && msg.phase && msg.step) {
-        addLog(msg.phase, msg.step, `Error: ${msg.error ?? "Unknown"} (${msg.statement ?? ""})`, "error");
+        addLog(
+          msg.phase,
+          msg.step,
+          `Error: ${msg.error ?? "Unknown"} (${msg.statement ?? ""})`,
+          "error",
+        );
       }
 
       return next;
     });
   };
 
-  const addLog = (phase: number | undefined, step: string | undefined, message: string, type: LogEntry["type"]) => {
+  const addLog = (
+    phase: number | undefined,
+    step: string | undefined,
+    message: string,
+    type: LogEntry["type"],
+  ) => {
     setLogs((prev) => [
       ...prev,
       { phase: phase ?? 0, step: step ?? "", message, type },
@@ -404,16 +450,18 @@ export default function AdminMigrateDatabasePage() {
 
   const connectionOk = connectionResult?.ok === true;
   const canValidate = connectionOk;
-  const canMigrate = connectionOk && (validationResult?.isEmpty ?? false) && !migrating;
+  const canMigrate =
+    connectionOk && (validationResult?.isEmpty ?? false) && !migrating;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
+    <div className="mx-auto max-w-3xl px-4 py-6 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
       <div className="mb-6">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white">
           Migrasi Database
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Salin skema dan data dari server Supabase saat ini ke server Supabase baru.
+          Salin skema dan data dari server Supabase saat ini ke server Supabase
+          baru.
         </p>
       </div>
 
@@ -469,7 +517,12 @@ export default function AdminMigrateDatabasePage() {
 
           <button
             onClick={handleCheckConnection}
-            disabled={checkingConnection || !targetUrl || !targetKey || !targetConnectionString}
+            disabled={
+              checkingConnection ||
+              !targetUrl ||
+              !targetKey ||
+              !targetConnectionString
+            }
             className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 active:bg-blue-800 disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-gray-600"
           >
             {checkingConnection ? (
@@ -510,7 +563,9 @@ export default function AdminMigrateDatabasePage() {
                   <XCircleIcon className="mt-0.5 h-4 w-4 shrink-0" />
                   <div>
                     <p className="font-medium">Gagal terhubung</p>
-                    <p className="text-xs opacity-80">{connectionResult.error}</p>
+                    <p className="text-xs opacity-80">
+                      {connectionResult.error}
+                    </p>
                     {connectionResult.hint && (
                       <p className="mt-2 rounded bg-red-100/50 p-2 text-[11px] leading-relaxed dark:bg-red-900/30">
                         {connectionResult.hint}
@@ -562,7 +617,8 @@ export default function AdminMigrateDatabasePage() {
                   <ExclamationTriangleIcon className="mt-0.5 h-4 w-4 shrink-0" />
                   <div>
                     <p className="font-medium">
-                      Database tidak kosong ({validationResult.tableCount} tabel ditemukan)
+                      Database tidak kosong ({validationResult.tableCount} tabel
+                      ditemukan)
                     </p>
                     <p className="mt-1 text-xs opacity-80">
                       Tabel: {validationResult.tables.join(", ")}
@@ -677,7 +733,10 @@ export default function AdminMigrateDatabasePage() {
                 {isExpanded && phaseSteps.length > 0 && (
                   <div className="mt-2 space-y-1 border-t border-gray-200 pt-2 dark:border-gray-600">
                     {phaseSteps.map((step) => (
-                      <div key={step.id} className="flex items-center gap-2 pl-9">
+                      <div
+                        key={step.id}
+                        className="flex items-center gap-2 pl-9"
+                      >
                         {step.status === "done" ? (
                           <CheckCircleIcon className="h-3.5 w-3.5 text-green-500" />
                         ) : step.status === "error" ? (
@@ -691,7 +750,10 @@ export default function AdminMigrateDatabasePage() {
                           {step.id}
                         </span>
                         {step.error && (
-                          <span className="text-[10px] text-red-500 truncate" title={step.error}>
+                          <span
+                            className="text-[10px] text-red-500 truncate"
+                            title={step.error}
+                          >
                             — {step.error.slice(0, 80)}
                           </span>
                         )}
@@ -731,7 +793,13 @@ export default function AdminMigrateDatabasePage() {
             <button
               onClick={() => {
                 setMigrationComplete(false);
-                setPhases(PHASES_META.map((p) => ({ ...p, status: "pending" as const, steps: [] })));
+                setPhases(
+                  PHASES_META.map((p) => ({
+                    ...p,
+                    status: "pending" as const,
+                    steps: [],
+                  })),
+                );
                 setLogs([]);
                 setTableCounts(null);
               }}
@@ -800,7 +868,8 @@ export default function AdminMigrateDatabasePage() {
           </div>
 
           <p className="mt-3 text-xs text-green-600 dark:text-green-400">
-            {Object.values(tableCounts).filter((c) => c >= 0).length} tabel terverifikasi
+            {Object.values(tableCounts).filter((c) => c >= 0).length} tabel
+            terverifikasi
           </p>
         </section>
       )}

@@ -120,14 +120,18 @@ export default function JasaPage() {
             }
           }
         }
-      } catch (err) {
-      }
+      } catch (err) {}
     };
     fetchData();
   }, []);
 
   const fetchServices = useCallback(async () => {
-    console.log("[DEBUG jasa page] fetchServices — page:", page, "filters:", { selectedCategory, selectedStatus, searchQuery, communityId });
+    console.log("[DEBUG jasa page] fetchServices — page:", page, "filters:", {
+      selectedCategory,
+      selectedStatus,
+      searchQuery,
+      communityId,
+    });
     setIsLoading(true);
 
     setError(null);
@@ -168,15 +172,28 @@ export default function JasaPage() {
       const response = await apiFetch(`/api/jasa?${queryString}`);
       const data: JasaListApiResponse = await response.json();
 
-      console.log("[DEBUG jasa page] Response status:", response.status, "ok:", response.ok);
+      console.log(
+        "[DEBUG jasa page] Response status:",
+        response.status,
+        "ok:",
+        response.ok,
+      );
       console.log("[DEBUG jasa page] Response data:", data);
 
       if (!response.ok || !data.success) {
-        console.log("[DEBUG jasa page] Fetch failed:", data.error || "Gagal memuat layanan");
+        console.log(
+          "[DEBUG jasa page] Fetch failed:",
+          data.error || "Gagal memuat layanan",
+        );
         throw new Error(data.error || "Gagal memuat layanan");
       }
 
-      console.log("[DEBUG jasa page] Services loaded:", data.data.services?.length ?? 0, "totalPages:", data.data.pagination.total_pages);
+      console.log(
+        "[DEBUG jasa page] Services loaded:",
+        data.data.services?.length ?? 0,
+        "totalPages:",
+        data.data.pagination.total_pages,
+      );
       setServices(data.data.services);
 
       setTotalPages(data.data.pagination.total_pages);
@@ -292,8 +309,7 @@ export default function JasaPage() {
       if (data.success) {
         setViewingService(data.data);
       }
-    } catch (err) {
-    }
+    } catch (err) {}
   };
 
   const hasActiveFilters =
@@ -340,7 +356,7 @@ export default function JasaPage() {
               <button
                 type="button"
                 onClick={() => router.push("/landing")}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90"
+                className="flex lg:hidden h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90"
                 aria-label="Kembali ke beranda"
               >
                 <ChevronLeftIcon className="h-4 w-4 text-white" />
@@ -401,189 +417,194 @@ export default function JasaPage() {
         </section>
 
         {/* ── Filters ──────────────────────────────────────────────────────── */}
-        <section className="px-4 pt-4">
-          <JasaFilters
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            selectedDays={selectedDays}
-            onDaysChange={setSelectedDays}
-            selectedStatus={selectedStatus}
-            onStatusChange={setSelectedStatus}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            minPrice={minPrice}
-            onMinPriceChange={setMinPrice}
-            maxPrice={maxPrice}
-            onMaxPriceChange={setMaxPrice}
-          />
-        </section>
+        <div className="lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
+          <section className="px-4 pt-4 lg:px-0">
+            <JasaFilters
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              selectedDays={selectedDays}
+              onDaysChange={setSelectedDays}
+              selectedStatus={selectedStatus}
+              onStatusChange={setSelectedStatus}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              minPrice={minPrice}
+              onMinPriceChange={setMinPrice}
+              maxPrice={maxPrice}
+              onMaxPriceChange={setMaxPrice}
+            />
+          </section>
 
-        {/* ── Content ──────────────────────────────────────────────────────── */}
-        <section className="px-4 pb-6 pt-4">
-          {/* Error State */}
-          {error && (
-            <div
-              className="mb-5 rounded-2xl p-4 text-center"
-              style={{
-                background:
-                  "color-mix(in srgb, #ef4444 8%, var(--color-surface))",
-                border:
-                  "1.5px solid color-mix(in srgb, #ef4444 22%, transparent)",
-              }}
-            >
-              <p className="text-sm font-medium text-red-700">{error}</p>
-              <button
-                onClick={fetchServices}
-                className="mt-2 text-sm font-semibold text-red-600 underline underline-offset-2"
+          {/* ── Content ──────────────────────────────────────────────────────── */}
+          <section className="px-4 pb-6 pt-4 lg:px-0">
+            {/* Error State */}
+            {error && (
+              <div
+                className="mb-5 rounded-2xl p-4 text-center"
+                style={{
+                  background:
+                    "color-mix(in srgb, #ef4444 8%, var(--color-surface))",
+                  border:
+                    "1.5px solid color-mix(in srgb, #ef4444 22%, transparent)",
+                }}
               >
-                Coba lagi
-              </button>
-            </div>
-          )}
-
-          {/* Loading — Skeleton Grid */}
-          {isLoading && (
-            <div className="flex flex-col gap-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <JasaCardSkeleton key={i} />
-              ))}
-            </div>
-          )}
-
-          {/* Empty State */}
-          {!isLoading && services.length === 0 && !error && (
-            <div
-              className="rounded-3xl px-6 py-10 text-center"
-              style={{
-                background:
-                  "color-mix(in srgb, var(--color-primary) 5%, var(--color-surface))",
-                border:
-                  "2px dashed color-mix(in srgb, var(--color-primary) 28%, transparent)",
-              }}
-            >
-              <div className="mb-3 flex items-center justify-center">
-                <div
-                  className="flex h-16 w-16 items-center justify-center rounded-2xl"
-                  style={{
-                    background:
-                      "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface))",
-                  }}
+                <p className="text-sm font-medium text-red-700">{error}</p>
+                <button
+                  onClick={fetchServices}
+                  className="mt-2 text-sm font-semibold text-red-600 underline underline-offset-2"
                 >
-                  <WrenchScrewdriverIcon
-                    className="h-8 w-8"
-                    style={{ color: "var(--color-primary)" }}
-                  />
-                </div>
+                  Coba lagi
+                </button>
               </div>
-              <p className="text-base font-bold text-app-title">
-                {hasActiveFilters
-                  ? "Tidak ada layanan ditemukan"
-                  : "Belum ada layanan"}
-              </p>
-              <p className="mt-1.5 text-sm text-app-body-muted">
-                {hasActiveFilters
-                  ? "Coba ubah atau hapus filter untuk melihat lebih banyak layanan."
-                  : "Jadilah yang pertama menambahkan layanan di lingkunganmu!"}
-              </p>
+            )}
 
-              {hasActiveFilters ? (
-                <button
-                  onClick={handleResetFilters}
-                  className="mx-auto mt-5 flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold transition-all active:scale-95"
-                  style={{
-                    border: "1.5px solid var(--color-primary)",
-                    color: "var(--color-primary)",
-                    background:
-                      "color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))",
-                  }}
-                >
-                  Hapus semua filter
-                </button>
-              ) : (
-                <button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="mx-auto mt-5 flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white transition-all active:scale-95"
-                  style={{
-                    background: "var(--color-primary)",
-                    boxShadow: "0 6px 20px -6px var(--color-primary-shadow)",
-                  }}
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  Tambah Layanan Pertama
-                </button>
-              )}
-            </div>
-          )}
+            {/* Loading — Skeleton Grid */}
+            {isLoading && (
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <JasaCardSkeleton key={i} />
+                ))}
+              </div>
+            )}
 
-          {/* Services Grid */}
-          {!isLoading && services.length > 0 && (
-            <>
-              {/* Results info + quick reset */}
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-xs text-app-body-muted">
-                  {services.length} dari {totalServices} layanan
+            {/* Empty State */}
+            {!isLoading && services.length === 0 && !error && (
+              <div
+                className="rounded-3xl px-6 py-10 text-center"
+                style={{
+                  background:
+                    "color-mix(in srgb, var(--color-primary) 5%, var(--color-surface))",
+                  border:
+                    "2px dashed color-mix(in srgb, var(--color-primary) 28%, transparent)",
+                }}
+              >
+                <div className="mb-3 flex items-center justify-center">
+                  <div
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl"
+                    style={{
+                      background:
+                        "color-mix(in srgb, var(--color-primary) 12%, var(--color-surface))",
+                    }}
+                  >
+                    <WrenchScrewdriverIcon
+                      className="h-8 w-8"
+                      style={{ color: "var(--color-primary)" }}
+                    />
+                  </div>
+                </div>
+                <p className="text-base font-bold text-app-title">
+                  {hasActiveFilters
+                    ? "Tidak ada layanan ditemukan"
+                    : "Belum ada layanan"}
                 </p>
-                {hasActiveFilters && (
+                <p className="mt-1.5 text-sm text-app-body-muted">
+                  {hasActiveFilters
+                    ? "Coba ubah atau hapus filter untuk melihat lebih banyak layanan."
+                    : "Jadilah yang pertama menambahkan layanan di lingkunganmu!"}
+                </p>
+
+                {hasActiveFilters ? (
                   <button
                     onClick={handleResetFilters}
-                    className="text-xs font-semibold transition-colors"
-                    style={{ color: "var(--color-primary)" }}
+                    className="mx-auto mt-5 flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold transition-all active:scale-95"
+                    style={{
+                      border: "1.5px solid var(--color-primary)",
+                      color: "var(--color-primary)",
+                      background:
+                        "color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))",
+                    }}
                   >
-                    Reset filter
+                    Hapus semua filter
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="mx-auto mt-5 flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white transition-all active:scale-95"
+                    style={{
+                      background: "var(--color-primary)",
+                      boxShadow: "0 6px 20px -6px var(--color-primary-shadow)",
+                    }}
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                    Tambah Layanan Pertama
                   </button>
                 )}
               </div>
+            )}
 
-              <div className="flex flex-col gap-3">
-                {services.map((service) => (
-                  <JasaCard
-                    key={service.id}
-                    service={service}
-                    onClick={() => handleViewService(service.id)}
-                  />
-                ))}
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-center gap-3">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-40"
-                    style={{
-                      border: "1.5px solid var(--color-input-border)",
-                      color: "var(--color-body)",
-                      background: "var(--color-surface)",
-                    }}
-                  >
-                    ← Sebelumnya
-                  </button>
-
-                  <span className="text-xs font-medium text-app-body-muted">
-                    {page} / {totalPages}
-                  </span>
-
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-40"
-                    style={{
-                      background: "var(--color-primary)",
-                      boxShadow: "0 4px 12px -4px var(--color-primary-shadow)",
-                    }}
-                  >
-                    Selanjutnya →
-                  </button>
+            {/* Services Grid */}
+            {!isLoading && services.length > 0 && (
+              <>
+                {/* Results info + quick reset */}
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-xs text-app-body-muted">
+                    {services.length} dari {totalServices} layanan
+                  </p>
+                  {hasActiveFilters && (
+                    <button
+                      onClick={handleResetFilters}
+                      className="text-xs font-semibold transition-colors"
+                      style={{ color: "var(--color-primary)" }}
+                    >
+                      Reset filter
+                    </button>
+                  )}
                 </div>
-              )}
-            </>
-          )}
-        </section>
 
-        {/* Bottom spacing */}
-        <div className="h-8" />
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3 lg:gap-4">
+                  {services.map((service) => (
+                    <JasaCard
+                      key={service.id}
+                      service={service}
+                      onClick={() => handleViewService(service.id)}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-6 flex items-center justify-center gap-3">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-40"
+                      style={{
+                        border: "1.5px solid var(--color-input-border)",
+                        color: "var(--color-body)",
+                        background: "var(--color-surface)",
+                      }}
+                    >
+                      ← Sebelumnya
+                    </button>
+
+                    <span className="text-xs font-medium text-app-body-muted">
+                      {page} / {totalPages}
+                    </span>
+
+                    <button
+                      onClick={() =>
+                        setPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={page === totalPages}
+                      className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-40"
+                      style={{
+                        background: "var(--color-primary)",
+                        boxShadow:
+                          "0 4px 12px -4px var(--color-primary-shadow)",
+                      }}
+                    >
+                      Selanjutnya →
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+
+          {/* Bottom spacing */}
+          <div className="h-8" />
+        </div>
       </div>
 
       {/* ── Modals ───────────────────────────────────────────────────────────── */}

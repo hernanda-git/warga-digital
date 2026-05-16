@@ -1503,7 +1503,7 @@ export default function KelolRolePage() {
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
+    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
       {/* Toasts */}
       {toasts.slice(-1).map((t) => (
         <Toast key={t.id} toast={t} onDismiss={() => dismissToast(t.id)} />
@@ -1536,7 +1536,7 @@ export default function KelolRolePage() {
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm transition hover:bg-white/25 active:scale-90"
+              className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm transition hover:bg-white/25 active:scale-90 lg:hidden"
               aria-label="Kembali ke admin"
             >
               <ChevronLeftIcon className="h-5 w-5" />

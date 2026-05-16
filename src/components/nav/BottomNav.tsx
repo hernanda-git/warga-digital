@@ -111,7 +111,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="flex shrink-0 items-center justify-around border-t border-[var(--color-input-border)] bg-app-surface/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur supports-[backdrop-filter]:bg-app-surface/85"
+      className="flex shrink-0 items-center justify-around border-t border-[var(--color-input-border)] bg-app-surface/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur supports-[backdrop-filter]:bg-app-surface/85 lg:hidden"
       aria-label="Navigasi utama"
     >
       {navItems.map(({ href, label, icon: Icon }) => {

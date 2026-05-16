@@ -94,8 +94,8 @@ export function ScreenTrust({
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-app-body-muted">
             Akun terverifikasi, identitas jelas, domisili valid. Satu platform
-            terintegrasi untuk administrasi, kas, usaha, dan seluruh kebutuhan
-            warga RT 03.
+            terintegrasi untuk pengelolaan aset, kas, usaha, dan seluruh
+            kebutuhan warga RT 03.
           </p>
         </div>
 

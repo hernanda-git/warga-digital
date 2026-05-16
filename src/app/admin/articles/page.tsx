@@ -358,25 +358,31 @@ function ArticleImageUploader({
       setIsUploading(true);
       setGlobalError(null);
       try {
-        const res = await apiFetch(`/api/cms/articles/${articleId}/images/batch`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            images: done.map((f, i) => ({
-              object_key: f.objectKey,
-              url: f.publicUrl,
-              mime_type: f.file.type,
-              sort_order: i,
-            })),
-          }),
-        });
+        const res = await apiFetch(
+          `/api/cms/articles/${articleId}/images/batch`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              images: done.map((f, i) => ({
+                object_key: f.objectKey,
+                url: f.publicUrl,
+                mime_type: f.file.type,
+                sort_order: i,
+              })),
+            }),
+          },
+        );
 
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.error || "Gagal menyimpan gambar ke database");
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Gagal menyimpan gambar ke database";
+        const message =
+          err instanceof Error
+            ? err.message
+            : "Gagal menyimpan gambar ke database";
         setGlobalError(message);
         setIsUploading(false);
         return;
@@ -432,9 +438,7 @@ function ArticleImageUploader({
       {/* File list */}
       {files.length > 0 && (
         <div className="space-y-2">
-          {globalError && (
-            <p className="text-sm text-red-600">{globalError}</p>
-          )}
+          {globalError && <p className="text-sm text-red-600">{globalError}</p>}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-700">
               {files.length} file(s)
@@ -456,7 +460,9 @@ function ArticleImageUploader({
                   disabled={isUploading}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
                 >
-                  {isUploading && <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />}
+                  {isUploading && (
+                    <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                  )}
                   {isUploading ? "Menyimpan..." : "Selesai"}
                 </button>
               )}
@@ -1209,7 +1215,7 @@ export default function AdminArticlesPage() {
         }
       `}</style>
 
-      <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
+      <main className="flex h-full min-h-0 flex-col bg-app-surface-alt lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
         {/* ── Gradient Hero ─────────────────────────────────────────────────── */}
         <section
           className="relative shrink-0 overflow-hidden px-4 pb-5 pt-4 text-white"

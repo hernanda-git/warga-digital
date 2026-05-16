@@ -50,7 +50,7 @@ export function KasRtHero({
 }: KasRtHeroProps) {
   return (
     <section
-      className="relative shrink-0 overflow-hidden px-4 pb-5 pt-5 text-white"
+      className="relative shrink-0 overflow-hidden px-4 pb-5 pt-5 text-white lg:max-w-4xl lg:mx-auto lg:w-full lg:rounded-b-2xl lg:px-6 lg:py-6"
       style={{
         background:
           "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",

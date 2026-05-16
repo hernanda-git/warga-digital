@@ -18,7 +18,8 @@ export default function HouseStatusClient({
   initialStatuses,
 }: HouseStatusClientProps) {
   const router = useRouter();
-  const [statuses, setStatuses] = useState<HouseTransactionStatus[]>(initialStatuses);
+  const [statuses, setStatuses] =
+    useState<HouseTransactionStatus[]>(initialStatuses);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,45 +67,45 @@ export default function HouseStatusClient({
     acc[s.blokRumah] = (acc[s.blokRumah] ?? 0) + s.total2026;
     return acc;
   }, {});
-  const paidCount = Object.values(paidByBlok).filter((t) => t >= 1440000).length;
+  const paidCount = Object.values(paidByBlok).filter(
+    (t) => t >= 1440000,
+  ).length;
   const totalPaid = Object.values(paidByBlok).reduce((sum, v) => sum + v, 0);
   const target = totalHouses * 1440000;
   const percentage = target > 0 ? Math.min(100, (totalPaid / target) * 100) : 0;
 
   // Group for list rendering
-  const groupedStatuses = statuses.reduce<Record<string, HouseTransactionStatus>>(
-    (acc, s) => {
-      const key = s.blokRumah;
-      if (!acc[key]) {
-        acc[key] = { ...s };
-      } else {
-        acc[key].total2026 += s.total2026;
-        acc[key].monthlyStatuses = acc[key].monthlyStatuses.map(
-          (val, idx) => val + (s.monthlyStatuses[idx] || 0),
-        );
-      }
-      return acc;
-    },
-    {},
-  );
+  const groupedStatuses = statuses.reduce<
+    Record<string, HouseTransactionStatus>
+  >((acc, s) => {
+    const key = s.blokRumah;
+    if (!acc[key]) {
+      acc[key] = { ...s };
+    } else {
+      acc[key].total2026 += s.total2026;
+      acc[key].monthlyStatuses = acc[key].monthlyStatuses.map(
+        (val, idx) => val + (s.monthlyStatuses[idx] || 0),
+      );
+    }
+    return acc;
+  }, {});
   const uniqueStatuses = Object.values(groupedStatuses);
 
-  const groupedByLetter = uniqueStatuses.reduce<Record<string, HouseTransactionStatus[]>>(
-    (acc, s) => {
-      const letter = s.blokRumah.charAt(0).toUpperCase();
-      if (!acc[letter]) acc[letter] = [];
-      acc[letter].push(s);
-      return acc;
-    },
-    {},
-  );
+  const groupedByLetter = uniqueStatuses.reduce<
+    Record<string, HouseTransactionStatus[]>
+  >((acc, s) => {
+    const letter = s.blokRumah.charAt(0).toUpperCase();
+    if (!acc[letter]) acc[letter] = [];
+    acc[letter].push(s);
+    return acc;
+  }, {});
   const sortedLetters = Object.keys(groupedByLetter).sort();
   sortedLetters.forEach((l) => {
     groupedByLetter[l].sort((a, b) => a.blokRumah.localeCompare(b.blokRumah));
   });
 
   return (
-    <main className="h-full overflow-y-auto bg-app-surface-alt">
+    <main className="h-full overflow-y-auto bg-app-surface-alt lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
       <section
         className="relative overflow-hidden px-4 pb-5 pt-5 text-white"
         style={{
@@ -120,7 +121,7 @@ export default function HouseStatusClient({
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 lg:hidden"
               aria-label="Kembali"
             >
               <ChevronLeftIcon className="h-5 w-5 text-white" />
@@ -150,7 +151,9 @@ export default function HouseStatusClient({
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur-sm">
-              <p className="text-[10px] text-white/70 font-medium">Total Rumah</p>
+              <p className="text-[10px] text-white/70 font-medium">
+                Total Rumah
+              </p>
               <p className="text-base font-extrabold text-white leading-tight">
                 {totalHouses}
               </p>
@@ -162,7 +165,9 @@ export default function HouseStatusClient({
               </p>
             </div>
             <div className="rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur-sm">
-              <p className="text-[10px] text-white/70 font-medium">Total Dibayar</p>
+              <p className="text-[10px] text-white/70 font-medium">
+                Total Dibayar
+              </p>
               <p className="text-base font-extrabold text-white leading-tight">
                 Rp{totalPaid.toLocaleString("id-ID")}
               </p>
@@ -197,7 +202,9 @@ export default function HouseStatusClient({
             {error && (
               <div className="rounded-2xl bg-error-container p-4">
                 <div className="text-error mb-2">
-                  <span className="material-symbols-outlined text-sm mr-1">error</span>
+                  <span className="material-symbols-outlined text-sm mr-1">
+                    error
+                  </span>
                   Gagal memuat data
                 </div>
                 <p className="text-sm text-error/80 mb-3">{error}</p>
@@ -249,7 +256,9 @@ export default function HouseStatusClient({
             {statuses.length > 0 && (
               <div className="rounded-2xl bg-white p-4 shadow-sm">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">info</span>
+                  <span className="material-symbols-outlined text-sm">
+                    info
+                  </span>
                   Informasi Status Bulanan
                 </h3>
                 <div className="space-y-2 text-xs">
@@ -259,7 +268,9 @@ export default function HouseStatusClient({
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-12 h-6 rounded-lg bg-green-300 border-2 border-green-300"></div>
-                    <span className="text-gray-600">&lt; Rp120.000 (Sebagian)</span>
+                    <span className="text-gray-600">
+                      &lt; Rp120.000 (Sebagian)
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-12 h-6 rounded-lg bg-white border-2 border-gray-200"></div>
@@ -267,8 +278,12 @@ export default function HouseStatusClient({
                   </div>
                   <div className="mt-3 pt-3 border-t border-gray-200">
                     <p className="text-gray-500 italic">
-                      <span className="material-symbols-outlined text-xs mr-1">lightbulb</span>
-                      Pembayaran diisi step-by-step dari Januari. Bulan berikutnya hanya akan berwarna jika bulan sebelumnya sudah lunas (≥ Rp120.000).
+                      <span className="material-symbols-outlined text-xs mr-1">
+                        lightbulb
+                      </span>
+                      Pembayaran diisi step-by-step dari Januari. Bulan
+                      berikutnya hanya akan berwarna jika bulan sebelumnya sudah
+                      lunas (≥ Rp120.000).
                     </p>
                   </div>
                 </div>

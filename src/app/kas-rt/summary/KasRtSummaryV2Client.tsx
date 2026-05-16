@@ -63,14 +63,14 @@ export default function KasRtSummaryV2Client({
     });
 
   return (
-    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
+    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
       {/* Sticky header with navigation */}
       <header className="sticky top-0 z-20 bg-white shadow-sm">
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             type="button"
             onClick={handleBack}
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 transition hover:bg-gray-200 active:scale-95"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 transition hover:bg-gray-200 active:scale-95 lg:hidden"
             aria-label="Kembali"
           >
             <svg

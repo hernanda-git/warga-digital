@@ -256,7 +256,7 @@ export default function AdminWargaPage() {
             <button
               type="button"
               onClick={() => router.push("/admin")}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 lg:hidden"
               aria-label="Kembali ke admin"
             >
               <ChevronLeftIcon className="h-5 w-5 text-white" />
@@ -339,7 +339,7 @@ export default function AdminWargaPage() {
       </section>
 
       {/* ── Sticky Search + Filter Bar ────────────────────────────────────── */}
-      <div className="shrink-0 space-y-2.5 bg-app-surface-alt px-4 pb-3 pt-3 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.08)]">
+      <div className="shrink-0 space-y-2.5 bg-app-surface-alt px-4 pb-3 pt-3 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.08)] lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6">
         {/* Error banner */}
         {error && (
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
@@ -424,7 +424,7 @@ export default function AdminWargaPage() {
       </div>
 
       {/* ── Scrollable Warga List ─────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className="flex-1 overflow-y-auto px-4 py-3 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
         {loading && !refreshing ? (
           /* Skeletons */
           <div className="space-y-2.5">

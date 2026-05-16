@@ -34,20 +34,20 @@ function ResetPinForm() {
   useEffect(() => {
     if (!token || !userId) {
       setValidateError(
-        "Tautan tidak valid. Pastikan Anda menggunakan tautan dari email."
+        "Tautan tidak valid. Pastikan Anda menggunakan tautan dari email.",
       );
       setValidating(false);
       return;
     }
 
     fetch(
-      `/api/auth/reset-pin/validate?token=${encodeURIComponent(token)}&user=${encodeURIComponent(userId)}`
+      `/api/auth/reset-pin/validate?token=${encodeURIComponent(token)}&user=${encodeURIComponent(userId)}`,
     )
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok || !data.valid) {
           setValidateError(
-            data.error ?? "Tautan tidak valid atau sudah kadaluarsa."
+            data.error ?? "Tautan tidak valid atau sudah kadaluarsa.",
           );
           setValid(false);
         } else {
@@ -99,7 +99,7 @@ function ResetPinForm() {
   };
 
   return (
-    <div className="px-5 pt-6 pb-10">
+    <div className="px-5 pt-6 pb-10 lg:mx-auto lg:w-full lg:max-w-[28rem]">
       {validating ? (
         <div className="flex flex-col items-center gap-4 py-8 text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-[var(--color-primary)]" />
@@ -254,7 +254,7 @@ function ResetPinForm() {
 
 function ResetPinFallback() {
   return (
-    <div className="px-5 pt-6 pb-10">
+    <div className="px-5 pt-6 pb-10 lg:mx-auto lg:w-full lg:max-w-[28rem]">
       <div className="flex flex-col items-center gap-4 py-8 text-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-[var(--color-primary)]" />
         <p className="text-sm text-app-body-muted">Memuat...</p>

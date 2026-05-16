@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowPathIcon, CloudArrowDownIcon, CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowPathIcon,
+  CloudArrowDownIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+} from "@heroicons/react/24/outline";
 import { PageLoader } from "@/components/ui";
 import { apiFetch } from "@/lib/api-client";
 import { hasAdminRoleInProfile } from "@/lib/roles";
@@ -54,7 +59,8 @@ const BUCKET_DESCRIPTIONS: Record<string, string> = {
   avatars: "File foto profil pengguna dan anggota organisasi",
   "jasa-images": "Gambar layanan jasa warga",
   "kas-rt-attachments": "Lampiran bukti transaksi Kas RT (private, signed URL)",
-  "related-data": "Perbarui referensi URL Supabase di tabel organisation_members, organisation_member_customs, dan articles (file sudah di R2)",
+  "related-data":
+    "Perbarui referensi URL Supabase di tabel organisation_members, organisation_member_customs, dan articles (file sudah di R2)",
 };
 
 export default function AdminMigrateStoragePage() {
@@ -68,7 +74,8 @@ export default function AdminMigrateStoragePage() {
   const [scanning, setScanning] = useState(true);
   const [activeBucket, setActiveBucket] = useState<string | null>(null);
   const [migrating, setMigrating] = useState(false);
-  const [migrationResult, setMigrationResult] = useState<MigrationResult | null>(null);
+  const [migrationResult, setMigrationResult] =
+    useState<MigrationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -88,7 +95,9 @@ export default function AdminMigrateStoragePage() {
       const body = await res.json();
       const data: ProfileData | undefined = body?.data ?? body;
       if (!data || !hasAdminRoleInProfile(data)) {
-        console.warn("[MigrateStorage] User does not have admin role, redirecting to /admin");
+        console.warn(
+          "[MigrateStorage] User does not have admin role, redirecting to /admin",
+        );
         router.replace("/admin");
         return;
       }
@@ -130,7 +139,10 @@ export default function AdminMigrateStoragePage() {
     setError(null);
 
     try {
-      console.log(`[MigrateStorage] Sending POST request to /api/admin/migrate-storage`, { bucket });
+      console.log(
+        `[MigrateStorage] Sending POST request to /api/admin/migrate-storage`,
+        { bucket },
+      );
       const res = await fetch("/api/admin/migrate-storage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -138,10 +150,13 @@ export default function AdminMigrateStoragePage() {
       });
 
       console.log(`[MigrateStorage] Migration response status: ${res.status}`);
-      
+
       if (!res.ok) {
         const errorText = await res.text();
-        console.error(`[MigrateStorage] Migration failed with status ${res.status}:`, errorText);
+        console.error(
+          `[MigrateStorage] Migration failed with status ${res.status}:`,
+          errorText,
+        );
         throw new Error("Gagal menjalankan migrasi");
       }
 
@@ -163,13 +178,14 @@ export default function AdminMigrateStoragePage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6">
+    <div className="mx-auto max-w-3xl px-4 py-6 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
       <div className="mb-6">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white">
           Migrasi Penyimpanan ke R2
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Salin file dari Supabase Storage ke Cloudflare R2 dan perbarui referensi di database.
+          Salin file dari Supabase Storage ke Cloudflare R2 dan perbarui
+          referensi di database.
         </p>
       </div>
 
@@ -216,7 +232,8 @@ export default function AdminMigrateStoragePage() {
                       </span>
                       {bucket.needsMigration > 0 ? (
                         <span className="text-amber-600 dark:text-amber-400">
-                          Perlu migrasi: <strong>{bucket.needsMigration}</strong>
+                          Perlu migrasi:{" "}
+                          <strong>{bucket.needsMigration}</strong>
                         </span>
                       ) : (
                         <span className="text-green-600 dark:text-green-400">
@@ -273,10 +290,18 @@ export default function AdminMigrateStoragePage() {
                       )}
                     </div>
 
-                    {migrationResult.items.filter((i) => i.status === "error" && i.detail).length > 0 && (
+                    {migrationResult.items.filter(
+                      (i) => i.status === "error" && i.detail,
+                    ).length > 0 && (
                       <details className="text-xs text-red-600 dark:text-red-400">
                         <summary className="cursor-pointer font-medium">
-                          Detail error ({migrationResult.items.filter((i) => i.status === "error").length})
+                          Detail error (
+                          {
+                            migrationResult.items.filter(
+                              (i) => i.status === "error",
+                            ).length
+                          }
+                          )
                         </summary>
                         <ul className="mt-1 max-h-40 space-y-0.5 overflow-y-auto rounded bg-red-50 p-2 dark:bg-red-900/20">
                           {migrationResult.items
@@ -301,7 +326,9 @@ export default function AdminMigrateStoragePage() {
               disabled={scanning || migrating}
               className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 active:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
             >
-              <ArrowPathIcon className={`h-4 w-4 ${scanning ? "animate-spin" : ""}`} />
+              <ArrowPathIcon
+                className={`h-4 w-4 ${scanning ? "animate-spin" : ""}`}
+              />
               Refresh Status
             </button>
           </div>

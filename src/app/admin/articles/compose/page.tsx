@@ -350,7 +350,7 @@ function ArticleComposerContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -359,7 +359,7 @@ function ArticleComposerContent() {
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <button
                 onClick={() => router.push("/admin/articles")}
-                className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex-shrink-0 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors lg:hidden"
                 title="Kembali"
               >
                 <ArrowLeftIcon className="h-5 w-5" />
@@ -514,7 +514,9 @@ function ArticleComposerContent() {
               {content.trim() ? (
                 <MarkdownRenderer content={content} />
               ) : (
-                <p className="text-gray-400 text-sm">Belum ada konten untuk dipratinjau.</p>
+                <p className="text-gray-400 text-sm">
+                  Belum ada konten untuk dipratinjau.
+                </p>
               )}
             </div>
           )}

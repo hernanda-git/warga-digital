@@ -280,7 +280,7 @@ export default function KasRtNewPage() {
     <main className="flex min-h-screen flex-col bg-app-surface-alt">
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto px-5 pb-40 pt-6"
+        className="flex-1 overflow-y-auto px-5 pb-40 pt-6 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6"
       >
         {/* ── Header ─────────────────────────────────────────────────── */}
         <div className="mb-6">

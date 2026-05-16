@@ -424,7 +424,7 @@ export default function NotifikasiPage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-app-primary transition hover:bg-app-primary-muted active:scale-90"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-app-primary transition hover:bg-app-primary-muted active:scale-90 lg:hidden"
             aria-label="Kembali"
             id="notifikasi-back-btn"
           >
@@ -455,7 +455,7 @@ export default function NotifikasiPage() {
         )}
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-8 pt-4 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 pb-8 pt-4 space-y-6 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
         {errorMessage && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {errorMessage}

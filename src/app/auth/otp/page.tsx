@@ -15,7 +15,9 @@ export default function OtpPage() {
 
   return (
     <main className="flex min-h-[var(--app-height,100dvh)] items-center justify-center">
-      <p className="text-app-body-muted">Mengalihkan...</p>
+      <div className="lg:mx-auto lg:w-full lg:max-w-[28rem]">
+        <p className="text-app-body-muted">Mengalihkan...</p>
+      </div>
     </main>
   );
 }

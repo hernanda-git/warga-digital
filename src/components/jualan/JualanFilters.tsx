@@ -55,7 +55,7 @@ export function JualanFilters({
         </svg>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide lg:flex-wrap">
         <button
           onClick={() => onCategoryChange(null)}
           className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${

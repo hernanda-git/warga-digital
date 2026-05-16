@@ -16,7 +16,10 @@ import { ROUTES, EMPTY_STATE_CONFIGS } from "@/config/landing";
 import type { HeaderProfile } from "@/types/landing";
 import type { ResidentPostItem } from "@/components/landing/ResidentPostsSection";
 import type { JualanGoodsWithMedia } from "@/types/jualan";
-import type { JasaServiceWithMedia, JasaServiceDetailWithMedia } from "@/types/database";
+import type {
+  JasaServiceWithMedia,
+  JasaServiceDetailWithMedia,
+} from "@/types/database";
 import type { JualanGoodsDetail } from "@/types/jualan";
 
 interface LandingPageClientProps {
@@ -76,8 +79,7 @@ export default function LandingPageClient({
       if (data.success) {
         setViewingService(data.data);
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const handleCloseDetail = () => {
@@ -92,8 +94,7 @@ export default function LandingPageClient({
       if (data.success) {
         setViewingGoods(data.data);
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const handleCloseGoodsDetail = () => {
@@ -117,7 +118,7 @@ export default function LandingPageClient({
       />
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main className="flex-1 lg:max-w-4xl lg:mx-auto lg:w-full">
         {/* Feature Grid */}
         <FeatureGrid />
 
@@ -135,7 +136,9 @@ export default function LandingPageClient({
             />
           ) : (
             <EmptyState
-              title={articlesError ? "Gagal memuat artikel" : "Belum ada artikel"}
+              title={
+                articlesError ? "Gagal memuat artikel" : "Belum ada artikel"
+              }
               description={
                 articlesError
                   ? "Periksa koneksi internet Anda dan coba lagi"
@@ -147,13 +150,14 @@ export default function LandingPageClient({
         </LandingSection>
 
         {/* UMKM / Jualan Section */}
+        {/* JUALAN Section */}
         <LandingSection
           title="Jual Beli RT 03"
           viewAllText="Lihat semua"
           viewAllHref={ROUTES.JUALAN}
         >
           {hasJualanContent ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4 xl:grid-cols-4">
               {jualanGoods.map((goods) => (
                 <JualanCard
                   key={goods.id}
@@ -178,7 +182,7 @@ export default function LandingPageClient({
           viewAllHref="/jasa"
         >
           {hasDirectJasaContent ? (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4 xl:grid-cols-3">
               {jasaServices.map((service) => (
                 <JasaCard
                   key={service.id}

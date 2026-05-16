@@ -149,7 +149,7 @@ export default function ArtikelPage() {
     <div className="min-h-screen bg-app-surface-alt">
       {/* Hero Section */}
       <section
-        className="relative shrink-0 overflow-hidden px-4 pb-5 pt-5 text-white"
+        className="relative shrink-0 overflow-hidden px-4 pb-5 pt-5 text-white lg:px-6 lg:py-8"
         style={{
           background:
             "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",
@@ -247,7 +247,7 @@ export default function ArtikelPage() {
       </section>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-md px-4 py-6">
+      <main className="mx-auto max-w-md px-4 py-6 lg:max-w-4xl lg:px-6 lg:py-6">
         {articles.length === 0 ? (
           <div className="text-center py-16">
             <div className="mx-auto w-24 h-24 rounded-full bg-app-primary-muted flex items-center justify-center mb-4">
@@ -262,8 +262,8 @@ export default function ArtikelPage() {
           </div>
         ) : (
           <>
-            {/* Articles Vertical List */}
-            <div className="space-y-6">
+            {/* Articles Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {articles.map((article) => {
                 const displayExcerpt = article.content
                   ? generateExcerpt(article.content)

@@ -168,13 +168,13 @@ export default function AdminJoinRequestPage() {
   }
 
   return (
-    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
+    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
       <header className="flex shrink-0 items-center justify-between border-b border-[var(--color-input-border)] bg-app-surface/90 px-4 py-3 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => router.push("/admin")}
-            className="flex h-8 w-8 items-center justify-center rounded-xl bg-app-surface-alt transition hover:bg-app-primary-muted active:scale-95"
+            className="flex h-8 w-8 items-center justify-center rounded-xl bg-app-surface-alt transition hover:bg-app-primary-muted active:scale-95 lg:hidden"
             aria-label="Kembali ke admin"
           >
             <ChevronLeftIcon className="h-4 w-4 text-app-body-muted" />

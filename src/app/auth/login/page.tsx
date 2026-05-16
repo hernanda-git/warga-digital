@@ -156,7 +156,7 @@ export default function LoginPage() {
 
       {/* ── Form card ─────────────────────────────────────────── */}
       <div className="relative -mt-6 flex flex-1 flex-col overflow-y-auto rounded-t-[2rem] bg-app-surface shadow-[0_-8px_40px_rgba(0,40,5,0.16)]">
-        <div className="px-5 pt-6 pb-10">
+        <div className="px-5 pt-6 pb-10 lg:mx-auto lg:w-full lg:max-w-[28rem]">
           {/* Step indicator */}
           <div className="mb-7 flex justify-center gap-2" aria-label="Langkah">
             {([1, 2] as const).map((s) => (

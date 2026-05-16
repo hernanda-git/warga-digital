@@ -24,8 +24,8 @@ export function LandingHeader({
 }: LandingHeaderProps) {
   const showBadge = notificationCount > 0;
   return (
-    <header className="flex shrink-0 items-center justify-between gap-3 bg-app-surface px-4 py-3 shadow-sm">
-      <div className="flex min-w-0 flex-1 items-center gap-3">
+    <header className="flex shrink-0 items-center justify-between gap-3 bg-app-surface px-4 py-3 shadow-sm lg:px-6 lg:py-4">
+      <div className="flex min-w-0 flex-1 items-center gap-3 lg:gap-4">
         <Avatar
           name={name}
           src={profilePictureUrl}
@@ -33,8 +33,12 @@ export function LandingHeader({
           className="shrink-0"
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-bold text-app-title">{name}</p>
-          <p className="truncate text-xs text-app-body-muted">{blokRumah}</p>
+          <p className="truncate text-base font-bold text-app-title lg:text-lg">
+            {name}
+          </p>
+          <p className="truncate text-xs text-app-body-muted lg:text-sm">
+            {blokRumah}
+          </p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">

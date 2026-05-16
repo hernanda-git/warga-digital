@@ -50,9 +50,7 @@ function statusLabel(status: string): string {
 }
 
 function toTitleCase(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/(?:^|\s|-)\S/g, (c) => c.toUpperCase());
+  return str.toLowerCase().replace(/(?:^|\s|-)\S/g, (c) => c.toUpperCase());
 }
 
 type OccupancyFilter = "ALL" | "KONTRAKAN" | "PRIBADI" | "KOSONG" | "TERISI";
@@ -68,9 +66,12 @@ export default function AdminBlokRumahPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [occupancyFilter, setOccupancyFilter] = useState<OccupancyFilter>("ALL");
+  const [occupancyFilter, setOccupancyFilter] =
+    useState<OccupancyFilter>("ALL");
   const [houses, setHouses] = useState<HouseItem[]>([]);
-  const [expandedHouseIds, setExpandedHouseIds] = useState<Record<string, boolean>>({});
+  const [expandedHouseIds, setExpandedHouseIds] = useState<
+    Record<string, boolean>
+  >({});
   const [editingHouse, setEditingHouse] = useState<HouseItem | null>(null);
   const [editName, setEditName] = useState("");
   const [editStatus, setEditStatus] = useState("");
@@ -243,11 +244,12 @@ export default function AdminBlokRumahPage() {
   }
 
   return (
-    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
+    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
       <section
         className="relative shrink-0 overflow-hidden px-4 pb-5 pt-4 text-white"
         style={{
-          background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",
+          background:
+            "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",
         }}
       >
         <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
@@ -258,7 +260,7 @@ export default function AdminBlokRumahPage() {
             <button
               type="button"
               onClick={() => router.push("/admin")}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 lg:hidden"
               aria-label="Kembali ke admin"
             >
               <ChevronLeftIcon className="h-5 w-5 text-white" />
@@ -288,19 +290,25 @@ export default function AdminBlokRumahPage() {
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur-sm">
-              <p className="text-[10px] text-white/70 font-medium">Total Blok</p>
+              <p className="text-[10px] text-white/70 font-medium">
+                Total Blok
+              </p>
               <p className="text-base font-extrabold text-white leading-tight">
                 {houses.length}
               </p>
             </div>
             <div className="rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur-sm">
-              <p className="text-[10px] text-white/70 font-medium">Ditampilkan</p>
+              <p className="text-[10px] text-white/70 font-medium">
+                Ditampilkan
+              </p>
               <p className="text-base font-extrabold text-white leading-tight">
                 {filteredHouses.length}
               </p>
             </div>
             <div className="rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur-sm">
-              <p className="text-[10px] text-white/70 font-medium">Total Warga</p>
+              <p className="text-[10px] text-white/70 font-medium">
+                Total Warga
+              </p>
               <p className="text-base font-extrabold text-white leading-tight">
                 {totalResidents}
               </p>
@@ -392,7 +400,9 @@ export default function AdminBlokRumahPage() {
             <HomeModernIcon className="h-10 w-10 text-app-body-muted/40" />
             <div>
               <p className="text-sm font-semibold text-app-body-muted">
-                {query ? "Tidak ada blok yang cocok" : "Belum ada data blok rumah"}
+                {query
+                  ? "Tidak ada blok yang cocok"
+                  : "Belum ada data blok rumah"}
               </p>
               <p className="mt-1 text-xs text-app-body-muted/70">
                 {query
@@ -411,83 +421,103 @@ export default function AdminBlokRumahPage() {
                   key={house.id}
                   className="rounded-2xl bg-app-surface p-4 shadow-[0_8px_24px_rgba(0,40,5,0.06)]"
                 >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-base font-extrabold text-app-title">
-                      {house.blok_rumah ?? "-"}
-                    </h2>
-                    {house.name ? (
-                      <p className="mt-0.5 truncate text-sm font-semibold text-app-body">
-                        {toTitleCase(house.name)}
-                      </p>
-                    ) : (
-                      <p className="mt-0.5 text-sm text-app-body-muted/60">Tanpa nama</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="rounded-full bg-app-primary-muted px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-app-primary">
-                      {statusLabel(house.status)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); openEditModal(house); }}
-                      className="rounded-full border border-[var(--color-input-border)] p-1 text-app-body-muted transition hover:bg-app-surface-alt"
-                      aria-label="Edit blok rumah"
-                      title="Edit blok rumah"
-                    >
-                      <PencilSquareIcon className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); toggleExpandedHouse(house.id); }}
-                      className="rounded-full border border-[var(--color-input-border)] p-1 text-app-body-muted transition hover:bg-app-surface-alt"
-                      aria-label={isExpanded ? "Sembunyikan daftar warga" : "Lihat daftar warga"}
-                      title={isExpanded ? "Sembunyikan daftar warga" : "Lihat daftar warga"}
-                    >
-                      {isExpanded ? (
-                        <ChevronUpIcon className="h-4 w-4" />
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="truncate text-base font-extrabold text-app-title">
+                        {house.blok_rumah ?? "-"}
+                      </h2>
+                      {house.name ? (
+                        <p className="mt-0.5 truncate text-sm font-semibold text-app-body">
+                          {toTitleCase(house.name)}
+                        </p>
                       ) : (
-                        <ChevronDownIcon className="h-4 w-4" />
+                        <p className="mt-0.5 text-sm text-app-body-muted/60">
+                          Tanpa nama
+                        </p>
                       )}
-                    </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="rounded-full bg-app-primary-muted px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-app-primary">
+                        {statusLabel(house.status)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditModal(house);
+                        }}
+                        className="rounded-full border border-[var(--color-input-border)] p-1 text-app-body-muted transition hover:bg-app-surface-alt"
+                        aria-label="Edit blok rumah"
+                        title="Edit blok rumah"
+                      >
+                        <PencilSquareIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpandedHouse(house.id);
+                        }}
+                        className="rounded-full border border-[var(--color-input-border)] p-1 text-app-body-muted transition hover:bg-app-surface-alt"
+                        aria-label={
+                          isExpanded
+                            ? "Sembunyikan daftar warga"
+                            : "Lihat daftar warga"
+                        }
+                        title={
+                          isExpanded
+                            ? "Sembunyikan daftar warga"
+                            : "Lihat daftar warga"
+                        }
+                      >
+                        {isExpanded ? (
+                          <ChevronUpIcon className="h-4 w-4" />
+                        ) : (
+                          <ChevronDownIcon className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="mt-3 flex items-center gap-1.5 text-xs text-app-body-muted">
-                  <UserGroupIcon className="h-4 w-4" />
-                  <span>{house.total_residents ?? 0} warga</span>
-                </div>
+                  <div className="mt-3 flex items-center gap-1.5 text-xs text-app-body-muted">
+                    <UserGroupIcon className="h-4 w-4" />
+                    <span>{house.total_residents ?? 0} warga</span>
+                  </div>
 
-                {house.address && (
-                  <p className="mt-2 line-clamp-2 text-xs text-app-body-muted">
-                    {house.address}
-                  </p>
-                )}
-
-                {isExpanded && (
-                  <div className="mt-3 rounded-xl border border-[var(--color-input-border)] bg-app-surface-alt/70 p-2.5">
-                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-app-body-muted">
-                      Daftar Warga
+                  {house.address && (
+                    <p className="mt-2 line-clamp-2 text-xs text-app-body-muted">
+                      {house.address}
                     </p>
-                    {residents.length === 0 ? (
-                      <p className="text-xs text-app-body-muted">Belum ada warga terdaftar</p>
-                    ) : (
-                      <ul className="space-y-1">
-                        {residents.map((resident) => (
-                          <li
-                            key={resident.user_id}
-                            className="flex items-center justify-between gap-2 rounded-lg bg-app-surface px-2.5 py-1.5 text-xs"
-                          >
-                            <span className="truncate text-app-body">{resident.full_name}</span>
-                            <span className="shrink-0 rounded-full bg-app-primary-muted px-2 py-0.5 text-[10px] font-semibold text-app-primary">
-                              {resident.relationship ?? "WARGA"}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
+                  )}
+
+                  {isExpanded && (
+                    <div className="mt-3 rounded-xl border border-[var(--color-input-border)] bg-app-surface-alt/70 p-2.5">
+                      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-app-body-muted">
+                        Daftar Warga
+                      </p>
+                      {residents.length === 0 ? (
+                        <p className="text-xs text-app-body-muted">
+                          Belum ada warga terdaftar
+                        </p>
+                      ) : (
+                        <ul className="space-y-1">
+                          {residents.map((resident) => (
+                            <li
+                              key={resident.user_id}
+                              className="flex items-center justify-between gap-2 rounded-lg bg-app-surface px-2.5 py-1.5 text-xs"
+                            >
+                              <span className="truncate text-app-body">
+                                {resident.full_name}
+                              </span>
+                              <span className="shrink-0 rounded-full bg-app-primary-muted px-2 py-0.5 text-[10px] font-semibold text-app-primary">
+                                {resident.relationship ?? "WARGA"}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
                 </article>
               );
             })}

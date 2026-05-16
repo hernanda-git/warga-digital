@@ -354,7 +354,7 @@ export default function AdminPage() {
   return (
     <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
       {/* ── Sticky Top Bar ────────────────────────────────────────────────── */}
-      <header className="flex shrink-0 items-center justify-between border-b border-[var(--color-input-border)] bg-app-surface/90 px-4 py-3 backdrop-blur-sm">
+      <header className="flex shrink-0 items-center justify-between border-b border-[var(--color-input-border)] bg-app-surface/90 px-4 py-3 backdrop-blur-sm lg:hidden">
         <div className="flex items-center gap-2">
           <ShieldCheckSolidIcon
             className="h-[18px] w-[18px]"
@@ -471,7 +471,7 @@ export default function AdminPage() {
         </section>
 
         {/* ── Page Sections ────────────────────────────────────────────────── */}
-        <div className="space-y-5 px-4 pb-10 pt-5">
+        <div className="space-y-5 px-4 pb-10 pt-5 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
           {/* Stats error */}
           {statsError && (
             <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
@@ -489,7 +489,7 @@ export default function AdminPage() {
           {/* ── Management Grid ──────────────────────────────────────────── */}
           <section aria-label="Kelola">
             <SectionLabel title="Kelola" />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {navItems.map((item) => (
                 <NavCard key={item.label} {...item} />
               ))}

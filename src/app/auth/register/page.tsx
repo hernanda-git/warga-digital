@@ -566,7 +566,7 @@ export default function RegisterWizardPage() {
 
       {/* ── Scrollable form body ─────────────────────────────── */}
       <div className="relative -mt-4 flex flex-1 flex-col overflow-y-auto rounded-t-[2rem] bg-app-surface shadow-[0_-8px_40px_rgba(0,40,5,0.14)]">
-        <div className="px-5 pt-6 pb-10">
+        <div className="px-5 pt-6 pb-10 lg:mx-auto lg:w-full lg:max-w-[28rem]">
           {/* ═══ PENDING APPROVAL ═══ */}
           {step === 0 && pendingApprovalData && (
             <div className="flex flex-col gap-5">

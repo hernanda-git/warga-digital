@@ -308,14 +308,14 @@ export default function KasRtPageClient({
   // ── Loading state ─────────────────────────────────────────────────────────
   if (isPageLoading) {
     return (
-      <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
+      <main className="flex h-full min-h-0 flex-col bg-app-surface-alt lg:py-6">
         <KasRtPageSkeleton />
       </main>
     );
   }
 
   return (
-    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
+    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt lg:py-6">
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto overscroll-contain"

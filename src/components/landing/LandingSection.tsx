@@ -14,8 +14,8 @@
  * - Flexible content area via children prop
  */
 
-import { ReactNode } from 'react';
-import Link from 'next/link';
+import { ReactNode } from "react";
+import Link from "next/link";
 
 // ─── Props Interface ──────────────────────────────────────────────────────────
 
@@ -67,27 +67,29 @@ interface LandingSectionProps {
  */
 export function LandingSection({
   title,
-  viewAllText = 'Lihat semua',
+  viewAllText = "Lihat semua",
   viewAllHref,
   children,
-  className = '',
-  contentClassName = '',
+  className = "",
+  contentClassName = "",
   id,
 }: LandingSectionProps) {
-  const sectionId = id || (title ? `section-${title.toLowerCase().replace(/\s+/g, '-')}` : undefined);
+  const sectionId =
+    id ||
+    (title ? `section-${title.toLowerCase().replace(/\s+/g, "-")}` : undefined);
   const titleId = title ? `${sectionId}-title` : undefined;
 
   return (
     <section
-      className={`py-4 ${className}`}
+      className={`py-4 lg:py-6 ${className}`}
       id={sectionId}
       aria-labelledby={titleId}
     >
       {title && (
-        <div className="mb-3 flex items-center justify-between px-4">
+        <div className="mb-3 flex items-center justify-between px-4 lg:px-6">
           <h2
             id={titleId}
-            className="text-lg font-bold text-app-title"
+            className="text-lg font-bold text-app-title lg:text-xl"
           >
             {title}
           </h2>
@@ -95,7 +97,7 @@ export function LandingSection({
           {viewAllHref && (
             <Link
               href={viewAllHref}
-              className="text-sm font-medium text-app-primary transition-opacity hover:opacity-80 active:opacity-60"
+              className="text-sm font-medium text-app-primary transition-opacity hover:opacity-80 active:opacity-60 lg:text-base"
             >
               {viewAllText}
             </Link>
@@ -103,7 +105,7 @@ export function LandingSection({
         </div>
       )}
 
-      <div className={contentClassName || (title ? 'px-4' : '')}>
+      <div className={contentClassName || (title ? "px-4 lg:px-6" : "")}>
         {children}
       </div>
     </section>

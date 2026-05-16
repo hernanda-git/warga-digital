@@ -172,7 +172,7 @@ function PageHero({
 }) {
   return (
     <section
-      className="relative shrink-0 overflow-hidden px-4 pb-5 pt-5 text-white"
+      className="relative shrink-0 overflow-hidden px-4 pb-5 pt-5 text-white lg:px-6 lg:py-6"
       style={{
         background:
           "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",
@@ -1077,9 +1077,12 @@ export default function ProfilePage() {
           }}
         />
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <form onSubmit={handleSave} className="space-y-4 px-4 pb-10 pt-5">
+          <form
+            onSubmit={handleSave}
+            className="space-y-4 px-4 pb-10 pt-5 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6"
+          >
             {/* Profile Picture Edit Section - Large Cover */}
-            <div className="flex flex-col items-center gap-4 py-6 -mx-4 px-4 bg-gradient-to-b from-app-surface to-transparent">
+            <div className="flex flex-col items-center gap-4 py-6 -mx-4 px-4 bg-gradient-to-b from-app-surface to-transparent lg:-mx-6">
               <div className="relative w-full flex items-center justify-center">
                 <div
                   className="relative rounded-3xl overflow-hidden shadow-lg"
@@ -1434,7 +1437,7 @@ export default function ProfilePage() {
         <div className="min-h-0 flex-1 overflow-y-auto">
           <form
             onSubmit={handleChangePin}
-            className="space-y-5 px-4 pb-10 pt-5"
+            className="space-y-5 px-4 pb-10 pt-5 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6"
           >
             <p className="text-[13px] text-app-body-muted leading-relaxed">
               Masukkan PIN saat ini lalu buat PIN baru 4 digit.
@@ -1563,7 +1566,7 @@ export default function ProfilePage() {
           }}
         />
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="space-y-3 px-4 pb-10 pt-5">
+          <div className="space-y-3 px-4 pb-10 pt-5 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
             {familyActionError && (
               <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
                 <p className="text-[13px] text-red-600">{familyActionError}</p>
@@ -1577,7 +1580,7 @@ export default function ProfilePage() {
             )}
 
             {/* Member list */}
-            <div className="space-y-2.5">
+            <div className="space-y-2.5 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
               {currentHouse.members.map((m) => (
                 <div
                   key={m.userId}
@@ -1748,7 +1751,7 @@ export default function ProfilePage() {
         {/* ── Hero ──────────────────────────────────────────────────────── */}
         <section
           aria-label="Profil pengguna"
-          className="relative overflow-hidden px-4 pb-6 pt-10 text-white"
+          className="relative overflow-hidden px-4 pb-6 pt-10 text-white lg:px-6 lg:py-10"
           style={{
             background:
               "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",
@@ -1763,7 +1766,7 @@ export default function ProfilePage() {
             aria-hidden
           />
 
-          <div className="relative z-10 flex flex-col items-center">
+          <div className="relative z-10 flex flex-col items-center lg:max-w-4xl lg:mx-auto lg:w-full">
             {/* Avatar upload */}
             <input
               ref={fileInputRef}
@@ -1834,7 +1837,7 @@ export default function ProfilePage() {
         </section>
 
         {/* ── Content ─────────────────────────────────────────────────── */}
-        <div className="space-y-3 px-4 pb-10 pt-4">
+        <div className="space-y-3 px-4 pb-10 pt-4 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
           {/* Error banners */}
           {error && (
             <div className="flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3">

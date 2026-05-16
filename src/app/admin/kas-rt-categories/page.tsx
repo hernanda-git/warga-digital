@@ -1068,7 +1068,7 @@ export default function KasRtCategoriesPage() {
     ];
 
   return (
-    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
+    <main className="flex h-full min-h-0 flex-col bg-app-surface-alt lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <section
         className="relative shrink-0 overflow-hidden px-4 pb-5 pt-4 text-white"
@@ -1091,7 +1091,7 @@ export default function KasRtCategoriesPage() {
             <button
               type="button"
               onClick={() => router.push("/admin")}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 lg:hidden"
               aria-label="Kembali ke admin"
             >
               <ChevronLeftIcon className="h-5 w-5 text-white" />

@@ -60,7 +60,9 @@ export default function JualanPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  const [goods, setGoods] = useState<JualanListApiResponse["data"]["goods"]>([]);
+  const [goods, setGoods] = useState<JualanListApiResponse["data"]["goods"]>(
+    [],
+  );
   const [categories, setCategories] = useState<
     Array<{ id: string; name: string; icon: string | null }>
   >([]);
@@ -123,8 +125,7 @@ export default function JualanPage() {
             }
           }
         }
-      } catch (err) {
-      }
+      } catch (err) {}
     };
     fetchData();
   }, []);
@@ -161,16 +162,22 @@ export default function JualanPage() {
       const sold = data.data.goods.reduce((sum, g) => sum + g.sold_count, 0);
 
       setAvailableCount(available);
-      setTotalSold(
-        page === 1 ? sold : totalSold,
-      );
+      setTotalSold(page === 1 ? sold : totalSold);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Gagal memuat data";
       setError(message);
     } finally {
       setIsLoading(false);
     }
-  }, [page, selectedCategory, searchQuery, minPrice, maxPrice, sortBy, communityId]);
+  }, [
+    page,
+    selectedCategory,
+    searchQuery,
+    minPrice,
+    maxPrice,
+    sortBy,
+    communityId,
+  ]);
 
   useEffect(() => {
     fetchGoods();
@@ -226,12 +233,14 @@ export default function JualanPage() {
       if (data.success) {
         setViewingGoods(data.data);
       }
-    } catch (err) {
-    }
+    } catch (err) {}
   };
 
   const hasActiveFilters =
-    !!searchQuery || !!selectedCategory || minPrice !== null || maxPrice !== null;
+    !!searchQuery ||
+    !!selectedCategory ||
+    minPrice !== null ||
+    maxPrice !== null;
 
   const handleResetFilters = () => {
     setSearchQuery("");
@@ -249,7 +258,7 @@ export default function JualanPage() {
     <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
       <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
         <section
-          className="relative shrink-0 overflow-hidden px-4 pb-5 pt-5 text-white"
+          className="relative shrink-0 overflow-hidden px-4 pb-5 pt-5 text-white lg:max-w-4xl lg:mx-auto lg:w-full lg:rounded-b-2xl lg:px-6 lg:py-6"
           style={{
             background:
               "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",
@@ -270,7 +279,7 @@ export default function JualanPage() {
               <button
                 type="button"
                 onClick={() => router.push("/landing")}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 lg:hidden"
                 aria-label="Kembali ke beranda"
               >
                 <ChevronLeftIcon className="h-4 w-4 text-white" />
@@ -327,7 +336,7 @@ export default function JualanPage() {
           </div>
         </section>
 
-        <section className="px-4 pt-4">
+        <section className="px-4 pt-4 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6">
           <JualanFilters
             categories={categories}
             selectedCategory={selectedCategory}
@@ -343,13 +352,15 @@ export default function JualanPage() {
           />
         </section>
 
-        <section className="px-4 pb-6 pt-4">
+        <section className="px-4 pb-6 pt-4 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:pb-8">
           {error && (
             <div
               className="mb-5 rounded-2xl p-4 text-center"
               style={{
-                background: "color-mix(in srgb, #ef4444 8%, var(--color-surface))",
-                border: "1.5px solid color-mix(in srgb, #ef4444 22%, transparent)",
+                background:
+                  "color-mix(in srgb, #ef4444 8%, var(--color-surface))",
+                border:
+                  "1.5px solid color-mix(in srgb, #ef4444 22%, transparent)",
               }}
             >
               <p className="text-sm font-medium text-red-700">{error}</p>
@@ -363,7 +374,7 @@ export default function JualanPage() {
           )}
 
           {isLoading && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
                 <JualanCardSkeleton key={i} />
               ))}
@@ -376,7 +387,8 @@ export default function JualanPage() {
               style={{
                 background:
                   "color-mix(in srgb, var(--color-primary) 5%, var(--color-surface))",
-                border: "2px dashed color-mix(in srgb, var(--color-primary) 28%, transparent)",
+                border:
+                  "2px dashed color-mix(in srgb, var(--color-primary) 28%, transparent)",
               }}
             >
               <div className="mb-3 flex items-center justify-center">
@@ -450,7 +462,7 @@ export default function JualanPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4 lg:gap-4">
                 {goods.map((item) => (
                   <JualanCard
                     key={item.id}

@@ -325,7 +325,7 @@ function OrganisationSheet({
       )
       .catch(() => setCommunityUsers([]))
       .finally(() => setCommunityUsersLoading(false));
-    
+
     // Initialize custom data from existing member if editing
     if (kind === "edit-member" && member) {
       const hasCustom = member.custom != null;
@@ -415,22 +415,27 @@ function OrganisationSheet({
     }
   };
 
-  const uploadAvatar = async (file: File, memberId: string): Promise<string | null> => {
+  const uploadAvatar = async (
+    file: File,
+    memberId: string,
+  ): Promise<string | null> => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("memberId", memberId);
-    
+
     const res = await apiFetch("/api/organisation/members/avatar", {
       method: "POST",
       credentials: "include",
       body: formData,
     });
-    
+
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: "Upload failed" }));
+      const error = await res
+        .json()
+        .catch(() => ({ message: "Upload failed" }));
       throw new Error(error.message ?? "Gagal mengupload foto");
     }
-    
+
     const data = await res.json();
     return data.avatarUrl;
   };
@@ -440,11 +445,11 @@ function OrganisationSheet({
     setErr(null);
     setSaving(true);
     const userId = selectedUserId.trim() ? selectedUserId.trim() : null;
-    
+
     try {
       let customPayload = useCustomData ? customData : undefined;
       let memberId: string | null = null;
-      
+
       // First, create/update member
       if (kind === "add-member" && roleId) {
         const res = await apiFetch(
@@ -470,7 +475,7 @@ function OrganisationSheet({
         if (!res.ok) throw new Error(data.message ?? "Gagal mengubah anggota");
         memberId = member.id;
       }
-      
+
       // Upload avatar file if provided
       if (avatarFile && memberId && useCustomData) {
         try {
@@ -495,7 +500,7 @@ function OrganisationSheet({
           setUploadingAvatar(false);
         }
       }
-      
+
       onSaved();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Terjadi kesalahan");
@@ -776,7 +781,10 @@ function OrganisationSheet({
                       type="text"
                       value={customData.fullName}
                       onChange={(e) =>
-                        setCustomData({ ...customData, fullName: e.target.value })
+                        setCustomData({
+                          ...customData,
+                          fullName: e.target.value,
+                        })
                       }
                       className="w-full rounded-2xl border px-4 py-2.5 text-sm font-semibold text-app-title focus:outline-none bg-white transition-all"
                       style={{ borderColor: "var(--color-input-border)" }}
@@ -807,7 +815,10 @@ function OrganisationSheet({
                       type="text"
                       value={customData.blockName}
                       onChange={(e) =>
-                        setCustomData({ ...customData, blockName: e.target.value })
+                        setCustomData({
+                          ...customData,
+                          blockName: e.target.value,
+                        })
                       }
                       className="w-full rounded-2xl border px-4 py-2.5 text-sm font-semibold text-app-title focus:outline-none bg-white transition-all"
                       style={{ borderColor: "var(--color-input-border)" }}
@@ -838,7 +849,10 @@ function OrganisationSheet({
                       type="tel"
                       value={customData.whatsappNumber}
                       onChange={(e) =>
-                        setCustomData({ ...customData, whatsappNumber: e.target.value })
+                        setCustomData({
+                          ...customData,
+                          whatsappNumber: e.target.value,
+                        })
                       }
                       className="w-full rounded-2xl border px-4 py-2.5 text-sm font-semibold text-app-title focus:outline-none bg-white transition-all"
                       style={{ borderColor: "var(--color-input-border)" }}
@@ -904,7 +918,9 @@ function OrganisationSheet({
                           className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border-2 border-dashed border-app-input-border px-4 py-3 text-sm font-semibold text-app-body-muted transition hover:border-primary hover:text-primary"
                         >
                           <CameraIcon className="h-5 w-5" />
-                          <span>{avatarFile ? "Ganti Foto" : "Upload Foto"}</span>
+                          <span>
+                            {avatarFile ? "Ganti Foto" : "Upload Foto"}
+                          </span>
                           <input
                             id="custom-avatar-upload"
                             type="file"
@@ -919,7 +935,8 @@ function OrganisationSheet({
                         </p>
                         {avatarFile && (
                           <p className="mt-1 text-[11px] text-app-body-muted">
-                            File: {avatarFile.name} ({Math.round(avatarFile.size / 1024)} KB)
+                            File: {avatarFile.name} (
+                            {Math.round(avatarFile.size / 1024)} KB)
                           </p>
                         )}
                         {avatarPreview && !avatarFile && (
@@ -928,7 +945,10 @@ function OrganisationSheet({
                             onClick={() => {
                               setAvatarPreview(null);
                               setAvatarFile(null);
-                              setCustomData({ ...customData, profilePictureUrl: null });
+                              setCustomData({
+                                ...customData,
+                                profilePictureUrl: null,
+                              });
                             }}
                             className="mt-2 text-[11px] font-semibold text-red-500 hover:text-red-600"
                           >
@@ -1189,7 +1209,7 @@ export default function OrganisasiManagePage() {
     <>
       <style>{globalKeyframes}</style>
 
-      <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
+      <main className="flex h-full min-h-0 flex-col bg-app-surface-alt lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
         {/* ── Gradient Hero ──────────────────────────────────── */}
         <section
           className="relative shrink-0 overflow-hidden px-4 pb-5 pt-5 text-white"
@@ -1214,7 +1234,7 @@ export default function OrganisasiManagePage() {
             <div className="flex items-center gap-3">
               <Link
                 href="/organisasi"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 lg:hidden"
                 aria-label="Kembali ke organisasi"
               >
                 <ArrowLeftIcon className="h-5 w-5 text-white" aria-hidden />

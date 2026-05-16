@@ -22,7 +22,7 @@ export function KasRtFilterBar({
 }: KasRtFilterBarProps) {
   return (
     <div
-      className="shrink-0 bg-app-surface-alt px-4 py-3"
+      className="shrink-0 bg-app-surface-alt px-4 py-3 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6"
       style={{ borderBottom: "1px solid var(--color-input-border)" }}
     >
       <div className="flex items-center gap-2">
@@ -40,9 +40,7 @@ export function KasRtFilterBar({
                     : "bg-app-surface text-app-body-muted hover:bg-app-surface-alt"
                 }`}
                 style={
-                  isActive
-                    ? { background: "var(--color-primary)" }
-                    : undefined
+                  isActive ? { background: "var(--color-primary)" } : undefined
                 }
               >
                 {label}

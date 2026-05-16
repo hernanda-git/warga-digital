@@ -91,12 +91,12 @@ export function ArtikelDetailClient({ article }: { article: Article }) {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white lg:max-w-3xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             onClick={() => router.push("/artikel")}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors lg:hidden"
           >
             <ArrowLeftIcon className="h-5 w-5" />
             <span className="text-sm font-medium">Kembali</span>

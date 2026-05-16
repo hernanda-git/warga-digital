@@ -131,6 +131,23 @@ textarea.outline-none:focus-visible {
     display: none;
 }
 
+/* ─── Desktop Responsive Breakpoints ─────────────────────────────────────── */
+@media (min-width: 768px) {
+    :root {
+        --app-max-width: 100%;
+    }
+
+    body {
+        overflow: auto;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root {
+        --app-max-width: 100%;
+    }
+}
+
 /* ─── Auth Login: professional full-page layout (uses theme variables) ─────── */
 .auth-login-page {
     background: linear-gradient(

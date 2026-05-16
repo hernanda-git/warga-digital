@@ -14,7 +14,13 @@ import { useAuthStore } from "@/stores/auth-store";
 import { PageLoader } from "@/components/ui";
 
 type TransactionType = "income" | "expense";
-type CategoryType = "gaji" | "belanja" | "tagihan" | "tabungan" | "transfer" | "lainnya";
+type CategoryType =
+  | "gaji"
+  | "belanja"
+  | "tagihan"
+  | "tabungan"
+  | "transfer"
+  | "lainnya";
 
 interface WalletTransaction {
   id: string;
@@ -119,7 +125,10 @@ const CATEGORY_COLORS: Record<CategoryType, string> = {
   lainnya: "bg-slate-100 text-slate-600",
 };
 
-const CATEGORY_ICONS: Record<CategoryType, React.ComponentType<{ className?: string }>> = {
+const CATEGORY_ICONS: Record<
+  CategoryType,
+  React.ComponentType<{ className?: string }>
+> = {
   gaji: BriefcaseIcon,
   belanja: ShoppingCartIcon,
   tagihan: DocumentTextIcon,
@@ -162,8 +171,12 @@ export default function DompetPage() {
   const [refreshedAt, setRefreshedAt] = useState(now);
 
   const totals = useMemo(() => {
-    const totalIncome = TRANSACTIONS.filter((tx) => tx.type === "income").reduce((s, tx) => s + tx.amount, 0);
-    const totalExpense = TRANSACTIONS.filter((tx) => tx.type === "expense").reduce((s, tx) => s + tx.amount, 0);
+    const totalIncome = TRANSACTIONS.filter(
+      (tx) => tx.type === "income",
+    ).reduce((s, tx) => s + tx.amount, 0);
+    const totalExpense = TRANSACTIONS.filter(
+      (tx) => tx.type === "expense",
+    ).reduce((s, tx) => s + tx.amount, 0);
     const balance = totalIncome - totalExpense;
 
     const thisMonthIndex = now.getMonth();
@@ -171,12 +184,20 @@ export default function DompetPage() {
 
     const monthIncome = TRANSACTIONS.filter((tx) => {
       const d = new Date(tx.date);
-      return tx.type === "income" && d.getMonth() === thisMonthIndex && d.getFullYear() === thisYear;
+      return (
+        tx.type === "income" &&
+        d.getMonth() === thisMonthIndex &&
+        d.getFullYear() === thisYear
+      );
     }).reduce((s, tx) => s + tx.amount, 0);
 
     const monthExpense = TRANSACTIONS.filter((tx) => {
       const d = new Date(tx.date);
-      return tx.type === "expense" && d.getMonth() === thisMonthIndex && d.getFullYear() === thisYear;
+      return (
+        tx.type === "expense" &&
+        d.getMonth() === thisMonthIndex &&
+        d.getFullYear() === thisYear
+      );
     }).reduce((s, tx) => s + tx.amount, 0);
 
     return { balance, totalIncome, totalExpense, monthIncome, monthExpense };
@@ -233,14 +254,18 @@ export default function DompetPage() {
     setTouchStartY(null);
   };
 
-  const savingsRate = totals.monthIncome > 0
-    ? Math.round(((totals.monthIncome - totals.monthExpense) / totals.monthIncome) * 100)
-    : 0;
+  const savingsRate =
+    totals.monthIncome > 0
+      ? Math.round(
+          ((totals.monthIncome - totals.monthExpense) / totals.monthIncome) *
+            100,
+        )
+      : 0;
 
   return (
     <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
       <div
-        className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-4"
+        className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 pt-4 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -253,8 +278,8 @@ export default function DompetPage() {
           {isRefreshing
             ? "Menyegarkan data dompet..."
             : pullDistance > 48
-            ? "Lepaskan untuk refresh"
-            : "Tarik untuk refresh"}
+              ? "Lepaskan untuk refresh"
+              : "Tarik untuk refresh"}
         </div>
 
         {/* Balance Card */}
@@ -266,18 +291,23 @@ export default function DompetPage() {
             {formatRupiah(totals.balance)}
           </h1>
           <p className="mt-1 text-sm text-indigo-100/90">
-            Saldo tersedia · {now.toLocaleString("id-ID", { month: "long", year: "numeric" })}
+            Saldo tersedia ·{" "}
+            {now.toLocaleString("id-ID", { month: "long", year: "numeric" })}
           </p>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-white/15 px-3 py-2.5 backdrop-blur">
-              <p className="text-xs font-medium text-indigo-100/80">Pemasukan</p>
+              <p className="text-xs font-medium text-indigo-100/80">
+                Pemasukan
+              </p>
               <p className="mt-1 text-base font-bold text-emerald-300">
                 +{formatRupiah(totals.monthIncome)}
               </p>
             </div>
             <div className="rounded-2xl bg-white/15 px-3 py-2.5 backdrop-blur">
-              <p className="text-xs font-medium text-indigo-100/80">Pengeluaran</p>
+              <p className="text-xs font-medium text-indigo-100/80">
+                Pengeluaran
+              </p>
               <p className="mt-1 text-base font-bold text-red-300">
                 -{formatRupiah(totals.monthExpense)}
               </p>
@@ -290,18 +320,23 @@ export default function DompetPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.06em] text-app-body-muted">
                   Tingkat tabungan bulan ini
                 </p>
-                <p className={`text-sm font-bold ${savingsRate >= 20 ? "text-emerald-600" : savingsRate >= 0 ? "text-amber-600" : "text-red-600"}`}>
+                <p
+                  className={`text-sm font-bold ${savingsRate >= 20 ? "text-emerald-600" : savingsRate >= 0 ? "text-amber-600" : "text-red-600"}`}
+                >
                   {savingsRate}%
                 </p>
               </div>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
                 <div
                   className={`h-full rounded-full transition-all ${savingsRate >= 20 ? "bg-emerald-500" : savingsRate >= 0 ? "bg-amber-400" : "bg-red-500"}`}
-                  style={{ width: `${Math.max(0, Math.min(100, savingsRate))}%` }}
+                  style={{
+                    width: `${Math.max(0, Math.min(100, savingsRate))}%`,
+                  }}
                 />
               </div>
               <p className="mt-1 text-xs text-app-body-muted">
-                Sisa setelah pengeluaran: {formatRupiah(totals.monthIncome - totals.monthExpense)}
+                Sisa setelah pengeluaran:{" "}
+                {formatRupiah(totals.monthIncome - totals.monthExpense)}
               </p>
             </div>
           )}
@@ -317,7 +352,9 @@ export default function DompetPage() {
               aria-expanded={isFilterOpen}
               aria-controls="wallet-filter-panel"
             >
-              <span className="text-base font-bold text-app-title">Filter Transaksi</span>
+              <span className="text-base font-bold text-app-title">
+                Filter Transaksi
+              </span>
               <span className="text-sm font-semibold text-indigo-600">
                 {isFilterOpen ? "Tutup" : "Buka"}
               </span>
@@ -325,12 +362,17 @@ export default function DompetPage() {
           </div>
 
           {isFilterOpen && (
-            <div id="wallet-filter-panel" className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border border-indigo-100/80 bg-white/90 p-3">
+            <div
+              id="wallet-filter-panel"
+              className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border border-indigo-100/80 bg-white/90 p-3"
+            >
               <label className="text-sm font-medium text-app-body">
                 Jenis transaksi
                 <select
                   value={typeFilter}
-                  onChange={(event) => setTypeFilter(event.target.value as "all" | TransactionType)}
+                  onChange={(event) =>
+                    setTypeFilter(event.target.value as "all" | TransactionType)
+                  }
                   className="mt-1 w-full rounded-xl border border-indigo-200 bg-indigo-50/40 px-3 py-2 text-sm text-app-body focus:border-indigo-400 focus:outline-none"
                 >
                   <option value="all">Semua transaksi</option>
@@ -363,12 +405,18 @@ export default function DompetPage() {
 
           <p className="mt-3 text-xs text-app-body-muted">
             Terakhir diperbarui:{" "}
-            {refreshedAt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+            {refreshedAt.toLocaleTimeString("id-ID", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </p>
         </section>
 
         {/* Transaction List */}
-        <section className="mt-4 space-y-3" aria-label="Daftar transaksi pribadi">
+        <section
+          className="mt-4 space-y-3"
+          aria-label="Daftar transaksi pribadi"
+        >
           {filteredTransactions.length === 0 ? (
             <div className="rounded-2xl bg-app-surface p-5 text-center text-sm text-app-body-muted shadow-sm">
               Tidak ada transaksi untuk filter ini.
@@ -384,17 +432,25 @@ export default function DompetPage() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-3">
-                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base ${CATEGORY_COLORS[tx.category]}`}>
+                      <div
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base ${CATEGORY_COLORS[tx.category]}`}
+                      >
                         <CategoryIcon className="h-5 w-5" aria-hidden />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="truncate text-sm font-bold text-app-title">{tx.title}</h3>
-                        <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${CATEGORY_COLORS[tx.category]}`}>
+                        <h3 className="truncate text-sm font-bold text-app-title">
+                          {tx.title}
+                        </h3>
+                        <span
+                          className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${CATEGORY_COLORS[tx.category]}`}
+                        >
                           {CATEGORY_LABELS[tx.category]}
                         </span>
                       </div>
                     </div>
-                    <p className={`shrink-0 text-sm font-bold ${isIncome ? "text-emerald-600" : "text-red-600"}`}>
+                    <p
+                      className={`shrink-0 text-sm font-bold ${isIncome ? "text-emerald-600" : "text-red-600"}`}
+                    >
                       {isIncome ? "+" : "-"}
                       {formatRupiah(tx.amount)}
                     </p>
@@ -410,7 +466,10 @@ export default function DompetPage() {
                     </span>
                     {tx.note && (
                       <>
-                        <span className="inline-block h-1 w-1 rounded-full bg-indigo-200" aria-hidden />
+                        <span
+                          className="inline-block h-1 w-1 rounded-full bg-indigo-200"
+                          aria-hidden
+                        />
                         <span className="truncate">{tx.note}</span>
                       </>
                     )}
@@ -424,5 +483,3 @@ export default function DompetPage() {
     </main>
   );
 }
-
-

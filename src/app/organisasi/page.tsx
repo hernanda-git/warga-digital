@@ -187,7 +187,7 @@ function RoleSection({
       </div>
 
       {/* Member cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
         {role.members.map((member) => (
           <MemberCard key={member.id} member={member} />
         ))}
@@ -262,15 +262,15 @@ export default function OrganisasiPage() {
       });
       if (!res.ok) throw new Error("Gagal memuat data organisasi");
       const data: OrganisationTreeApi = await res.json();
-      
+
       // Log all members with custom data
-      data.roles.forEach(role => {
-        role.members.forEach(member => {
+      data.roles.forEach((role) => {
+        role.members.forEach((member) => {
           if (member.custom) {
           }
         });
       });
-      
+
       setTree(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal memuat data organisasi");
@@ -393,7 +393,7 @@ export default function OrganisasiPage() {
         </section>
 
         {/* ── Scrollable content ────────────────────────────── */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 lg:mx-auto lg:w-full lg:max-w-4xl lg:px-6 lg:py-6">
           {/* Error banner */}
           {error && (
             <div className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
@@ -417,7 +417,7 @@ export default function OrganisasiPage() {
                     <div className="h-3 w-24 animate-pulse rounded-full bg-app-surface" />
                     <div className="h-4 w-12 animate-pulse rounded-full bg-app-surface" />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">
                     {Array.from({ length: count }).map((_, i) => (
                       <SkeletonCard key={i} />
                     ))}
