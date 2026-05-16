@@ -68,6 +68,11 @@ function setSessionAdminRole(value: boolean) {
   }
 }
 
+// Module-level flag ensures the admin check fetch runs only once per page load,
+// even when React 18 Strict Mode double-invokes the effect (mount → unmount → mount).
+// Combined with sessionStorage caching, this eliminates redundant /api/profile calls.
+let adminCheckFetched = false;
+
 export function BottomNav() {
   const pathname = usePathname();
   const [isAdminRt, setIsAdminRt] = useState<boolean>(() => {
@@ -75,6 +80,12 @@ export function BottomNav() {
   });
 
   useEffect(() => {
+    // Already cached in sessionStorage — survives page refreshes.
+    if (getSessionAdminRole() !== null) return;
+    // Prevent double-fetch from React 18 Strict Mode.
+    if (adminCheckFetched) return;
+    adminCheckFetched = true;
+
     let cancelled = false;
     fetch("/api/profile")
       .then((res) => (res.ok ? res.json() : null))
@@ -85,10 +96,8 @@ export function BottomNav() {
         setIsAdminRt(result);
       })
       .catch(() => {
-        if (!cancelled) {
-          // Keep current state on transient errors to avoid flicker/hiding
-          // admin menu because of network hiccups.
-        }
+        // Allow retry on next mount if the request failed.
+        adminCheckFetched = false;
       });
 
     return () => {
