@@ -355,6 +355,12 @@ export default function AdminPage() {
       icon: PhotoIcon,
       href: "/admin/branding",
     },
+    {
+      label: "Transaksi Bayangan",
+      sublabel: "Penyesuaian tahunan kas RT",
+      icon: DocumentTextIcon,
+      href: "/admin/kas-rt-shadow",
+    },
   ];
 
   // ── Render ─────────────────────────────────────────────────────────────────

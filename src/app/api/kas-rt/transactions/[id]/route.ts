@@ -14,6 +14,7 @@ import {
   getPublicUrlSafe,
   ALLOWED_ATTACHMENT_TYPES,
 } from "@/lib/r2";
+import { notifyAllActiveUsers } from "@/lib/notifications";
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
 
@@ -83,43 +84,7 @@ async function sendKasRtNotification(
 
     const actorFullName = actorUser?.full_name?.trim() || "Seseorang";
 
-    // 2. Get all tenant_user row IDs that carry a kas-rt role (non-revoked)
-    const { data: roleRows, error: roleErr } = await supabase
-      .from("tenant_user_roles")
-      .select("tenant_user_id")
-      .in("role_id", ROLE_IDS_CAN_SUBMIT_KAS_RT)
-      .is("revoked_at", null);
-
-    if (roleErr) {
-      return;
-    }
-
-    if (!roleRows?.length) return;
-
-    const authorizedTenantUserIds = roleRows.map((r) => r.tenant_user_id);
-
-    // 3. Resolve to user_ids: active, in this tenant, NOT the actor
-    const { data: tenantUsers, error: tuErr } = await supabase
-      .from("tenant_users")
-      .select("user_id")
-      .eq("tenant_id", tenantId)
-      .eq("status", "ACTIVE")
-      .in("id", authorizedTenantUserIds)
-      .neq("user_id", actorUserId);
-
-    if (tuErr) {
-      return;
-    }
-
-    if (!tenantUsers?.length) return;
-
-    const uniqueRecipients = Array.from(
-      new Set(tenantUsers.map((r) => r.user_id).filter(Boolean)),
-    );
-
-    if (uniqueRecipients.length === 0) return;
-
-    // 4. Build notification content
+    // 2. Build notification content
     const titleMap: Record<"UPDATED" | "DELETED", string> = {
       UPDATED:
         transactionType === "income"
@@ -140,37 +105,37 @@ async function sendKasRtNotification(
       `${transactionTitle.trim()} – Rp ${Math.round(transactionAmount).toLocaleString("id-ID")}` +
       ` · ${actionLabelMap[action]}: ${actorFullName}`;
 
-    // 5. Insert one notification row per recipient
-    const notificationRows = uniqueRecipients.map((recipientUserId) => ({
-      tenant_id: tenantId,
-      recipient_user_id: recipientUserId,
-      actor_user_id: actorUserId,
-      type: "KAS_RT",
-      priority: "NORMAL",
-      title: titleMap[action],
-      body,
-      action_url: "/kas-rt",
-      entity_table: "kas_rt_transactions",
-      entity_id: transactionId,
-      dedupe_key: `kas_rt_transaction:${transactionId}:${action}:to:${recipientUserId}`,
-      metadata: {
-        transactionId,
-        transactionType,
-        amount: transactionAmount,
-        date,
-        action,
-        actorFullName,
+    // 3. Send to all active users in the community
+    await notifyAllActiveUsers(
+      supabase,
+      {
+        tenant_id: tenantId,
+        actor_user_id: actorUserId,
+        type: "KAS_RT",
+        priority: "NORMAL",
+        title: titleMap[action],
+        body,
+        action_url: "/kas-rt",
+        entity_table: "kas_rt_transactions",
+        entity_id: transactionId,
+        dedupe_key: `kas_rt_transaction:${transactionId}:${action}`,
+        metadata: {
+          transactionId,
+          transactionType,
+          amount: transactionAmount,
+          date,
+          action,
+          actorFullName,
+        },
+        created_by: actorUserId,
       },
-      created_by: actorUserId,
-    }));
-
-    const { error: notifErr } = await supabase
-      .from("notifications")
-      .insert(notificationRows);
-
-    if (notifErr) {
-    }
+      actorUserId,
+    );
   } catch (error) {
+    console.error(
+      "[kas-rt/transactions/id] sendKasRtNotification error:",
+      error,
+    );
   }
 }
 
@@ -204,7 +169,14 @@ export async function PATCH(
     reference?: string | null;
     details?: string | null;
     category?: string | null;
-    transaction_details?: { name: string; rate_per_warga: number; jumlah_warga: number; subtotal: number }[] | null;
+    transaction_details?:
+      | {
+          name: string;
+          rate_per_warga: number;
+          jumlah_warga: number;
+          subtotal: number;
+        }[]
+      | null;
     attachments?: File[];
   } = {};
 
@@ -382,8 +354,15 @@ export async function PATCH(
   );
 
   // ── Handle transaction details (expense breakdown) ───────────────────────────
-  let savedTransactionDetails: { id: string; name: string; rate_per_warga: number; jumlah_warga: number; subtotal: number; sort_order: number }[] = [];
-  
+  let savedTransactionDetails: {
+    id: string;
+    name: string;
+    rate_per_warga: number;
+    jumlah_warga: number;
+    subtotal: number;
+    sort_order: number;
+  }[] = [];
+
   if (body.transaction_details !== undefined) {
     // Delete existing details first
     await supabase
@@ -419,13 +398,18 @@ export async function PATCH(
       .select("id, name, rate_per_warga, jumlah_warga, subtotal, sort_order")
       .eq("transaction_id", id)
       .order("sort_order");
-    
+
     if (existingDetails) {
       savedTransactionDetails = existingDetails;
     }
   }
 
-  let savedAttachments: { id: string; file_name: string; url: string | null; mime_type: string | null }[] = [];
+  let savedAttachments: {
+    id: string;
+    file_name: string;
+    url: string | null;
+    mime_type: string | null;
+  }[] = [];
 
   const { data: existingAttachments } = await supabase
     .from("kas_rt_attachments")
@@ -456,7 +440,9 @@ export async function PATCH(
           { status: 400 },
         );
       }
-      if (!(ALLOWED_ATTACHMENT_TYPES as readonly string[]).includes(file.type)) {
+      if (
+        !(ALLOWED_ATTACHMENT_TYPES as readonly string[]).includes(file.type)
+      ) {
         return NextResponse.json(
           { message: `Tipe file ${file.name} tidak didukung.` },
           { status: 400 },

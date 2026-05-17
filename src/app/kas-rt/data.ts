@@ -164,7 +164,7 @@ export async function fetchKasRtHero(): Promise<KasRtTotals | null> {
     // Fallback: bounded query + JS aggregation
     const { data: txData } = await supabase
       .from("kas_rt_transactions")
-      .select("type, amount, date")
+      .select("type, amount, date, is_shadow")
       .eq("tenant_id", DEFAULT_TENANT_ID)
       .eq("community_id", DEFAULT_COMMUNITY_ID)
       .is("deleted_at", null)
@@ -178,13 +178,21 @@ export async function fetchKasRtHero(): Promise<KasRtTotals | null> {
 
     for (const tx of txData ?? []) {
       const amount = Number(tx.amount ?? 0);
-      const isIncome = tx.type === "income";
-      const signed = isIncome ? amount : -amount;
+      const isShadow = tx.is_shadow === true;
+      // Shadow transactions use signed amount directly; normal use type-based sign
+      const signed = isShadow
+        ? amount
+        : tx.type === "income"
+          ? amount
+          : -amount;
       balance += signed;
       if (tx.date <= prevMonthEndStr) balanceEndOfPrevMonth += signed;
       if (tx.date >= thisMonthStartStr) {
-        if (isIncome) thisMonthIncome += amount;
-        else thisMonthExpense += amount;
+        // Shadow transactions are yearly (Dec 31), exclude from monthly breakdown
+        if (!isShadow) {
+          if (tx.type === "income") thisMonthIncome += amount;
+          else thisMonthExpense += amount;
+        }
       }
       if (tx.date >= prevMonthStartStr && tx.date <= prevMonthEndStr) {
         prevMonthNet += signed;
@@ -225,16 +233,23 @@ export async function fetchKasRtTransactions(
       .select("id", { count: "exact", head: true })
       .eq("tenant_id", DEFAULT_TENANT_ID)
       .eq("community_id", DEFAULT_COMMUNITY_ID)
-      .is("deleted_at", null);
+      .is("deleted_at", null)
+      .eq("is_shadow", false);
 
     if (filters.typeFilter && filters.typeFilter !== "all") {
       countQuery = countQuery.eq("type", filters.typeFilter);
     }
     if (filters.categoryFilter?.trim()) {
-      countQuery = countQuery.ilike("category", `%${filters.categoryFilter.trim()}%`);
+      countQuery = countQuery.ilike(
+        "category",
+        `%${filters.categoryFilter.trim()}%`,
+      );
     }
     if (filters.blockFilter?.trim()) {
-      countQuery = countQuery.ilike("reference", `%${filters.blockFilter.trim()}%`);
+      countQuery = countQuery.ilike(
+        "reference",
+        `%${filters.blockFilter.trim()}%`,
+      );
     }
     if (filters.startDate) {
       countQuery = countQuery.gte("date", filters.startDate);
@@ -245,7 +260,10 @@ export async function fetchKasRtTransactions(
 
     const { count: totalCount, error: countError } = await countQuery;
     if (countError) {
-      console.error("[kas-rt/data] fetchKasRtTransactions count error:", countError);
+      console.error(
+        "[kas-rt/data] fetchKasRtTransactions count error:",
+        countError,
+      );
     }
 
     let query = supabase
@@ -256,6 +274,7 @@ export async function fetchKasRtTransactions(
       .eq("tenant_id", DEFAULT_TENANT_ID)
       .eq("community_id", DEFAULT_COMMUNITY_ID)
       .is("deleted_at", null)
+      .eq("is_shadow", false)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(10);
@@ -335,7 +354,9 @@ export async function fetchKasRtSummary(
 
 // ─── House Statuses ─────────────────────────────────────────────────────────
 
-export async function fetchKasRtHouseStatuses(): Promise<HouseTransactionStatus[]> {
+export async function fetchKasRtHouseStatuses(): Promise<
+  HouseTransactionStatus[]
+> {
   try {
     const supabase = createServerClient();
 
@@ -348,7 +369,10 @@ export async function fetchKasRtHouseStatuses(): Promise<HouseTransactionStatus[
       .order("blok_rumah");
 
     if (housesError) {
-      console.error("[kas-rt/data] fetchKasRtHouseStatuses houses error:", housesError);
+      console.error(
+        "[kas-rt/data] fetchKasRtHouseStatuses houses error:",
+        housesError,
+      );
       return [];
     }
     if (!houses?.length) {
@@ -361,7 +385,7 @@ export async function fetchKasRtHouseStatuses(): Promise<HouseTransactionStatus[
     const currentYear = new Date().getFullYear();
     const { data: transactions, error: txError } = await supabase
       .from("kas_rt_transactions")
-      .select("amount, date, reference")
+      .select("amount, date, reference, is_shadow")
       .eq("tenant_id", DEFAULT_TENANT_ID)
       .eq("community_id", DEFAULT_COMMUNITY_ID)
       .gte("date", `${currentYear}-01-01`)
@@ -421,9 +445,7 @@ export async function fetchKasRtBlockNames(): Promise<string[]> {
       return [];
     }
 
-    return data
-      .map((h) => h.blok_rumah as string)
-      .sort(sortBlokRumah);
+    return data.map((h) => h.blok_rumah as string).sort(sortBlokRumah);
   } catch {
     return [];
   }

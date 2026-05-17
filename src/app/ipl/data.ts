@@ -57,6 +57,7 @@ export async function fetchIplTransactions(
       .eq("reference", blokRumah)
       .eq("type", "income")
       .is("deleted_at", null)
+      .eq("is_shadow", false)
       .gte("date", yearStart)
       .lt("date", yearEnd)
       .order("date", { ascending: false })

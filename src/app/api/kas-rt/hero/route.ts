@@ -45,14 +45,18 @@ export async function GET() {
     const thisMonthIndex = now.getMonth();
 
     // First day of this month (YYYY-MM-01)
-    const thisMonthStartStr = toDateInputValue(new Date(thisYear, thisMonthIndex, 1));
+    const thisMonthStartStr = toDateInputValue(
+      new Date(thisYear, thisMonthIndex, 1),
+    );
 
     // Last day of previous month
     const prevMonthEnd = new Date(thisYear, thisMonthIndex, 0);
     const prevMonthEndStr = toDateInputValue(prevMonthEnd);
 
     // First day of previous month
-    const prevMonthStartStr = toDateInputValue(new Date(thisYear, thisMonthIndex - 1, 1));
+    const prevMonthStartStr = toDateInputValue(
+      new Date(thisYear, thisMonthIndex - 1, 1),
+    );
 
     // Previous month end label (Indonesian format)
     const prevMonthEndLabel = prevMonthEnd.toLocaleDateString("id-ID", {
@@ -74,12 +78,16 @@ export async function GET() {
     });
 
     // If RPC doesn't exist, fall back to raw SQL via Supabase
-    if (error?.code === "PGRST202" || error?.message?.includes("function") || error?.message?.includes("does not exist")) {
+    if (
+      error?.code === "PGRST202" ||
+      error?.message?.includes("function") ||
+      error?.message?.includes("does not exist")
+    ) {
       // Fallback: Use direct query with aggregation in JavaScript
       // This is still efficient as we only fetch type, amount, date
       const { data: txData, error: txError } = await supabase
         .from("kas_rt_transactions")
-        .select("type, amount, date")
+        .select("type, amount, date, is_shadow")
         .eq("tenant_id", tenantId)
         .eq("community_id", communityId)
         .is("deleted_at", null);
@@ -100,9 +108,14 @@ export async function GET() {
 
       for (const tx of txData ?? []) {
         const rawAmount = tx.amount;
-        const amount = rawAmount != null && !isNaN(Number(rawAmount)) ? Number(rawAmount) : 0;
+        const amount =
+          rawAmount != null && !isNaN(Number(rawAmount))
+            ? Number(rawAmount)
+            : 0;
+        const isShadow = tx.is_shadow === true;
         const isIncome = tx.type === "income";
-        const signedAmount = isIncome ? amount : -amount;
+        // Shadow transactions use signed amount directly; normal use type-based sign
+        const signedAmount = isShadow ? amount : isIncome ? amount : -amount;
 
         // Total balance (all transactions)
         balance += signedAmount;
@@ -112,8 +125,8 @@ export async function GET() {
           balanceEndOfPrevMonth += signedAmount;
         }
 
-        // This month income/expense
-        if (tx.date >= thisMonthStartStr) {
+        // This month income/expense (shadow transactions are yearly, exclude from monthly)
+        if (tx.date >= thisMonthStartStr && !isShadow) {
           if (isIncome) {
             thisMonthIncome += amount;
           } else {

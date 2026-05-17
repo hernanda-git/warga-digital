@@ -9,6 +9,7 @@ import {
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
 import { getMonthNameIndonesian, applyTemplate } from "@/lib/kas-rt-utils";
+import { notifyAllActiveUsers } from "@/lib/notifications";
 
 export async function POST(request: Request) {
   try {
@@ -136,7 +137,10 @@ export async function POST(request: Request) {
         .eq("category", "IPL")
         .eq("reference", blokRumah)
         .is("deleted_at", null)
-        .gte("date", `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`)
+        .gte(
+          "date",
+          `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`,
+        )
         .lt(
           "date",
           `${currentYear}-${String(currentMonth + 2).padStart(2, "0")}-01`,
@@ -186,7 +190,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // ── Notifications (same logic as existing income POST) ─────────────────
+    // ── Notifications (all active users in community) ──────────────────────
     const { data: actorUser } = await supabase
       .from("users")
       .select("full_name")
@@ -207,66 +211,24 @@ export async function POST(request: Request) {
       actorFullName,
     };
 
-    const { data: roleRows, error: roleErr } = await supabase
-      .from("tenant_user_roles")
-      .select("tenant_user_id")
-      .in("role_id", ROLE_IDS_CAN_SUBMIT_KAS_RT)
-      .is("revoked_at", null);
-
-    if (roleErr) {
-      console.error(
-        "[kas-rt/transactions/ipl] Role query error:",
-        roleErr,
-      );
-    } else if (roleRows?.length) {
-      const authorizedTenantUserIds = roleRows.map((r) => r.tenant_user_id);
-
-      const { data: recipientRows, error: recipientErr } = await supabase
-        .from("tenant_users")
-        .select("user_id")
-        .eq("tenant_id", tenantId)
-        .eq("status", "ACTIVE")
-        .in("id", authorizedTenantUserIds)
-        .neq("user_id", session.userId);
-
-      if (recipientErr) {
-        console.error(
-          "[kas-rt/transactions/ipl] Recipient query error:",
-          recipientErr,
-        );
-      } else if (recipientRows && recipientRows.length > 0) {
-        const uniqueRecipients = Array.from(
-          new Set(recipientRows.map((row) => row.user_id).filter(Boolean)),
-        );
-
-        const notificationRows = uniqueRecipients.map((recipientUserId) => ({
-          tenant_id: tenantId,
-          recipient_user_id: recipientUserId,
-          actor_user_id: session.userId,
-          type: "KAS_RT",
-          priority: "NORMAL",
-          title: notifTitle,
-          body: notifBody,
-          action_url: "/kas-rt",
-          entity_table: "kas_rt_transactions",
-          entity_id: createdTx.id,
-          dedupe_key: `kas_rt_transaction:${createdTx.id}:CREATED:to:${recipientUserId}`,
-          metadata: notifMeta,
-          created_by: session.userId,
-        }));
-
-        const { error: notifErr } = await supabase
-          .from("notifications")
-          .insert(notificationRows);
-
-        if (notifErr) {
-          console.error(
-            "[kas-rt/transactions/ipl] Failed to insert notifications:",
-            notifErr,
-          );
-        }
-      }
-    }
+    await notifyAllActiveUsers(
+      supabase,
+      {
+        tenant_id: tenantId,
+        actor_user_id: session.userId,
+        type: "KAS_RT",
+        priority: "NORMAL",
+        title: notifTitle,
+        body: notifBody,
+        action_url: "/kas-rt",
+        entity_table: "kas_rt_transactions",
+        entity_id: createdTx.id,
+        dedupe_key: `kas_rt_transaction:${createdTx.id}:CREATED`,
+        metadata: notifMeta,
+        created_by: session.userId,
+      },
+      session.userId,
+    );
 
     return NextResponse.json({
       id: createdTx.id,

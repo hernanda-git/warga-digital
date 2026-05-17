@@ -84,7 +84,7 @@ export async function fetchKasRtSummaryData({
 
   const { data: allTx, error: txError } = await supabase
     .from("kas_rt_transactions")
-    .select("type, amount, date, category, reference")
+    .select("type, amount, date, category, reference, is_shadow")
     .eq("tenant_id", tenantId)
     .eq("community_id", communityId)
     .is("deleted_at", null)
@@ -99,7 +99,9 @@ export async function fetchKasRtSummaryData({
 
   const selectedMonthTx = transactions.filter((tx) => {
     const txDateStr = tx.date;
-    return txDateStr >= selectedMonthStartStr && txDateStr <= selectedMonthEndStr;
+    return (
+      txDateStr >= selectedMonthStartStr && txDateStr <= selectedMonthEndStr
+    );
   });
 
   let selectedMonthIncome = 0;
@@ -109,22 +111,41 @@ export async function fetchKasRtSummaryData({
 
   for (const tx of selectedMonthTx) {
     const rawAmount = tx.amount;
-    const amount = rawAmount != null && !isNaN(Number(rawAmount)) ? Number(rawAmount) : 0;
-    const isIncome = tx.type === "income";
+    const amount =
+      rawAmount != null && !isNaN(Number(rawAmount)) ? Number(rawAmount) : 0;
+    const isShadow = tx.is_shadow === true;
 
-    if (isIncome) {
-      selectedMonthIncome += amount;
+    if (isShadow) {
+      // Shadow transactions: signed amount affects net directly
+      if (amount >= 0) {
+        selectedMonthIncome += amount;
+      } else {
+        selectedMonthExpense += Math.abs(amount);
+      }
     } else {
-      selectedMonthExpense += amount;
+      if (tx.type === "income") {
+        selectedMonthIncome += amount;
+      } else {
+        selectedMonthExpense += amount;
+      }
     }
 
     const catKey = tx.category ?? "Lainnya";
     const existing = categoryMap.get(catKey) ?? { amount: 0, count: 0 };
-    categoryMap.set(catKey, { amount: existing.amount + amount, count: existing.count + 1 });
+    categoryMap.set(catKey, {
+      amount: existing.amount + amount,
+      count: existing.count + 1,
+    });
 
     const dateKey = tx.date;
     const daily = dailyMap.get(dateKey) ?? { income: 0, expense: 0 };
-    if (isIncome) {
+    if (isShadow) {
+      if (amount >= 0) {
+        daily.income += amount;
+      } else {
+        daily.expense += Math.abs(amount);
+      }
+    } else if (tx.type === "income") {
       daily.income += amount;
     } else {
       daily.expense += amount;
@@ -141,14 +162,19 @@ export async function fetchKasRtSummaryData({
         category,
         amount: data.amount,
         count: data.count,
-        percentage: selectedMonthIncome + selectedMonthExpense > 0
-          ? (data.amount / (selectedMonthIncome + selectedMonthExpense)) * 100
-          : 0,
+        percentage:
+          selectedMonthIncome + selectedMonthExpense > 0
+            ? (data.amount / (selectedMonthIncome + selectedMonthExpense)) * 100
+            : 0,
       }))
       .sort((a, b) => b.amount - a.amount);
 
   const dailyBreakdown = Array.from(dailyMap.entries())
-    .map(([date, data]) => ({ date, income: data.income, expense: data.expense }))
+    .map(([date, data]) => ({
+      date,
+      income: data.income,
+      expense: data.expense,
+    }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const prevMonthTx = transactions.filter((tx) => {
@@ -161,8 +187,13 @@ export async function fetchKasRtSummaryData({
 
   for (const tx of prevMonthTx) {
     const rawAmount = tx.amount;
-    const amount = rawAmount != null && !isNaN(Number(rawAmount)) ? Number(rawAmount) : 0;
-    if (tx.type === "income") {
+    const amount =
+      rawAmount != null && !isNaN(Number(rawAmount)) ? Number(rawAmount) : 0;
+    const isShadow = tx.is_shadow === true;
+    if (isShadow) {
+      if (amount >= 0) prevMonthIncome += amount;
+      else prevMonthExpense += Math.abs(amount);
+    } else if (tx.type === "income") {
       prevMonthIncome += amount;
     } else {
       prevMonthExpense += amount;
@@ -171,42 +202,55 @@ export async function fetchKasRtSummaryData({
 
   const prevMonthNet = prevMonthIncome - prevMonthExpense;
 
-  const yearlyTrend: KasRtSummaryResponse["yearlyTrend"] = trendMonths.map(({ year: y, month: m }) => {
-    const monthStart = new Date(y, m, 1);
-    const monthEnd = new Date(y, m + 1, 0);
-    const monthStartStr = toDateInputValue(monthStart);
-    const monthEndStr = toDateInputValue(monthEnd);
-    const monthLabel = monthStart.toLocaleDateString("id-ID", { month: "short" });
+  const yearlyTrend: KasRtSummaryResponse["yearlyTrend"] = trendMonths.map(
+    ({ year: y, month: m }) => {
+      const monthStart = new Date(y, m, 1);
+      const monthEnd = new Date(y, m + 1, 0);
+      const monthStartStr = toDateInputValue(monthStart);
+      const monthEndStr = toDateInputValue(monthEnd);
+      const monthLabel = monthStart.toLocaleDateString("id-ID", {
+        month: "short",
+      });
 
-    const monthTx = transactions.filter((tx) => {
-      const txDateStr = tx.date;
-      return txDateStr >= monthStartStr && txDateStr <= monthEndStr;
-    });
+      const monthTx = transactions.filter((tx) => {
+        const txDateStr = tx.date;
+        return txDateStr >= monthStartStr && txDateStr <= monthEndStr;
+      });
 
-    let income = 0;
-    let expense = 0;
+      let income = 0;
+      let expense = 0;
 
-    for (const tx of monthTx) {
-      const rawAmount = tx.amount;
-      const amount = rawAmount != null && !isNaN(Number(rawAmount)) ? Number(rawAmount) : 0;
-      if (tx.type === "income") {
-        income += amount;
-      } else {
-        expense += amount;
+      for (const tx of monthTx) {
+        const rawAmount = tx.amount;
+        const amount =
+          rawAmount != null && !isNaN(Number(rawAmount))
+            ? Number(rawAmount)
+            : 0;
+        const isShadow = tx.is_shadow === true;
+        if (isShadow) {
+          if (amount >= 0) income += amount;
+          else expense += Math.abs(amount);
+        } else if (tx.type === "income") {
+          income += amount;
+        } else {
+          expense += amount;
+        }
       }
-    }
 
-    return {
-      month: `${y}-${String(m + 1).padStart(2, "0")}`,
-      label: monthLabel,
-      income,
-      expense,
-    };
-  });
+      return {
+        month: `${y}-${String(m + 1).padStart(2, "0")}`,
+        label: monthLabel,
+        income,
+        expense,
+      };
+    },
+  );
 
   const TOTAL_HOUSES = 85;
   const iplCategory = "IPL";
-  const iplTx = selectedMonthTx.filter((tx) => tx.category === iplCategory && tx.type === "income");
+  const iplTx = selectedMonthTx.filter(
+    (tx) => tx.category === iplCategory && tx.type === "income",
+  );
 
   const paidBlocks = new Set<string>();
   for (const tx of iplTx) {
@@ -216,7 +260,8 @@ export async function fetchKasRtSummaryData({
   }
 
   const paidHouses = paidBlocks.size;
-  const iplPercentage = TOTAL_HOUSES > 0 ? Math.round((paidHouses / TOTAL_HOUSES) * 100) : 0;
+  const iplPercentage =
+    TOTAL_HOUSES > 0 ? Math.round((paidHouses / TOTAL_HOUSES) * 100) : 0;
 
   const iplCollection: KasRtSummaryResponse["iplCollection"] = {
     totalHouses: TOTAL_HOUSES,
@@ -226,9 +271,15 @@ export async function fetchKasRtSummaryData({
   };
 
   const daysWithTx = dailyBreakdown.length;
-  const avgPerDay = daysWithTx > 0 ? (selectedMonthIncome + selectedMonthExpense) / daysWithTx : 0;
+  const avgPerDay =
+    daysWithTx > 0
+      ? (selectedMonthIncome + selectedMonthExpense) / daysWithTx
+      : 0;
 
-  const dailyNet = dailyBreakdown.map((d) => ({ date: d.date, net: d.income - d.expense }));
+  const dailyNet = dailyBreakdown.map((d) => ({
+    date: d.date,
+    net: d.income - d.expense,
+  }));
 
   let bestDay: { date: string; amount: number } | null = null;
   let worstDay: { date: string; amount: number } | null = null;
@@ -242,9 +293,10 @@ export async function fetchKasRtSummaryData({
     }
   }
 
-  const highestCategory = byCategory.length > 0
-    ? { name: byCategory[0].category, amount: byCategory[0].amount }
-    : { name: "Tidak ada", amount: 0 };
+  const highestCategory =
+    byCategory.length > 0
+      ? { name: byCategory[0].category, amount: byCategory[0].amount }
+      : { name: "Tidak ada", amount: 0 };
 
   const stats: KasRtSummaryResponse["stats"] = {
     avgPerDay,

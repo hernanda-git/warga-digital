@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     // Fetch transactions for 2026
     const { data: transactions, error: txError } = await supabase
       .from("kas_rt_transactions")
-      .select("amount, date, reference")
+      .select("amount, date, reference, is_shadow")
       .eq("tenant_id", tenantId)
       .eq("community_id", communityId)
       .gte("date", "2026-01-01")

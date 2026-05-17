@@ -232,87 +232,24 @@ export async function POST(request: Request) {
       actorFullName,
     };
 
-    if (type === "expense") {
-      await notifyAllActiveUsers(
-        supabase,
-        {
-          tenant_id: tenantId,
-          actor_user_id: session.userId,
-          type: "KAS_RT",
-          priority: "NORMAL",
-          title: notifTitle,
-          body: notifBody,
-          action_url: "/kas-rt",
-          entity_table: "kas_rt_transactions",
-          entity_id: data.id,
-          dedupe_key: `kas_rt_transaction:${data.id}:CREATED`,
-          metadata: notifMeta,
-          created_by: session.userId,
-        },
-        session.userId,
-      );
-    } else {
-      const { data: roleRows, error: roleErr } = await supabase
-        .from("tenant_user_roles")
-        .select("tenant_user_id")
-        .in("role_id", ROLE_IDS_CAN_SUBMIT_KAS_RT)
-        .is("revoked_at", null);
-
-      if (roleErr) {
-        console.error(
-          "[kas-rt/transactions] Role query error for income notification:",
-          roleErr,
-        );
-      } else if (roleRows?.length) {
-        const authorizedTenantUserIds = roleRows.map((r) => r.tenant_user_id);
-
-        const { data: recipientRows, error: recipientErr } = await supabase
-          .from("tenant_users")
-          .select("user_id")
-          .eq("tenant_id", tenantId)
-          .eq("status", "ACTIVE")
-          .in("id", authorizedTenantUserIds)
-          .neq("user_id", session.userId);
-
-        if (recipientErr) {
-          console.error(
-            "[kas-rt/transactions] Recipient query error for income notification:",
-            recipientErr,
-          );
-        } else if (recipientRows && recipientRows.length > 0) {
-          const uniqueRecipients = Array.from(
-            new Set(recipientRows.map((row) => row.user_id).filter(Boolean)),
-          );
-
-          const notificationRows = uniqueRecipients.map((recipientUserId) => ({
-            tenant_id: tenantId,
-            recipient_user_id: recipientUserId,
-            actor_user_id: session.userId,
-            type: "KAS_RT",
-            priority: "NORMAL",
-            title: notifTitle,
-            body: notifBody,
-            action_url: "/kas-rt",
-            entity_table: "kas_rt_transactions",
-            entity_id: data.id,
-            dedupe_key: `kas_rt_transaction:${data.id}:CREATED:to:${recipientUserId}`,
-            metadata: notifMeta,
-            created_by: session.userId,
-          }));
-
-          const { error: notifErr } = await supabase
-            .from("notifications")
-            .insert(notificationRows);
-
-          if (notifErr) {
-            console.error(
-              "[kas-rt/transactions] Failed to insert income notifications:",
-              notifErr,
-            );
-          }
-        }
-      }
-    }
+    await notifyAllActiveUsers(
+      supabase,
+      {
+        tenant_id: tenantId,
+        actor_user_id: session.userId,
+        type: "KAS_RT",
+        priority: "NORMAL",
+        title: notifTitle,
+        body: notifBody,
+        action_url: "/kas-rt",
+        entity_table: "kas_rt_transactions",
+        entity_id: data.id,
+        dedupe_key: `kas_rt_transaction:${data.id}:CREATED`,
+        metadata: notifMeta,
+        created_by: session.userId,
+      },
+      session.userId,
+    );
 
     const attachmentNames: string[] = [];
     const attachmentsToInsert: {
@@ -527,7 +464,8 @@ export async function GET(request: Request) {
       .select("id", { count: "exact", head: true })
       .eq("tenant_id", tenantId)
       .eq("community_id", communityId)
-      .is("deleted_at", null);
+      .is("deleted_at", null)
+      .eq("is_shadow", false);
 
     // Apply filters to count query
     if (typeFilter && (typeFilter === "income" || typeFilter === "expense")) {
@@ -560,6 +498,7 @@ export async function GET(request: Request) {
       .eq("tenant_id", tenantId)
       .eq("community_id", communityId)
       .is("deleted_at", null)
+      .eq("is_shadow", false)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
