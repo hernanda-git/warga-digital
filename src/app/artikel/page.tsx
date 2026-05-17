@@ -70,12 +70,6 @@ function generateExcerpt(content: string, maxLength: number = 300): string {
   return plainText.substring(0, maxLength) + "...";
 }
 
-function getCommunityNameFromCookie(): string {
-  if (typeof document === "undefined") return "Warga Digital";
-  const match = document.cookie.match(/community_name=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : "Warga Digital";
-}
-
 export default function ArtikelPage() {
   const router = useRouter();
   const [articles, setArticles] = useState<Article[]>([]);
@@ -85,7 +79,7 @@ export default function ArtikelPage() {
   const [totalArticles, setTotalArticles] = useState(0);
   const [articlesThisWeek, setArticlesThisWeek] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [communityName] = useState<string>(getCommunityNameFromCookie());
+  const [communityName, setCommunityName] = useState<string>("Warga Digital");
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [navigatingSlug, setNavigatingSlug] = useState<string | null>(null);
 
@@ -115,7 +109,19 @@ export default function ArtikelPage() {
 
   useEffect(() => {
     fetchArticles();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
+
+  useEffect(() => {
+    fetch("/api/community/info")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.communityName) setCommunityName(data.communityName);
+      })
+      .catch(() => {
+        // fallback to default "Warga Digital"
+      });
+  }, []);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("id-ID", {
