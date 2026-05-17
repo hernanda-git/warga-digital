@@ -16,6 +16,7 @@ import {
   Cog6ToothIcon,
   NewspaperIcon,
   ArrowLeftOnRectangleIcon,
+  ArchiveBoxIcon,
 } from "@heroicons/react/24/outline";
 import {
   HomeIcon as HomeSolidIcon,
@@ -28,6 +29,7 @@ import {
   UserCircleIcon as UserCircleSolidIcon,
   Cog6ToothIcon as Cog6ToothSolidIcon,
   NewspaperIcon as NewspaperSolidIcon,
+  ArchiveBoxIcon as ArchiveBoxSolidIcon,
 } from "@heroicons/react/24/solid";
 import { hasAdminRoleInProfile } from "@/lib/roles";
 import { useAuthStore } from "@/stores/auth-store";
@@ -57,6 +59,12 @@ const BASE_NAV_ITEMS: NavItem[] = [
     label: "Kas RT",
     icon: BanknotesIcon,
     activeIcon: BanknotesSolidIcon,
+  },
+  {
+    href: "/asset-rt",
+    label: "Aset RT",
+    icon: ArchiveBoxIcon,
+    activeIcon: ArchiveBoxSolidIcon,
   },
   {
     href: "/ipl",
