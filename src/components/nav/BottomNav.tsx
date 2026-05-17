@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -16,6 +16,7 @@ import {
   UserCircleIcon as UserCircleSolidIcon,
 } from "@heroicons/react/24/solid";
 import { hasAdminRoleInProfile } from "@/lib/roles";
+import { useAuthStore } from "@/stores/auth-store";
 
 const BASE_NAV_ITEMS = [
   { href: "/landing", label: "Beranda", icon: HomeIcon },
@@ -48,43 +49,20 @@ function AdminIcon({ active }: { active: boolean }) {
   return <Icon className="h-6 w-6" aria-hidden />;
 }
 
-const SESSION_KEY = "isAdminRt";
-
-function getSessionAdminRole(): boolean | null {
-  try {
-    const val = sessionStorage.getItem(SESSION_KEY);
-    if (val === null) return null;
-    return val === "true";
-  } catch {
-    return null;
-  }
-}
-
-function setSessionAdminRole(value: boolean) {
-  try {
-    sessionStorage.setItem(SESSION_KEY, String(value));
-  } catch {
-    // sessionStorage not available (e.g. SSR), silently ignore
-  }
-}
-
-// Module-level flag ensures the admin check fetch runs only once per page load,
-// even when React 18 Strict Mode double-invokes the effect (mount → unmount → mount).
-// Combined with sessionStorage caching, this eliminates redundant /api/profile calls.
-let adminCheckFetched = false;
+// Module-level guard so the admin-fetch effect runs only once per page load,
+// even when React 18 Strict Mode double-invokes mount → unmount → mount.
+let adminFetchFired = false;
 
 export function BottomNav() {
   const pathname = usePathname();
-  const [isAdminRt, setIsAdminRt] = useState<boolean>(() => {
-    return getSessionAdminRole() ?? false;
-  });
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const setAdminRole = useAuthStore((s) => s.setAdminRole);
 
+  // ── Admin role: use persisted value from auth store (instant on first paint)
+  //    then freshen it from the API in the background.
   useEffect(() => {
-    // Already cached in sessionStorage — survives page refreshes.
-    if (getSessionAdminRole() !== null) return;
-    // Prevent double-fetch from React 18 Strict Mode.
-    if (adminCheckFetched) return;
-    adminCheckFetched = true;
+    if (adminFetchFired) return;
+    adminFetchFired = true;
 
     let cancelled = false;
     fetch("/api/profile")
@@ -92,20 +70,18 @@ export function BottomNav() {
       .then((data) => {
         if (cancelled) return;
         const result = hasAdminRoleInProfile(data);
-        setSessionAdminRole(result);
-        setIsAdminRt(result);
+        setAdminRole(result);
       })
       .catch(() => {
-        // Allow retry on next mount if the request failed.
-        adminCheckFetched = false;
+        adminFetchFired = false; // allow retry if request failed
       });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setAdminRole]);
 
-  const navItems = isAdminRt
+  const navItems = isAdmin
     ? [...BASE_NAV_ITEMS, ADMIN_NAV_ITEM]
     : BASE_NAV_ITEMS;
 

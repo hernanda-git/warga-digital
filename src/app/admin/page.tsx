@@ -17,6 +17,7 @@ import {
   Squares2X2Icon,
   DocumentTextIcon,
   KeyIcon,
+  PhotoIcon,
 } from "@heroicons/react/24/outline";
 import { ShieldCheckIcon as ShieldCheckSolidIcon } from "@heroicons/react/24/solid";
 import { PageLoader } from "@/components/ui";
@@ -347,6 +348,12 @@ export default function AdminPage() {
       sublabel: "Kelola konten & berita",
       icon: DocumentTextIcon,
       href: "/admin/articles",
+    },
+    {
+      label: "Branding",
+      sublabel: "Logo sidebar & tampilan",
+      icon: PhotoIcon,
+      href: "/admin/branding",
     },
   ];
 

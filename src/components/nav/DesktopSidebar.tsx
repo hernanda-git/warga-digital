@@ -98,41 +98,25 @@ const ADMIN_NAV_ITEM: NavItem = {
   activeIcon: Cog6ToothSolidIcon,
 };
 
-const SESSION_KEY = "isAdminRt";
-
-function getSessionAdminRole(): boolean | null {
-  try {
-    const val = sessionStorage.getItem(SESSION_KEY);
-    if (val === null) return null;
-    return val === "true";
-  } catch {
-    return null;
-  }
-}
-
-function setSessionAdminRole(value: boolean) {
-  try {
-    sessionStorage.setItem(SESSION_KEY, String(value));
-  } catch {
-    // sessionStorage not available (e.g. SSR), silently ignore
-  }
-}
-
-let adminCheckFetched = false;
+// Module-level guard so the admin-fetch effect runs only once per page load,
+// even when React 18 Strict Mode double-invokes mount → unmount → mount.
+let adminFetchFired = false;
 
 export function DesktopSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const clearUser = useAuthStore((s) => s.clearUser);
-  const [isAdminRt, setIsAdminRt] = useState<boolean>(() => {
-    return getSessionAdminRole() ?? false;
-  });
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const setAdminRole = useAuthStore((s) => s.setAdminRole);
+  const logoUrl = useAuthStore((s) => s.logoUrl);
+  const setLogoUrl = useAuthStore((s) => s.setLogoUrl);
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // ── Admin role: use persisted value from auth store (instant on first paint)
+  //    then freshen it from the API in the background.
   useEffect(() => {
-    if (getSessionAdminRole() !== null) return;
-    if (adminCheckFetched) return;
-    adminCheckFetched = true;
+    if (adminFetchFired) return;
+    adminFetchFired = true;
 
     let cancelled = false;
     fetch("/api/profile")
@@ -140,19 +124,40 @@ export function DesktopSidebar() {
       .then((data) => {
         if (cancelled) return;
         const result = hasAdminRoleInProfile(data);
-        setSessionAdminRole(result);
-        setIsAdminRt(result);
+        setAdminRole(result);
       })
       .catch(() => {
-        adminCheckFetched = false;
+        adminFetchFired = false; // allow retry if request failed
       });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setAdminRole]);
 
-  const navItems = isAdminRt
+  // ── Fetch logo URL if not yet cached in auth store ─────────────────────
+  useEffect(() => {
+    if (logoUrl) return; // already have it
+
+    let cancelled = false;
+    fetch("/api/admin/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.logo_url) {
+          setLogoUrl(data.logo_url);
+        }
+      })
+      .catch(() => {
+        // silent — will retry on next page load
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [logoUrl, setLogoUrl]);
+
+  const navItems = isAdmin
     ? [...BASE_NAV_ITEMS, ADMIN_NAV_ITEM]
     : BASE_NAV_ITEMS;
 
@@ -171,13 +176,15 @@ export function DesktopSidebar() {
     <aside className="hidden lg:flex lg:flex-col lg:h-dvh lg:w-64 lg:shrink-0 lg:border-r lg:border-[var(--color-input-border)] lg:bg-white">
       {/* ── Brand Header ─────────────────────────────────────── */}
       <div className="flex shrink-0 items-center gap-3 border-b border-[var(--color-input-border)] px-5 py-4">
-        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl">
+        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden">
           <Image
-            src="/warga-digital.png"
+            src={logoUrl || "/warga-digital.png"}
             alt="Warga Digital"
-            fill
-            className="object-cover"
+            width={36}
+            height={36}
+            className="h-full w-full object-contain"
             priority
+            unoptimized
           />
         </div>
         <div className="min-w-0">
