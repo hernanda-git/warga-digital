@@ -1,0 +1,267 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .page { max-width: 390px; margin: 0 auto; background: #F5F5F3; min-height: 100vh; font-family: var(--font-sans); }
+
+  .hero { background: #111827; padding: 24px 20px 24px; }
+  .hero-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+  .hero-eyebrow { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.3); letter-spacing: 0.12em; text-transform: uppercase; }
+  .hero-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); font-size: 14px; }
+
+  .hero-main { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+  .hero-heading { font-size: 28px; font-weight: 500; color: #fff; letter-spacing: -0.03em; line-height: 1.1; }
+  .btn-tambah { flex-shrink: 0; display: flex; align-items: center; gap: 6px; background: #fff; color: #111827; font-size: 13px; font-weight: 500; padding: 9px 16px; border-radius: 10px; border: none; cursor: pointer; letter-spacing: -0.01em; }
+  .btn-tambah i { font-size: 15px; }
+
+  .hero-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .stat-box { background: rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px; }
+  .stat-box .val { font-size: 22px; font-weight: 500; color: #fff; letter-spacing: -0.03em; }
+  .stat-box .lbl { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 1px; }
+
+  .search-wrap { padding: 16px 20px 0; }
+  .search-bar { background: #fff; border-radius: 12px; padding: 0 14px; display: flex; align-items: center; gap: 10px; height: 44px; }
+  .search-bar i { color: #aaa; font-size: 16px; flex-shrink: 0; }
+  .search-bar input { border: none; background: transparent; outline: none; font-size: 14px; color: var(--color-text-primary); flex: 1; height: 100%; }
+  .search-bar input::placeholder { color: #bbb; }
+
+  .filter-row { display: flex; gap: 7px; padding: 12px 20px 0; overflow-x: auto; scrollbar-width: none; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .chip { flex-shrink: 0; font-size: 12px; font-weight: 500; padding: 6px 14px; border-radius: 20px; background: #fff; color: #888; cursor: pointer; }
+  .chip.active { background: #111827; color: #fff; }
+
+  .list-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 10px; }
+  .list-count { font-size: 12px; color: #aaa; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
+  .sort-btn { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #888; background: none; border: none; cursor: pointer; }
+  .sort-btn i { font-size: 14px; }
+
+  .card-list { padding: 0 20px 40px; display: flex; flex-direction: column; gap: 10px; }
+
+  .asset-card { background: #fff; border-radius: 16px; overflow: hidden; }
+
+  .card-body { padding: 16px 16px 14px; }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .asset-name { font-size: 15px; font-weight: 500; color: #111827; letter-spacing: -0.01em; }
+  .asset-loc { font-size: 12px; color: #aaa; display: flex; align-items: center; gap: 3px; margin-top: 3px; }
+  .asset-loc i { font-size: 12px; }
+  .qty-chip { flex-shrink: 0; font-size: 13px; font-weight: 500; color: #111827; background: #F5F5F3; border-radius: 8px; padding: 5px 11px; white-space: nowrap; }
+
+  .tag-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  .tag { font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 6px; }
+  .tag.blue   { background: #EBF3FD; color: #1556A8; }
+  .tag.green  { background: #E8F5E2; color: #2D6B14; }
+  .tag.amber  { background: #FDF0DC; color: #7A4A0A; }
+  .tag.purple { background: #EFEDFE; color: #3C3489; }
+  .tag.gray   { background: #F0EFEA; color: #777; }
+
+  .card-sep { height: 1px; background: #F0EFEA; margin: 14px 0 12px; }
+
+  .card-dates { display: flex; justify-content: space-between; }
+  .date-group { display: flex; flex-direction: column; gap: 2px; }
+  .date-group.right { text-align: right; }
+  .date-label { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: 0.06em; }
+  .date-value { font-size: 12px; color: #888; }
+
+  .card-updated { padding: 9px 16px; background: #FAFAF9; display: flex; align-items: center; gap: 6px; }
+  .card-updated i { font-size: 13px; color: #ccc; }
+  .card-updated span { font-size: 11px; color: #bbb; }
+  .card-updated strong { font-size: 11px; font-weight: 500; color: #888; }
+
+  .card-footer { display: flex; background: #fff; }
+  .action-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px 0; font-size: 13px; font-weight: 500; background: none; border: none; cursor: pointer; color: #aaa; }
+  .action-sep { width: 1px; background: #F0EFEA; }
+  .action-btn.primary { color: #111827; }
+  .action-btn i { font-size: 15px; }
+</style>
+
+<h2 class="sr-only">Daftar aset — desain penuh tanpa border berlebihan, dengan tombol tambah di hero</h2>
+
+<div class="page">
+
+  <div class="hero">
+    <div class="hero-top">
+      <span class="hero-eyebrow">Inventaris</span>
+      <div class="hero-avatar"><i class="ti ti-user" aria-hidden="true"></i></div>
+    </div>
+    <div class="hero-main">
+      <div class="hero-heading">Daftar<br>Aset</div>
+      <button class="btn-tambah" onclick="sendPrompt('Tambah aset baru')"><i class="ti ti-plus" aria-hidden="true"></i> Tambah Aset</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-box"><div class="val">124</div><div class="lbl">Total aset</div></div>
+      <div class="stat-box"><div class="val">8</div><div class="lbl">Baru bulan ini</div></div>
+      <div class="stat-box"><div class="val">3</div><div class="lbl">Perlu update</div></div>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <div class="search-bar">
+      <i class="ti ti-search" aria-hidden="true"></i>
+      <input type="text" placeholder="Cari nama, lokasi, atau tag…" />
+      <i class="ti ti-adjustments-horizontal" aria-hidden="true" style="color:#bbb;cursor:pointer;"></i>
+    </div>
+  </div>
+
+  <div class="filter-row">
+    <div class="chip active">Semua</div>
+    <div class="chip">Elektronik</div>
+    <div class="chip">Furnitur</div>
+    <div class="chip">Kendaraan</div>
+    <div class="chip">Mesin</div>
+  </div>
+
+  <div class="list-header">
+    <span class="list-count">124 aset</span>
+    <button class="sort-btn"><i class="ti ti-arrows-sort" aria-hidden="true"></i> Urutkan</button>
+  </div>
+
+  <div class="card-list">
+
+    <div class="asset-card">
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="asset-name">Laptop Dell XPS 15</div>
+            <div class="asset-loc"><i class="ti ti-map-pin" aria-hidden="true"></i> Ruang IT — Lt. 3</div>
+          </div>
+          <span class="qty-chip">5 Unit</span>
+        </div>
+        <div class="tag-row">
+          <span class="tag blue">Elektronik</span>
+          <span class="tag green">Aktif</span>
+          <span class="tag gray">Garansi</span>
+        </div>
+        <div class="card-sep"></div>
+        <div class="card-dates">
+          <div class="date-group">
+            <span class="date-label">Tgl. pembelian</span>
+            <span class="date-value">12 Jan 2023</span>
+          </div>
+          <div class="date-group right">
+            <span class="date-label">Terakhir diperbarui</span>
+            <span class="date-value">02 Mei 2025</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-updated">
+        <i class="ti ti-user-circle" aria-hidden="true"></i>
+        <span>Diperbarui oleh</span><strong style="margin-left:4px;">Andi Saputra</strong>
+      </div>
+      <div class="card-footer">
+        <button class="action-btn" onclick="sendPrompt('Tampilkan detail Laptop Dell XPS 15')"><i class="ti ti-eye" aria-hidden="true"></i> Detail</button>
+        <div class="action-sep"></div>
+        <button class="action-btn primary" onclick="sendPrompt('Edit aset Laptop Dell XPS 15')"><i class="ti ti-edit" aria-hidden="true"></i> Edit</button>
+      </div>
+    </div>
+
+    <div class="asset-card">
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="asset-name">Meja Kerja Kayu Jati</div>
+            <div class="asset-loc"><i class="ti ti-map-pin" aria-hidden="true"></i> Ruang Meeting B</div>
+          </div>
+          <span class="qty-chip">12 Buah</span>
+        </div>
+        <div class="tag-row">
+          <span class="tag amber">Furnitur</span>
+          <span class="tag green">Aktif</span>
+        </div>
+        <div class="card-sep"></div>
+        <div class="card-dates">
+          <div class="date-group">
+            <span class="date-label">Tgl. pembelian</span>
+            <span class="date-value">03 Mar 2021</span>
+          </div>
+          <div class="date-group right">
+            <span class="date-label">Terakhir diperbarui</span>
+            <span class="date-value">15 Apr 2025</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-updated">
+        <i class="ti ti-user-circle" aria-hidden="true"></i>
+        <span>Diperbarui oleh</span><strong style="margin-left:4px;">Rini Wulandari</strong>
+      </div>
+      <div class="card-footer">
+        <button class="action-btn" onclick="sendPrompt('Tampilkan detail Meja Kerja Kayu Jati')"><i class="ti ti-eye" aria-hidden="true"></i> Detail</button>
+        <div class="action-sep"></div>
+        <button class="action-btn primary" onclick="sendPrompt('Edit aset Meja Kerja Kayu Jati')"><i class="ti ti-edit" aria-hidden="true"></i> Edit</button>
+      </div>
+    </div>
+
+    <div class="asset-card">
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="asset-name">Toyota Avanza 2022</div>
+            <div class="asset-loc"><i class="ti ti-map-pin" aria-hidden="true"></i> Garasi Utama</div>
+          </div>
+          <span class="qty-chip">2 Unit</span>
+        </div>
+        <div class="tag-row">
+          <span class="tag purple">Kendaraan</span>
+          <span class="tag amber">Servis</span>
+          <span class="tag gray">Asuransi</span>
+        </div>
+        <div class="card-sep"></div>
+        <div class="card-dates">
+          <div class="date-group">
+            <span class="date-label">Tgl. pembelian</span>
+            <span class="date-value">20 Jun 2022</span>
+          </div>
+          <div class="date-group right">
+            <span class="date-label">Terakhir diperbarui</span>
+            <span class="date-value">01 Mei 2025</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-updated">
+        <i class="ti ti-user-circle" aria-hidden="true"></i>
+        <span>Diperbarui oleh</span><strong style="margin-left:4px;">Budi Hartono</strong>
+      </div>
+      <div class="card-footer">
+        <button class="action-btn" onclick="sendPrompt('Tampilkan detail Toyota Avanza 2022')"><i class="ti ti-eye" aria-hidden="true"></i> Detail</button>
+        <div class="action-sep"></div>
+        <button class="action-btn primary" onclick="sendPrompt('Edit aset Toyota Avanza 2022')"><i class="ti ti-edit" aria-hidden="true"></i> Edit</button>
+      </div>
+    </div>
+
+    <div class="asset-card">
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="asset-name">Proyektor Epson EB-X51</div>
+            <div class="asset-loc"><i class="ti ti-map-pin" aria-hidden="true"></i> Ruang Presentasi</div>
+          </div>
+          <span class="qty-chip">3 Unit</span>
+        </div>
+        <div class="tag-row">
+          <span class="tag blue">Elektronik</span>
+          <span class="tag green">Aktif</span>
+        </div>
+        <div class="card-sep"></div>
+        <div class="card-dates">
+          <div class="date-group">
+            <span class="date-label">Tgl. pembelian</span>
+            <span class="date-value">08 Sep 2022</span>
+          </div>
+          <div class="date-group right">
+            <span class="date-label">Terakhir diperbarui</span>
+            <span class="date-value">20 Apr 2025</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-updated">
+        <i class="ti ti-user-circle" aria-hidden="true"></i>
+        <span>Diperbarui oleh</span><strong style="margin-left:4px;">Dewi Lestari</strong>
+      </div>
+      <div class="card-footer">
+        <button class="action-btn" onclick="sendPrompt('Tampilkan detail Proyektor Epson EB-X51')"><i class="ti ti-eye" aria-hidden="true"></i> Detail</button>
+        <div class="action-sep"></div>
+        <button class="action-btn primary" onclick="sendPrompt('Edit aset Proyektor Epson EB-X51')"><i class="ti ti-edit" aria-hidden="true"></i> Edit</button>
+      </div>
+    </div>
+
+  </div>
+</div>

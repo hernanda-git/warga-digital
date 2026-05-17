@@ -10,6 +10,7 @@ const APP_ROUTES = [
   "/artikel",
   "/organisasi",
   "/dompet",
+  "/asset-rt",
   "/kas-rt",
   "/ipl",
   "/jasa",

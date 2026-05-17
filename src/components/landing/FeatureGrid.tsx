@@ -18,7 +18,7 @@ export const LANDING_FEATURES = [
     id: "asset-rt",
     label: "Asset RT",
     description: "Monitoring aset milik warga & RT",
-    href: "#asset-rt",
+    href: "/asset-rt",
     icon: ClipboardDocumentListIcon,
     color: "text-blue-600 dark:text-blue-400",
   },
