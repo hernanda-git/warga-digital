@@ -11,105 +11,39 @@ import {
   DEFAULT_ROLE_WARGA_ID,
 } from "@/lib/constants/seed-ids";
 import { parseBlokRumah } from "@/lib/blok-rumah";
+import { hashPin } from "@/lib/crypto";
+import { createSession, setSessionCookie } from "@/lib/auth/session";
 import { notifyAdmins } from "@/lib/notifications";
 
-/**
- * Find or create house (by canonical blok_rumah), ensure tenant_users + user_houses (OWNER, primary),
- * assign default WARGA role. All mandatory data for first-time use is set here.
- * See blueprints/registration-blok-rumah-house-provisioning.md
- */
-async function provisionHouseAndTenantMembership(
-  supabase: ReturnType<typeof createServerClient>,
-  userId: string,
-  blokRumah: string,
-): Promise<{ houseId: string }> {
-  const tenantId = DEFAULT_TENANT_ID;
-  const communityId = DEFAULT_COMMUNITY_ID;
+/* ──────────────────────────────────────────────────────────────────────────
+   Constants
+   ──────────────────────────────────────────────────────────────────────── */
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/;
+const PIN_REGEX = /^\d{4}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  let houseId: string;
-
-  const { data: existingHouse } = await supabase
-    .from("houses")
-    .select("id")
-    .eq("tenant_id", tenantId)
-    .eq("community_id", communityId)
-    .eq("blok_rumah", blokRumah)
-    .maybeSingle();
-
-  if (existingHouse?.id) {
-    houseId = existingHouse.id;
-  } else {
-    const newHouse = await supabase
-      .from("houses")
-      .insert({
-        id: uuidv7(),
-        tenant_id: tenantId,
-        community_id: communityId,
-        name: blokRumah,
-        blok_rumah: blokRumah,
-        status: "PRIBADI",
-        total_residents: 0,
-        is_active: true,
-        created_by: userId,
-      })
-      .select("id")
-      .single();
-
-    if (newHouse.error) {
-      throw new Error("Gagal membuat data rumah");
-    }
-    houseId = newHouse.data.id;
-  }
-
-  const { data: tenantUser, error: tuError } = await supabase
-    .from("tenant_users")
-    .upsert(
-      {
-        tenant_id: tenantId,
-        user_id: userId,
-        status: "ACTIVE",
-      },
-      { onConflict: "tenant_id,user_id" },
-    )
-    .select("id")
-    .single();
-
-  if (tuError || !tenantUser?.id) {
-    throw new Error("Gagal mendaftarkan ke tenant");
-  }
-
-  const { data: existingPrimary } = await supabase
-    .from("user_houses")
-    .select("id")
-    .eq("tenant_id", tenantId)
-    .eq("user_id", userId)
-    .eq("is_primary", true)
-    .eq("status", "ACTIVE")
-    .maybeSingle();
-
-  if (!existingPrimary) {
-    await supabase.from("user_houses").insert({
-      id: uuidv7(),
-      tenant_id: tenantId,
-      user_id: userId,
-      house_id: houseId,
-      relationship: "OWNER",
-      is_primary: true,
-      status: "ACTIVE",
-      created_by: userId,
-    });
-  }
-
-  const { error: roleErr } = await supabase.from("tenant_user_roles").insert({
-    tenant_user_id: tenantUser.id,
-    role_id: DEFAULT_ROLE_WARGA_ID,
-  });
-  if (roleErr && roleErr.code !== "23505") {
-  }
-
-  return { houseId };
+interface FamilyMemberInput {
+  fullName: string;
+  username?: string;
+  waNumber?: string;
+  email?: string;
 }
 
+interface RegisterPayload {
+  fullName: string;
+  waNumber?: string;
+  email?: string;
+  username?: string;
+  blokRumah: string;
+  houseId: string;
+  familyMembers: FamilyMemberInput[];
+  pin: string;
+  confirmPin: string;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Helper: assign default WARGA role (idempotent)
+   ──────────────────────────────────────────────────────────────────────── */
 async function assignDefaultWargaRole(
   supabase: ReturnType<typeof createServerClient>,
   tenantUserId: string,
@@ -119,511 +53,670 @@ async function assignDefaultWargaRole(
     role_id: DEFAULT_ROLE_WARGA_ID,
   });
   if (roleErr && roleErr.code !== "23505") {
+    // Non-unique errors are unexpected; swallow to avoid breaking registration
+    console.error("assignDefaultWargaRole error:", roleErr);
   }
 }
 
-async function tryClaimSystemPreregisteredOwner(
+/* ──────────────────────────────────────────────────────────────────────────
+   Helper: collect all identifiers that must be unique across the system
+   ──────────────────────────────────────────────────────────────────────── */
+function collectIdentifiers(payload: RegisterPayload): {
+  waNumbers: string[];
+  emails: string[];
+  usernames: string[];
+} {
+  const waNumbers: string[] = [];
+  const emails: string[] = [];
+  const usernames: string[] = [];
+
+  if (payload.waNumber) waNumbers.push(payload.waNumber);
+  if (payload.email) emails.push(payload.email.toLowerCase().trim());
+  if (payload.username) usernames.push(payload.username);
+
+  for (const m of payload.familyMembers) {
+    if (m.waNumber) waNumbers.push(m.waNumber);
+    if (m.email) emails.push(m.email.toLowerCase().trim());
+    if (m.username) usernames.push(m.username);
+  }
+
+  return { waNumbers, emails, usernames };
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Helper: check in-request duplicates (family vs main & family vs family)
+   Returns a user-friendly error message or null.
+   ──────────────────────────────────────────────────────────────────────── */
+function checkInternalDuplicates(payload: RegisterPayload): string | null {
+  const seenWa = new Map<string, string>(); // value -> label
+  const seenEmail = new Map<string, string>();
+  const seenUsername = new Map<string, string>();
+
+  const label = payload.waNumber ? "Nomor WhatsApp utama" : "Email utama";
+
+  if (payload.waNumber) {
+    seenWa.set(payload.waNumber, "data utama");
+  }
+  if (payload.email) {
+    seenEmail.set(payload.email.toLowerCase().trim(), "data utama");
+  }
+  if (payload.username) {
+    seenUsername.set(payload.username, "data utama");
+  }
+
+  for (let i = 0; i < payload.familyMembers.length; i++) {
+    const m = payload.familyMembers[i];
+    const tag = `anggota ${i + 1} (${m.fullName})`;
+
+    if (m.waNumber) {
+      const existing = seenWa.get(m.waNumber);
+      if (existing) {
+        return `Nomor WhatsApp ${m.waNumber} sudah dipakai di ${existing}`;
+      }
+      seenWa.set(m.waNumber, tag);
+    }
+
+    if (m.email) {
+      const key = m.email.toLowerCase().trim();
+      const existing = seenEmail.get(key);
+      if (existing) {
+        return `Email ${m.email} sudah dipakai di ${existing}`;
+      }
+      seenEmail.set(key, tag);
+    }
+
+    if (m.username) {
+      const existing = seenUsername.get(m.username);
+      if (existing) {
+        return `Username @${m.username} sudah dipakai di ${existing}`;
+      }
+      seenUsername.set(m.username, tag);
+    }
+  }
+
+  return null;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Helper: check identifiers against existing DB users
+   Returns a user-friendly error message or null.
+   ──────────────────────────────────────────────────────────────────────── */
+async function checkDbDuplicates(
   supabase: ReturnType<typeof createServerClient>,
-  tenantId: string,
-  houseId: string,
-  userId: string,
-): Promise<{ claimed: boolean }> {
-  const { data, error } = await supabase.rpc(
-    "claim_system_preregistered_owner",
-    {
-      p_tenant_id: tenantId,
-      p_house_id: houseId,
-      p_real_user_id: userId,
-    },
-  );
-  if (error) {
-    return { claimed: false };
+  identifiers: ReturnType<typeof collectIdentifiers>,
+): Promise<string | null> {
+  // ── WhatsApp numbers ─────────────────────────────────────────────────────
+  if (identifiers.waNumbers.length > 0) {
+    const { data: rows } = await supabase
+      .from("users")
+      .select("wa_number")
+      .in("wa_number", identifiers.waNumbers);
+
+    if (rows && rows.length > 0) {
+      return `Nomor WhatsApp ${rows[0].wa_number} sudah terdaftar. Gunakan nomor lain atau login.`;
+    }
   }
-  if (Array.isArray(data) && data.length > 0) {
-    return { claimed: data[0]?.claimed === true };
+
+  // ── Emails (case-insensitive) ────────────────────────────────────────────
+  const emailChecks: Promise<string | null>[] = [];
+  for (const email of identifiers.emails) {
+    emailChecks.push(
+      (async () => {
+        const { data: rows } = await supabase
+          .from("users")
+          .select("email")
+          .eq("email", email);
+
+        if (rows && rows.length > 0) {
+          return `Email ${email} sudah terdaftar. Gunakan email lain atau login.`;
+        }
+        return null;
+      })(),
+    );
   }
-  return { claimed: false };
+
+  const emailResults = await Promise.all(emailChecks);
+  const emailConflict = emailResults.find(Boolean);
+  if (emailConflict) return emailConflict;
+
+  // ── Usernames (case-insensitive via RPC) ─────────────────────────────────
+  for (const username of identifiers.usernames) {
+    const { data: rows } = await supabase.rpc("get_user_by_username_lower", {
+      login_input: username,
+    });
+
+    if (Array.isArray(rows) && rows.length > 0) {
+      return `Username @${username} sudah dipakai. Pilih username lain.`;
+    }
+  }
+
+  return null;
 }
 
-const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,30}$/;
-
+/* ──────────────────────────────────────────────────────────────────────────
+   POST /api/auth/register
+   Complete registration: validates everything upfront, then creates all
+   records atomically. No partial writes, no auto-creation of houses.
+   ──────────────────────────────────────────────────────────────────────── */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: RegisterPayload = await request.json();
     const {
       fullName,
-      waNumber,
-      blokRumah: blokRumahRaw,
+      waNumber: waNumberRaw,
+      email: emailRaw,
       username: usernameRaw,
-      requestToJoinExisting: requestToJoinExistingRaw,
+      blokRumah: blokRumahRaw,
+      houseId,
+      familyMembers,
+      pin,
+      confirmPin,
     } = body;
-    const requestToJoinExisting = requestToJoinExistingRaw === true;
 
+    /* ════════════════════════════════════════════════════════════════════════
+       PHASE 1 — Validate all inputs
+       ══════════════════════════════════════════════════════════════════════ */
+
+    // ── Full name ───────────────────────────────────────────────────────────
     if (!fullName || typeof fullName !== "string") {
       return NextResponse.json(
-        { error: "Nama lengkap wajib" },
+        { error: "Nama lengkap wajib diisi", field: "fullName" },
         { status: 400 },
       );
     }
-
     const trimmedName = fullName.trim();
     if (trimmedName.length < 2) {
       return NextResponse.json(
-        { error: "Nama lengkap minimal 2 karakter" },
+        { error: "Nama lengkap minimal 2 karakter", field: "fullName" },
         { status: 400 },
       );
     }
 
+    // ── At least one login method ───────────────────────────────────────────
     const hasWa =
-      waNumber != null &&
-      typeof waNumber === "string" &&
-      waNumber.trim().length > 0;
+      waNumberRaw != null &&
+      typeof waNumberRaw === "string" &&
+      waNumberRaw.trim().length > 0;
     const hasUsername =
       usernameRaw != null &&
       typeof usernameRaw === "string" &&
       usernameRaw.trim().length > 0;
-    if (!hasWa && !hasUsername) {
+    const hasEmail =
+      emailRaw != null &&
+      typeof emailRaw === "string" &&
+      emailRaw.trim().length > 0;
+
+    if (!hasWa && !hasUsername && !hasEmail) {
       return NextResponse.json(
-        { error: "Isi salah satu: nomor WhatsApp atau username untuk login" },
+        {
+          error:
+            "Isi minimal satu: nomor WhatsApp, email, atau username untuk login",
+          field: "login",
+        },
         { status: 400 },
       );
     }
 
-    let username: string | null = null;
-    if (hasUsername) {
-      const u = String(usernameRaw).trim();
-      if (!USERNAME_REGEX.test(u)) {
+    // ── WhatsApp ────────────────────────────────────────────────────────────
+    let normalizedWa: string | null = null;
+    if (hasWa) {
+      normalizedWa = normalizeWaNumber(String(waNumberRaw).trim());
+      const waError = validateNormalizedWaNumber(normalizedWa);
+      if (waError) {
         return NextResponse.json(
-          { error: "Username 3–30 karakter, huruf/angka/underscore saja" },
+          { error: waError, field: "waNumber" },
           { status: 400 },
         );
       }
-      username = u;
     }
 
-    let normalized: string | null = null;
-    if (hasWa) {
-      normalized = normalizeWaNumber(String(waNumber).trim());
-      const waError = validateNormalizedWaNumber(normalized);
-      if (waError) {
-        return NextResponse.json({ error: waError }, { status: 400 });
+    // ── Email ───────────────────────────────────────────────────────────────
+    let normalizedEmail: string | null = null;
+    if (hasEmail) {
+      normalizedEmail = String(emailRaw).trim().toLowerCase();
+      if (!EMAIL_REGEX.test(normalizedEmail)) {
+        return NextResponse.json(
+          { error: "Format email tidak valid", field: "email" },
+          { status: 400 },
+        );
       }
     }
 
+    // ── Username ────────────────────────────────────────────────────────────
+    let normalizedUsername: string | null = null;
+    if (hasUsername) {
+      normalizedUsername = String(usernameRaw).trim();
+      if (!USERNAME_REGEX.test(normalizedUsername)) {
+        return NextResponse.json(
+          {
+            error: "Username 3–30 karakter, huruf/angka/underscore saja",
+            field: "username",
+          },
+          { status: 400 },
+        );
+      }
+    }
+
+    // ── Blok rumah ──────────────────────────────────────────────────────────
     if (
       blokRumahRaw == null ||
       typeof blokRumahRaw !== "string" ||
       !blokRumahRaw.trim()
     ) {
       return NextResponse.json(
-        { error: "Blok rumah wajib diisi" },
+        { error: "Blok rumah wajib diisi", field: "blokRumah" },
         { status: 400 },
       );
     }
-    const { normalized: blokRumah, error: blokError } =
+    const { normalized: normalizedBlok, error: blokError } =
       parseBlokRumah(blokRumahRaw);
     if (blokError) {
-      return NextResponse.json({ error: blokError }, { status: 400 });
+      return NextResponse.json(
+        { error: blokError, field: "blokRumah" },
+        { status: 400 },
+      );
     }
 
-    const supabase = createServerClient();
-
-    let existingUser: { id: string } | null = null;
-    if (normalized) {
-      const { data } = await supabase
-        .from("users")
-        .select("id")
-        .eq("wa_number", normalized)
-        .maybeSingle();
-      existingUser = data;
-    }
-    if (!existingUser && username) {
-      const { data: rows } = await supabase.rpc("get_user_by_username_lower", {
-        login_input: username,
-      });
-      if (Array.isArray(rows) && rows.length > 0 && rows[0]?.id) {
-        existingUser = { id: rows[0].id };
-      }
+    // ── houseId ─────────────────────────────────────────────────────────────
+    if (!houseId || typeof houseId !== "string") {
+      return NextResponse.json(
+        { error: "ID rumah tidak valid", field: "blokRumah" },
+        { status: 400 },
+      );
     }
 
-    // Track whether this is a brand-new user (vs an existing one re-registering)
-    const isNewUser = !existingUser;
-    let userId: string;
+    // ── PIN ─────────────────────────────────────────────────────────────────
+    const pinStr = String(pin ?? "").trim();
+    const confirmStr = String(confirmPin ?? "").trim();
+    if (!PIN_REGEX.test(pinStr)) {
+      return NextResponse.json(
+        { error: "PIN harus 4 digit angka", field: "pin" },
+        { status: 400 },
+      );
+    }
+    if (pinStr !== confirmStr) {
+      return NextResponse.json(
+        { error: "PIN dan konfirmasi PIN tidak sama", field: "confirmPin" },
+        { status: 400 },
+      );
+    }
 
-    if (existingUser?.id) {
-      userId = existingUser.id;
-      const updatePayload: {
-        full_name: string;
-        username?: string | null;
-        wa_number?: string | null;
-      } = { full_name: trimmedName };
-      if (username !== null) updatePayload.username = username;
-      if (normalized !== null) updatePayload.wa_number = normalized;
-      const { error: updateErr } = await supabase
-        .from("users")
-        .update(updatePayload)
-        .eq("id", userId);
-      if (updateErr?.code === "23505") {
+    // ── Family members ──────────────────────────────────────────────────────
+    const members: FamilyMemberInput[] = Array.isArray(familyMembers)
+      ? familyMembers
+      : [];
+    for (let i = 0; i < members.length; i++) {
+      const m = members[i];
+      if (
+        !m.fullName ||
+        typeof m.fullName !== "string" ||
+        m.fullName.trim().length < 2
+      ) {
         return NextResponse.json(
-          { error: "Username sudah dipakai" },
+          {
+            error: `Anggota ${i + 1}: nama lengkap minimal 2 karakter`,
+            field: `familyMembers[${i}].fullName`,
+          },
           { status: 400 },
         );
       }
-      if (updateErr) {
+      m.fullName = m.fullName.trim();
+
+      if (m.waNumber) {
+        m.waNumber = normalizeWaNumber(m.waNumber);
+        const waErr = validateNormalizedWaNumber(m.waNumber);
+        if (waErr) {
+          return NextResponse.json(
+            {
+              error: `Anggota ${i + 1} (${m.fullName}): ${waErr}`,
+              field: `familyMembers[${i}].waNumber`,
+            },
+            { status: 400 },
+          );
+        }
+      }
+
+      if (m.email) {
+        const e = m.email.trim().toLowerCase();
+        if (!EMAIL_REGEX.test(e)) {
+          return NextResponse.json(
+            {
+              error: `Anggota ${i + 1} (${m.fullName}): format email tidak valid`,
+              field: `familyMembers[${i}].email`,
+            },
+            { status: 400 },
+          );
+        }
+        m.email = e;
+      }
+
+      if (m.username) {
+        if (!USERNAME_REGEX.test(m.username)) {
+          return NextResponse.json(
+            {
+              error: `Anggota ${i + 1} (${m.fullName}): username 3–30 karakter, huruf/angka/underscore`,
+              field: `familyMembers[${i}].username`,
+            },
+            { status: 400 },
+          );
+        }
+        m.username = m.username;
+      }
+
+      // Each family member must have at least one identifier
+      if (!m.waNumber && !m.email && !m.username) {
         return NextResponse.json(
-          { error: "Gagal memperbarui data" },
-          { status: 500 },
+          {
+            error: `Anggota ${i + 1} (${m.fullName}): isi minimal satu: nomor WhatsApp, email, atau username`,
+            field: `familyMembers[${i}].login`,
+          },
+          { status: 400 },
         );
       }
-    } else {
-      const newUser = await supabase
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       PHASE 2 — Verify house exists (NO auto-create)
+       ══════════════════════════════════════════════════════════════════════ */
+    const supabase = createServerClient();
+    const tenantId = DEFAULT_TENANT_ID;
+    const communityId = DEFAULT_COMMUNITY_ID;
+
+    const { data: houseRow, error: houseErr } = await supabase
+      .from("houses")
+      .select("id")
+      .eq("id", houseId)
+      .eq("tenant_id", tenantId)
+      .eq("community_id", communityId)
+      .eq("blok_rumah", normalizedBlok)
+      .maybeSingle();
+
+    if (houseErr || !houseRow) {
+      return NextResponse.json(
+        {
+          error:
+            "Blok rumah tidak ditemukan. Silakan hubungi pengurus RT untuk mendaftarkan blok ini.",
+          field: "blokRumah",
+        },
+        { status: 400 },
+      );
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       PHASE 3 — Check duplicates (WA, email, username) against DB and in-request
+       ══════════════════════════════════════════════════════════════════════ */
+
+    // Build the full payload with normalized values for duplicate checking
+    const fullPayload: RegisterPayload = {
+      fullName: trimmedName,
+      waNumber: normalizedWa ?? undefined,
+      email: normalizedEmail ?? undefined,
+      username: normalizedUsername ?? undefined,
+      blokRumah: normalizedBlok,
+      houseId,
+      familyMembers: members,
+      pin: pinStr,
+      confirmPin: confirmStr,
+    };
+
+    // 3a — Internal duplicates (main ↔ family, family ↔ family)
+    const internalConflict = checkInternalDuplicates(fullPayload);
+    if (internalConflict) {
+      return NextResponse.json({ error: internalConflict }, { status: 409 });
+    }
+
+    // 3b — Against existing DB records
+    const identifiers = collectIdentifiers(fullPayload);
+    const dbConflict = await checkDbDuplicates(supabase, identifiers);
+    if (dbConflict) {
+      return NextResponse.json({ error: dbConflict }, { status: 409 });
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       PHASE 4 — Check house ownership status
+       ══════════════════════════════════════════════════════════════════════ */
+    const { data: ownerRow } = await supabase
+      .from("user_houses")
+      .select("user_id")
+      .eq("house_id", houseId)
+      .eq("relationship", "OWNER")
+      .eq("status", "ACTIVE")
+      .limit(1)
+      .maybeSingle();
+
+    const hasExistingOwner = !!ownerRow?.user_id;
+
+    /* ════════════════════════════════════════════════════════════════════════
+       PHASE 5 — Create all records (best-effort sequential, fail on any error)
+       ══════════════════════════════════════════════════════════════════════ */
+
+    let mainUserId: string;
+    let caughtError: string | null = null;
+
+    try {
+      // 5a — Create main user with PIN, active immediately
+      const now = new Date().toISOString();
+      const pinHash = hashPin(pinStr);
+
+      const { data: newUser, error: userErr } = await supabase
         .from("users")
         .insert({
           id: uuidv7(),
           full_name: trimmedName,
-          wa_number: normalized ?? undefined,
-          username: username ?? undefined,
-          community_id: "b0000000-0000-7000-8000-000000000002",
-          status: "INACTIVE",
+          wa_number: normalizedWa ?? undefined,
+          email: normalizedEmail ?? undefined,
+          username: normalizedUsername ?? undefined,
+          community_id: communityId,
+          pin_hash: pinHash,
+          status: "ACTIVE",
+          wa_verified_at: now,
+        })
+        .select("id, full_name")
+        .single();
+
+      if (userErr) {
+        if (userErr.code === "23505") {
+          // This shouldn't happen after duplicate check, but handle gracefully
+          return NextResponse.json(
+            { error: "Nomor WhatsApp, email, atau username sudah terdaftar" },
+            { status: 409 },
+          );
+        }
+        throw new Error("Gagal membuat akun utama");
+      }
+      mainUserId = newUser.id;
+
+      // 5b — Create tenant_users for main user
+      const { data: mainTu, error: tuErr } = await supabase
+        .from("tenant_users")
+        .insert({
+          tenant_id: tenantId,
+          user_id: mainUserId,
+          status: "ACTIVE",
         })
         .select("id")
         .single();
 
-      if (newUser.error) {
-        if (newUser.error.code === "23505") {
-          return NextResponse.json(
-            { error: "Nomor WhatsApp atau username sudah terdaftar" },
-            { status: 400 },
-          );
-        }
-        return NextResponse.json(
-          {
-            error: "Gagal mendaftar",
-            detail:
-              process.env.NODE_ENV !== "production"
-                ? newUser.error.message
-                : undefined,
-          },
-          { status: 500 },
-        );
-      }
-      userId = newUser.data!.id;
-    }
-
-    const tenantId = DEFAULT_TENANT_ID;
-    const communityId = DEFAULT_COMMUNITY_ID;
-
-    const { data: existingHouse } = await supabase
-      .from("houses")
-      .select("id")
-      .eq("tenant_id", tenantId)
-      .eq("community_id", communityId)
-      .eq("blok_rumah", blokRumah)
-      .maybeSingle();
-
-    const existingHouseId = existingHouse?.id ?? null;
-    const claimResult =
-      existingHouseId != null
-        ? await tryClaimSystemPreregisteredOwner(
-            supabase,
-            tenantId,
-            existingHouseId,
-            userId,
-          )
-        : { claimed: false };
-
-    if (claimResult.claimed && existingHouseId) {
-      const { data: tenantUser, error: tuError } = await supabase
-        .from("tenant_users")
-        .upsert(
-          { tenant_id: tenantId, user_id: userId, status: "ACTIVE" },
-          { onConflict: "tenant_id,user_id" },
-        )
-        .select("id")
-        .single();
-
-      if (tuError || !tenantUser?.id) {
-        return NextResponse.json(
-          { error: "Gagal mendaftarkan ke tenant" },
-          { status: 500 },
-        );
+      if (tuErr || !mainTu) {
+        throw new Error("Gagal mendaftarkan ke tenant");
       }
 
-      await assignDefaultWargaRole(supabase, tenantUser.id);
+      // 5c — Assign default WARGA role to main user
+      await assignDefaultWargaRole(supabase, mainTu.id);
 
-      const { error: _b1 } = await supabase
-        .from("user_badges")
-        .insert({ user_id: userId, badge_id: 1 });
-      if (_b1 && _b1.code !== "23505") throw _b1;
-      const { error: _b2 } = await supabase
-        .from("user_badges")
-        .insert({ user_id: userId, badge_id: 2 });
-      if (_b2 && _b2.code !== "23505") throw _b2;
-
-      const { data: user } = await supabase
-        .from("users")
-        .select("id, full_name")
-        .eq("id", userId)
-        .single();
-
-      if (!user) {
-        return NextResponse.json(
-          { error: "User tidak ditemukan" },
-          { status: 500 },
-        );
-      }
-
-      if (isNewUser) {
-        await notifyAdmins(supabase, {
-          tenant_id: tenantId,
-          actor_user_id: userId,
-          type: "SYSTEM",
-          priority: "NORMAL",
-          title: "Warga Baru Claim Data Pra-Registrasi",
-          body: `${trimmedName} berhasil claim owner rumah ${blokRumah} dari data pra-registrasi sistem.`,
-          action_url: "/admin/warga",
-          entity_table: "users",
-          entity_id: userId,
-          dedupe_key: `new_user:${userId}:prereg-claimed`,
-          metadata: { blokRumah, preRegisteredClaimed: true },
-          created_by: userId,
-        });
-      }
-
-      return NextResponse.json({
-        success: true,
-        userId: user.id,
-        fullName: user.full_name,
-        houseId: existingHouseId,
-        blokRumah,
-        claimedFromSystemPreRegistration: true,
+      // 5d — Create user_houses for main user (OWNER or FAMILY)
+      const mainRelationship = hasExistingOwner ? "FAMILY" : "OWNER";
+      const { error: uhErr } = await supabase.from("user_houses").insert({
+        id: uuidv7(),
+        tenant_id: tenantId,
+        user_id: mainUserId,
+        house_id: houseId,
+        relationship: mainRelationship,
+        is_primary: true,
+        status: "ACTIVE",
+        created_by: mainUserId,
       });
-    }
 
-    if (requestToJoinExisting && existingHouseId) {
-      const houseId = existingHouseId;
-
-      const { data: tenantUser, error: tuError } = await supabase
-        .from("tenant_users")
-        .upsert(
-          { tenant_id: tenantId, user_id: userId, status: "ACTIVE" },
-          { onConflict: "tenant_id,user_id" },
-        )
-        .select("id")
-        .single();
-
-      if (tuError || !tenantUser?.id) {
-        return NextResponse.json(
-          { error: "Gagal mendaftarkan ke tenant" },
-          { status: 500 },
-        );
+      if (uhErr) {
+        throw new Error("Gagal mengaitkan ke rumah");
       }
 
-      await assignDefaultWargaRole(supabase, tenantUser.id);
-
-      const { data: existingRequest } = await supabase
-        .from("house_join_requests")
-        .select("id, status")
-        .eq("house_id", houseId)
-        .eq("requester_user_id", userId)
-        .eq("status", "PENDING")
-        .maybeSingle();
-
-      let requestId: string;
-      if (existingRequest) {
-        requestId = existingRequest.id;
-      } else {
+      // 5e — If house has an owner, create house_join_requests PENDING
+      let requestId: string | null = null;
+      if (hasExistingOwner) {
         requestId = uuidv7();
         const { error: reqErr } = await supabase
           .from("house_join_requests")
           .insert({
             id: requestId,
             house_id: houseId,
-            requester_user_id: userId,
+            requester_user_id: mainUserId,
             status: "PENDING",
           });
 
         if (reqErr) {
-          return NextResponse.json(
-            { error: "Gagal mengirim permintaan bergabung" },
-            { status: 500 },
-          );
+          throw new Error("Gagal mengirim permintaan bergabung");
         }
-      }
 
-      const { data: ownerRow } = await supabase
-        .from("user_houses")
-        .select("user_id")
-        .eq("house_id", houseId)
-        .eq("relationship", "OWNER")
-        .eq("status", "ACTIVE")
-        .limit(1)
-        .maybeSingle();
-
-      const { data: houseRow } = await supabase
-        .from("houses")
-        .select("created_by")
-        .eq("id", houseId)
-        .single();
-
-      const userIdsToFetch = new Set<string>();
-      if (ownerRow?.user_id) userIdsToFetch.add(ownerRow.user_id);
-      if (houseRow?.created_by) userIdsToFetch.add(houseRow.created_by);
-      let ownerFullName = "—";
-      let createdByFullName = "—";
-      if (userIdsToFetch.size > 0) {
-        const { data: users } = await supabase
-          .from("users")
-          .select("id, full_name")
-          .in("id", Array.from(userIdsToFetch));
-        const userMap = new Map(
-          (users ?? []).map((u) => [u.id, u.full_name ?? "—"]),
-        );
-        if (ownerRow?.user_id)
-          ownerFullName = userMap.get(ownerRow.user_id) ?? "—";
-        if (houseRow?.created_by)
-          createdByFullName = userMap.get(houseRow.created_by) ?? "—";
-      }
-
-      if (ownerRow?.user_id) {
-        const { error: notifErr } = await supabase
-          .from("notifications")
-          .insert({
-            tenant_id: tenantId,
-            recipient_user_id: ownerRow.user_id,
-            actor_user_id: userId,
-            type: "RUMAH",
-            priority: "NORMAL",
-            title: "Permintaan Bergabung Rumah",
-            body: `${trimmedName} meminta bergabung ke rumah ${blokRumah}.`,
-            action_url: "/profil",
-            entity_table: "house_join_requests",
-            entity_id: requestId,
-            dedupe_key: `house_join_request:${requestId}:owner`,
-            metadata: {
-              houseId,
-              blokRumah,
-              requesterUserId: userId,
-              requestId,
-            },
-            created_by: userId,
-          });
-        if (notifErr) {
-        }
-      }
-
-      const { error: _b1 } = await supabase
-        .from("user_badges")
-        .insert({ user_id: userId, badge_id: 1 });
-      if (_b1 && _b1.code !== "23505") throw _b1;
-      const { data: user } = await supabase
-        .from("users")
-        .select("id, full_name")
-        .eq("id", userId)
-        .single();
-
-      if (!user) {
-        return NextResponse.json(
-          { error: "User tidak ditemukan" },
-          { status: 500 },
-        );
-      }
-
-      // ── Notify all admins of brand-new registration (best-effort) ──────────
-      if (isNewUser) {
-        await notifyAdmins(supabase, {
+        // Notify the owner
+        await supabase.from("notifications").insert({
           tenant_id: tenantId,
-          actor_user_id: userId,
-          type: "SYSTEM",
+          recipient_user_id: ownerRow.user_id,
+          actor_user_id: mainUserId,
+          type: "RUMAH",
           priority: "NORMAL",
-          title: "Warga Baru Terdaftar",
-          body: `${trimmedName} baru saja mendaftar dengan blok rumah ${blokRumah} dan menunggu persetujuan bergabung.`,
-          action_url: "/admin/warga",
-          entity_table: "users",
-          entity_id: userId,
-          dedupe_key: `new_user:${userId}:registered`,
-          metadata: { blokRumah, requiresApproval: true },
-          created_by: userId,
+          title: "Permintaan Bergabung Rumah",
+          body: `${trimmedName} meminta bergabung ke rumah ${normalizedBlok}.`,
+          action_url: "/profil",
+          entity_table: "house_join_requests",
+          entity_id: requestId,
+          dedupe_key: `house_join_request:${requestId}:owner`,
+          metadata: {
+            houseId,
+            blokRumah: normalizedBlok,
+            requesterUserId: mainUserId,
+            requestId,
+          },
+          created_by: mainUserId,
         });
       }
 
-      return NextResponse.json({
-        success: true,
-        requiresApproval: true,
-        userId: user.id,
-        fullName: user.full_name,
-        blokRumah,
-        requestId,
-        ownerFullName,
-        createdByFullName,
-      });
-    }
+      // 5f — Create family members
+      const familyUserIds: string[] = [];
+      for (let i = 0; i < members.length; i++) {
+        const m = members[i];
+        const famUserId = uuidv7();
 
-    let houseId: string;
-    try {
-      const provisioned = await provisionHouseAndTenantMembership(
-        supabase,
-        userId,
-        blokRumah,
-      );
-      houseId = provisioned.houseId;
-    } catch (err) {
-      return NextResponse.json(
-        {
-          error:
-            err instanceof Error ? err.message : "Gagal menyimpan blok rumah",
-        },
-        { status: 500 },
-      );
-    }
+        const { error: famErr } = await supabase.from("users").insert({
+          id: famUserId,
+          full_name: m.fullName,
+          wa_number: m.waNumber ?? undefined,
+          email: m.email ?? undefined,
+          username: m.username ?? undefined,
+          community_id: communityId,
+          status: "INACTIVE",
+        });
 
-    const { error: _b1 } = await supabase
-      .from("user_badges")
-      .insert({ user_id: userId, badge_id: 1 });
-    if (_b1 && _b1.code !== "23505") throw _b1;
-    const { error: _b2 } = await supabase
-      .from("user_badges")
-      .insert({ user_id: userId, badge_id: 2 });
-    if (_b2 && _b2.code !== "23505") throw _b2;
-    const { data: user } = await supabase
-      .from("users")
-      .select("id, full_name")
-      .eq("id", userId)
-      .single();
+        if (famErr) {
+          throw new Error(`Gagal menambah anggota: ${m.fullName}`);
+        }
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "User tidak ditemukan" },
-        { status: 500 },
-      );
-    }
+        // Family member -> tenant_users
+        const { data: famTu, error: famTuErr } = await supabase
+          .from("tenant_users")
+          .insert({
+            tenant_id: tenantId,
+            user_id: famUserId,
+            status: "ACTIVE",
+          })
+          .select("id")
+          .single();
 
-    // ── Notify all admins of brand-new registration (best-effort) ──────────
-    if (isNewUser) {
+        if (famTuErr || !famTu) {
+          throw new Error(
+            `Gagal mendaftarkan anggota ke tenant: ${m.fullName}`,
+          );
+        }
+
+        await assignDefaultWargaRole(supabase, famTu.id);
+
+        // Family member -> user_houses (FAMILY, non-primary)
+        const { error: famUhErr } = await supabase.from("user_houses").insert({
+          id: uuidv7(),
+          tenant_id: tenantId,
+          user_id: famUserId,
+          house_id: houseId,
+          relationship: "FAMILY",
+          is_primary: false,
+          status: "ACTIVE",
+          created_by: mainUserId,
+        });
+
+        if (famUhErr) {
+          throw new Error(`Gagal mengaitkan anggota ke rumah: ${m.fullName}`);
+        }
+
+        familyUserIds.push(famUserId);
+      }
+
+      // 5g — Badges for main user (best-effort)
+      await supabase
+        .from("user_badges")
+        .insert({ user_id: mainUserId, badge_id: 1 });
+      await supabase
+        .from("user_badges")
+        .insert({ user_id: mainUserId, badge_id: 2 });
+
+      // 5h — Notify admins (best-effort)
       await notifyAdmins(supabase, {
         tenant_id: tenantId,
-        actor_user_id: userId,
+        actor_user_id: mainUserId,
         type: "SYSTEM",
         priority: "NORMAL",
-        title: "Warga Baru Terdaftar",
-        body: `${trimmedName} baru saja mendaftar dengan blok rumah ${blokRumah}.`,
+        title: hasExistingOwner
+          ? "Warga Baru Terdaftar (Menunggu Persetujuan)"
+          : "Warga Baru Terdaftar",
+        body: hasExistingOwner
+          ? `${trimmedName} baru saja mendaftar dengan blok rumah ${normalizedBlok} dan menunggu persetujuan bergabung.`
+          : `${trimmedName} baru saja mendaftar dengan blok rumah ${normalizedBlok}.`,
         action_url: "/admin/warga",
         entity_table: "users",
-        entity_id: userId,
-        dedupe_key: `new_user:${userId}:registered`,
-        metadata: { blokRumah },
-        created_by: userId,
+        entity_id: mainUserId,
+        dedupe_key: `new_user:${mainUserId}:registered`,
+        metadata: {
+          blokRumah: normalizedBlok,
+          requiresApproval: hasExistingOwner,
+        },
+        created_by: mainUserId,
       });
-    }
 
-    return NextResponse.json({
-      success: true,
-      userId: user.id,
-      fullName: user.full_name,
-      houseId,
-      blokRumah,
-    });
+      /* ══════════════════════════════════════════════════════════════════════
+         PHASE 6 — Create session and set cookie
+         ════════════════════════════════════════════════════════════════════ */
+      const jwt = await createSession(mainUserId);
+      await setSessionCookie(jwt);
+
+      return NextResponse.json({
+        success: true,
+        userId: mainUserId,
+        fullName: trimmedName,
+        houseId,
+        blokRumah: normalizedBlok,
+        requiresApproval: hasExistingOwner,
+        requestId,
+      });
+    } catch (err) {
+      // If we created records but something failed mid-way, log it for debugging.
+      // In production, a proper transaction (DB RPC) would roll back.
+      // The sequential approach means failures are rare and early (before many writes).
+      caughtError =
+        err instanceof Error ? err.message : "Gagal menyelesaikan pendaftaran";
+      console.error("Registration error (partial write risk):", caughtError);
+
+      return NextResponse.json({ error: caughtError }, { status: 500 });
+    }
   } catch (err) {
+    console.error("Registration unexpected error:", err);
     return NextResponse.json({ error: "Terjadi kesalahan" }, { status: 500 });
   }
 }

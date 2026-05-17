@@ -55,12 +55,14 @@ export type MarketplaceTxEventType =
 export interface User {
   id: string;
   full_name: string;
+  username: string | null;
   wa_number: string | null;
   wa_number_hash: string | null;
   wa_verified_at: string | null;
   email: string | null;
   date_of_birth: string | null;
   community_id: string;
+  pin_hash: string | null;
   status: UserStatus;
   avatar_path: string | null;
   last_active_at: string | null;

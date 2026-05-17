@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { DEFAULT_TENANT_ID, DEFAULT_COMMUNITY_ID } from "@/lib/constants/seed-ids";
+import {
+  DEFAULT_TENANT_ID,
+  DEFAULT_COMMUNITY_ID,
+} from "@/lib/constants/seed-ids";
 import { parseBlokRumah } from "@/lib/blok-rumah";
 
 /**
@@ -13,14 +16,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const blokRumahRaw = body?.blokRumah;
 
-    if (blokRumahRaw == null || typeof blokRumahRaw !== "string" || !blokRumahRaw.trim()) {
+    if (
+      blokRumahRaw == null ||
+      typeof blokRumahRaw !== "string" ||
+      !blokRumahRaw.trim()
+    ) {
       return NextResponse.json(
         { error: "Blok rumah wajib diisi" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const { normalized: blokRumah, error: blokError } = parseBlokRumah(blokRumahRaw);
+    const { normalized: blokRumah, error: blokError } =
+      parseBlokRumah(blokRumahRaw);
     if (blokError) {
       return NextResponse.json({ error: blokError }, { status: 400 });
     }
@@ -94,6 +102,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         exists: false,
         blokRumah,
+        houseId,
         claimableExistingHouse: true,
       });
     }
@@ -101,14 +110,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       exists: true,
       blokRumah,
+      houseId,
       ownerFullName,
       createdByFullName,
       claimableExistingHouse: false,
     });
   } catch (err) {
-    return NextResponse.json(
-      { error: "Terjadi kesalahan" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Terjadi kesalahan" }, { status: 500 });
   }
 }
