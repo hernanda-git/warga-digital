@@ -50,12 +50,59 @@ interface UserItem {
 }
 
 function formatJoinedDate(iso: string | null): string {
-  if (!iso) return "\u2014";
+  if (!iso) return "—";
   return new Date(iso).toLocaleDateString("id-ID", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
+}
+
+function formatLastActive(iso: string | null): string {
+  if (!iso) return "—";
+
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diffSec = Math.floor((now - then) / 1000);
+
+  if (diffSec < 0) return "Baru saja";
+  if (diffSec < 60) return "Baru saja";
+
+  const totalMenit = Math.floor(diffSec / 60);
+  const totalJam = Math.floor(totalMenit / 60);
+  const totalHari = Math.floor(totalJam / 24);
+  const totalMinggu = Math.floor(totalHari / 7);
+  const totalBulan = Math.floor(totalHari / 30);
+  const totalTahun = Math.floor(totalHari / 365);
+
+  const parts: string[] = [];
+
+  if (totalTahun > 0) {
+    parts.push(`${totalTahun} tahun`);
+    const sisaHari = totalHari % 365;
+    const sisaBulan = Math.floor(sisaHari / 30);
+    if (sisaBulan > 0) parts.push(`${sisaBulan} bulan`);
+  } else if (totalBulan > 0) {
+    parts.push(`${totalBulan} bulan`);
+    const sisaHari = totalHari % 30;
+    if (sisaHari > 0) parts.push(`${sisaHari} hari`);
+  } else if (totalMinggu > 0) {
+    parts.push(`${totalMinggu} minggu`);
+    const sisaHari = totalHari % 7;
+    if (sisaHari > 0) parts.push(`${sisaHari} hari`);
+  } else if (totalHari > 0) {
+    parts.push(`${totalHari} hari`);
+    const sisaJam = totalJam % 24;
+    if (sisaJam > 0) parts.push(`${sisaJam} jam`);
+  } else if (totalJam > 0) {
+    parts.push(`${totalJam} jam`);
+    const sisaMenit = totalMenit % 60;
+    if (sisaMenit > 0) parts.push(`${sisaMenit} menit`);
+  } else {
+    parts.push(`${totalMenit} menit`);
+  }
+
+  return `${parts.join(" ")} yang lalu`;
 }
 
 function maskEmail(email: string | null): string {
@@ -657,6 +704,9 @@ export default function AdminManageUsersPage() {
                         </>
                       )}
                     </p>
+                    <p className="mt-0.5 text-[10px] text-app-body-muted/70">
+                      Terakhir Aktif: {formatLastActive(user.last_active_at)}
+                    </p>
                   </div>
                 </div>
               </button>
@@ -737,6 +787,10 @@ export default function AdminManageUsersPage() {
                       </span>
                     </p>
                     <p>Bergabung: {formatJoinedDate(selectedUser.joined_at)}</p>
+                    <p>
+                      Terakhir Aktif:{" "}
+                      {formatLastActive(selectedUser.last_active_at)}
+                    </p>
                     {selectedUser.roles.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-1">
                         {selectedUser.roles.map((role) => (
