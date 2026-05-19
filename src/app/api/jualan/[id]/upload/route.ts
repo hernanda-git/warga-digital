@@ -3,7 +3,8 @@ import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import crypto from "crypto";
 import {
-  generateSignedUploadUrl,
+  serverUpload,
+  getPublicUrl,
   isAllowedContentType,
   isValidFileSize,
 } from "@/lib/r2";
@@ -18,7 +19,13 @@ import {
 
 /**
  * POST /api/jualan/[id]/upload
- * Generate signed R2 upload URLs for direct browser upload
+ *
+ * Upload images for a jualan goods listing (server-side upload).
+ * Accepts multipart/form-data with:
+ *   - files: one or more image files (max 5)
+ *
+ * This uses server-side upload to avoid CORS issues with direct browser-to-R2
+ * uploads, and ensures proper error handling throughout the flow.
  */
 export async function POST(
   request: NextRequest,
@@ -33,6 +40,7 @@ export async function POST(
     const supabase = createServerClient();
     const resolvedParams = await params;
 
+    // Verify the goods item exists and belongs to the user
     const { data: goods } = await supabase
       .from("jualan_goods")
       .select("owner_user_id, tenant_id")
@@ -47,10 +55,11 @@ export async function POST(
       return forbiddenResponse("Anda bukan pemilik barang ini");
     }
 
-    const body = await request.json();
-    const { files } = body;
+    // Parse multipart form data
+    const formData = await request.formData();
+    const files = formData.getAll("files") as File[];
 
-    if (!files || !Array.isArray(files) || files.length === 0) {
+    if (!files || files.length === 0) {
       return badRequestResponse("Tidak ada file yang diunggah");
     }
 
@@ -58,41 +67,91 @@ export async function POST(
       return badRequestResponse("Maksimal 5 gambar per barang");
     }
 
-    const uploadUrls = [];
+    // Check existing media count to determine sort order and primary
+    const { count: existingCount } = await supabase
+      .from("jualan_item_media")
+      .select("*", { count: "exact", head: true })
+      .eq("item_id", resolvedParams.id);
 
-    for (const file of files) {
-      const { filename, contentType, size } = file;
+    const existingMediaCount = existingCount ?? 0;
+    const needsPrimary = existingMediaCount === 0;
 
-      if (!isAllowedContentType(contentType)) {
+    // Process each file: validate, upload to R2, and save media record
+    const uploadedMedia: Array<{
+      id: string;
+      url: string;
+      alt_text: string;
+      sort_order: number;
+      is_primary: boolean;
+    }> = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      // Validate content type
+      if (!isAllowedContentType(file.type)) {
+        // Clean up any already-uploaded files on failure
+        await cleanupUploadedMedia(supabase, resolvedParams.id, uploadedMedia);
         return badRequestResponse(
-          `Tipe file tidak diizinkan: ${contentType}. Hanya JPEG, PNG, WebP, dan GIF yang diperbolehkan.`,
+          `Tipe file tidak diizinkan: ${file.type}. Hanya JPEG, PNG, WebP, dan GIF yang diperbolehkan.`,
         );
       }
 
-      if (!isValidFileSize(size)) {
+      // Validate file size
+      if (!isValidFileSize(file.size)) {
+        await cleanupUploadedMedia(supabase, resolvedParams.id, uploadedMedia);
         return badRequestResponse(
-          `Ukuran file terlalu besar: ${(size / 1024 / 1024).toFixed(2)}MB. Maksimal 10MB.`,
+          `Ukuran file terlalu besar: ${(file.size / 1024 / 1024).toFixed(2)}MB. Maksimal 10MB.`,
         );
       }
 
-      const objectKey = generateObjectKey(resolvedParams.id, filename);
+      try {
+        // Generate object key
+        const objectKey = generateObjectKey(resolvedParams.id, file.name);
 
-      const { uploadUrl, publicUrl } = await generateSignedUploadUrl(
-        objectKey,
-        contentType,
-      );
+        // Upload to R2 server-side (no CORS issues, no UNSIGNED-PAYLOAD concerns)
+        const buffer = new Uint8Array(await file.arrayBuffer());
+        await serverUpload(buffer, objectKey, file.type);
 
-      uploadUrls.push({
-        filename,
-        uploadUrl,
-        publicUrl,
-        objectKey,
-      });
+        const publicUrl = getPublicUrl(objectKey);
+
+        const isPrimary = needsPrimary && i === 0;
+
+        // Save media record to database
+        const { data: mediaRecord, error: insertError } = await supabase
+          .from("jualan_item_media")
+          .insert({
+            item_id: resolvedParams.id,
+            url: publicUrl,
+            alt_text: file.name,
+            sort_order: existingMediaCount + i,
+            is_primary: isPrimary,
+          })
+          .select("id, url, alt_text, sort_order, is_primary")
+          .single();
+
+        if (insertError) {
+          // Roll back R2 upload
+          await deleteR2Object(objectKey);
+          await cleanupUploadedMedia(
+            supabase,
+            resolvedParams.id,
+            uploadedMedia,
+          );
+          return errorResponse("Gagal menyimpan data gambar", 500);
+        }
+
+        uploadedMedia.push(mediaRecord);
+      } catch (uploadErr) {
+        // Clean up already-uploaded files on failure
+        await cleanupUploadedMedia(supabase, resolvedParams.id, uploadedMedia);
+        return errorResponse("Gagal mengunggah gambar", 500);
+      }
     }
 
     return successResponse({
-      uploadUrls,
-      message: `Generated ${uploadUrls.length} signed upload URL(s)`,
+      media: uploadedMedia,
+      message: `${files.length} gambar berhasil diunggah`,
     });
   } catch (error) {
     return errorResponse("Terjadi kesalahan server", 500);
@@ -100,68 +159,69 @@ export async function POST(
 }
 
 /**
- * POST /api/jualan/[id]/upload/confirm
- * Confirm upload and save media records to database
+ * Clean up media records and R2 objects if upload fails midway
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const session = await getSessionFromCookie();
-    if (!session) {
-      return unauthorizedResponse();
+async function cleanupUploadedMedia(
+  supabase: ReturnType<typeof createServerClient>,
+  itemId: string,
+  uploadedMedia: Array<{ id: string; url: string }>,
+): Promise<void> {
+  if (uploadedMedia.length === 0) return;
+
+  // Delete media records
+  const mediaIds = uploadedMedia.map((m) => m.id);
+  await supabase.from("jualan_item_media").delete().in("id", mediaIds);
+
+  // Delete R2 objects
+  for (const media of uploadedMedia) {
+    const key = extractObjectKeyFromUrl(media.url);
+    if (key) {
+      try {
+        await deleteR2Object(key);
+      } catch {
+        // Best-effort cleanup
+      }
     }
-
-    const supabase = createServerClient();
-    const resolvedParams = await params;
-
-    const { data: goods } = await supabase
-      .from("jualan_goods")
-      .select("owner_user_id")
-      .eq("id", resolvedParams.id)
-      .single();
-
-    if (!goods) {
-      return notFoundResponse("Barang tidak ditemukan");
-    }
-
-    if (goods.owner_user_id !== session.userId) {
-      return forbiddenResponse("Anda bukan pemilik barang ini");
-    }
-
-    const body = await request.json();
-    const { media } = body;
-
-    if (!media || !Array.isArray(media) || media.length === 0) {
-      return badRequestResponse("Tidak ada media yang dikonfirmasi");
-    }
-
-    const mediaRecords = media.map((m, index) => ({
-      item_id: resolvedParams.id,
-      url: m.publicUrl,
-      alt_text: m.altText || m.filename,
-      sort_order: m.sortOrder ?? index,
-      is_primary: m.isPrimary ?? index === 0,
-    }));
-
-    const { error } = await supabase
-      .from("jualan_item_media")
-      .insert(mediaRecords);
-
-    if (error) {
-      return errorResponse("Gagal menyimpan data media", 500);
-    }
-
-    return successResponse({
-      message: "Media berhasil disimpan",
-      count: mediaRecords.length,
-    });
-  } catch (error) {
-    return errorResponse("Terjadi kesalahan server", 500);
   }
 }
 
+/**
+ * Delete an object from R2 by its key
+ */
+async function deleteR2Object(objectKey: string): Promise<void> {
+  const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
+  const { getR2Client, getBucketName } = await import("@/lib/r2");
+
+  const client = getR2Client();
+  const bucketName = getBucketName();
+
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: bucketName,
+      Key: objectKey,
+    }),
+  );
+}
+
+/**
+ * Extract the R2 object key from a public URL
+ */
+function extractObjectKeyFromUrl(publicUrl: string): string | null {
+  try {
+    const baseUrl = process.env.R2_PUBLIC_BASE_URL;
+    if (baseUrl && publicUrl.startsWith(baseUrl)) {
+      return publicUrl.replace(baseUrl + "/", "");
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Generate a deterministic object key for jualan images
+ * Format: jualan/{itemId}/{yyyy}/{MM}/{dd}/{uuid}-{sanitized-filename}
+ */
 function generateObjectKey(itemId: string, filename: string): string {
   const now = new Date();
   const year = now.getFullYear();

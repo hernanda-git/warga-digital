@@ -75,18 +75,17 @@ export function JualanCreateModal({
 
     setIsUploading(true);
     try {
-      const uploadPayload = {
-        files: files.map((file) => ({
-          filename: file.name,
-          contentType: file.type,
-          size: file.size,
-        })),
-      };
+      // Use FormData to send files directly to the server
+      // The server handles uploading to R2, avoiding CORS issues
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append("files", file);
+      }
 
       const response = await apiFetch(`/api/jualan/${itemId}/upload`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(uploadPayload),
+        // No Content-Type header — browser sets multipart/form-data with boundary
+        body: formData,
       });
 
       const data = await response.json();
@@ -95,42 +94,8 @@ export function JualanCreateModal({
         throw new Error(data.error?.message || "Gagal mengunggah gambar");
       }
 
-      const uploadPromises = data.data.uploadUrls.map(
-        async (upload: any, index: number) => {
-          const file = files[index];
-          await fetch(upload.uploadUrl, {
-            method: "PUT",
-            body: file,
-            headers: {
-              "Content-Type": file.type,
-            },
-          });
-
-          return {
-            filename: upload.filename,
-            publicUrl: upload.publicUrl,
-            objectKey: upload.objectKey,
-          };
-        },
-      );
-
-      const uploaded = await Promise.all(uploadPromises);
-
-      const mediaData = uploaded.map((img, index) => ({
-        filename: img.filename,
-        publicUrl: img.publicUrl,
-        altText: img.filename,
-        sortOrder: index,
-        isPrimary: index === 0,
-      }));
-
-      await apiFetch(`/api/jualan/${itemId}/upload`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ media: mediaData }),
-      });
-
-      return uploaded;
+      // Server already saved media records; return the uploaded media
+      return data.data.media || [];
     } catch (error) {
       throw error;
     } finally {
@@ -222,7 +187,9 @@ export function JualanCreateModal({
         {(modalOnClose) => (
           <div className="flex flex-col flex-1 min-h-0">
             <div className="flex items-center justify-between border-b border-app-input-border p-4 shrink-0">
-              <h2 className="text-lg font-bold text-app-title">Jual Barang Baru</h2>
+              <h2 className="text-lg font-bold text-app-title">
+                Jual Barang Baru
+              </h2>
               <button
                 onClick={modalOnClose}
                 className="rounded-full p-2 text-app-body-muted transition hover:bg-app-surface-alt hover:text-app-body"
@@ -409,7 +376,10 @@ export function JualanCreateModal({
                         type="text"
                         value={formData.custom_unit}
                         onChange={(e) =>
-                          setFormData({ ...formData, custom_unit: e.target.value })
+                          setFormData({
+                            ...formData,
+                            custom_unit: e.target.value,
+                          })
                         }
                         placeholder="Contoh: liter"
                         className="h-11 w-full rounded-xl border border-app-input-border bg-app-surface px-3 text-sm text-app-body outline-none transition focus:border-app-primary focus:ring-2 focus:ring-app-primary/20"
@@ -454,11 +424,17 @@ export function JualanCreateModal({
                     id="is_featured"
                     checked={formData.is_featured}
                     onChange={(e) =>
-                      setFormData({ ...formData, is_featured: e.target.checked })
+                      setFormData({
+                        ...formData,
+                        is_featured: e.target.checked,
+                      })
                     }
                     className="h-4 w-4 rounded border-app-input-border text-app-primary focus:ring-app-primary"
                   />
-                  <label htmlFor="is_featured" className="text-sm text-app-body">
+                  <label
+                    htmlFor="is_featured"
+                    className="text-sm text-app-body"
+                  >
                     Tandai sebagai Featured (unggulan)
                   </label>
                 </div>

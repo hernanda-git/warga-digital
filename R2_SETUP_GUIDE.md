@@ -36,6 +36,14 @@ The Gambar Cover (Featured Image) feature requires Cloudflare R2 bucket configur
 
 **CORS Configuration (Required):**
 
+> ⚠️ **Important:** CORS must be configured for the **exact** production domain.
+> The `jualan` (marketplace) module previously used direct browser-to-R2 uploads
+> which require CORS. As of the latest fix, `jualan` now uses **server-side upload**
+> (matching the `jasa` module pattern), which avoids CORS issues entirely.
+> However, other modules (articles, branding) still use direct browser uploads.
+
+**Option A — Via Cloudflare Dashboard:**
+
 1. Go to bucket settings
 2. Click **CORS** tab
 3. Add CORS Rule:
@@ -43,14 +51,29 @@ The Gambar Cover (Featured Image) feature requires Cloudflare R2 bucket configur
 ```json
 {
   "AllowedOrigins": [
-    "https://admin.yoursite.com",
+    "https://www.warga-digital.com",
+    "https://warga-digital.com",
     "http://localhost:3000"
   ],
-  "AllowedMethods": ["PUT", "GET", "POST", "HEAD"],
+  "AllowedMethods": ["GET", "PUT", "POST", "HEAD", "DELETE"],
   "AllowedHeaders": ["*"],
   "ExposeHeaders": ["ETag"],
-  "MaxAgeSeconds": 3000
+  "MaxAgeSeconds": 3600
 }
+```
+
+**Option B — Via Script (recommended):**
+
+Run the CORS configuration script:
+
+```bash
+npx tsx scripts/configure-r2-cors.ts
+```
+
+To customize origins:
+
+```bash
+npx tsx scripts/configure-r2-cors.ts --origins "https://www.warga-digital.com,https://staging.warga-digital.com,http://localhost:3000"
 ```
 
 ---

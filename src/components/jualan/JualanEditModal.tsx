@@ -85,7 +85,9 @@ export function JualanEditModal({
 
   useEffect(() => {
     if (goods) {
-      const unitInCommon = COMMON_UOMS.find((u) => u.value === goods.unit_label);
+      const unitInCommon = COMMON_UOMS.find(
+        (u) => u.value === goods.unit_label,
+      );
       setFormData({
         category_id: goods.category_id,
         name: goods.name,
@@ -110,7 +112,8 @@ export function JualanEditModal({
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    const totalImages = existingMedia.length + pendingImages.length + files.length;
+    const totalImages =
+      existingMedia.length + pendingImages.length + files.length;
     if (totalImages > 5) {
       alert("Maksimal 5 gambar per barang");
       return;
@@ -152,18 +155,17 @@ export function JualanEditModal({
 
     setIsUploading(true);
     try {
-      const uploadPayload = {
-        files: files.map((file) => ({
-          filename: file.name,
-          contentType: file.type,
-          size: file.size,
-        })),
-      };
+      // Use FormData to send files directly to the server
+      // The server handles uploading to R2, avoiding CORS issues
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append("files", file);
+      }
 
       const response = await apiFetch(`/api/jualan/${itemId}/upload`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(uploadPayload),
+        // No Content-Type header — browser sets multipart/form-data with boundary
+        body: formData,
       });
 
       const data = await response.json();
@@ -172,43 +174,8 @@ export function JualanEditModal({
         throw new Error(data.error?.message || "Gagal mengunggah gambar");
       }
 
-      const uploadPromises = data.data.uploadUrls.map(
-        async (upload: any, index: number) => {
-          const file = files[index];
-          await fetch(upload.uploadUrl, {
-            method: "PUT",
-            body: file,
-            headers: {
-              "Content-Type": file.type,
-            },
-          });
-
-          return {
-            filename: upload.filename,
-            publicUrl: upload.publicUrl,
-            objectKey: upload.objectKey,
-          };
-        },
-      );
-
-      const uploaded = await Promise.all(uploadPromises);
-
-      const hasExistingMedia = existingMedia.length > 0;
-      const mediaData = uploaded.map((img, index) => ({
-        filename: img.filename,
-        publicUrl: img.publicUrl,
-        altText: img.filename,
-        sortOrder: hasExistingMedia ? existingMedia.length + index : index,
-        isPrimary: !hasExistingMedia && index === 0,
-      }));
-
-      await apiFetch(`/api/jualan/${itemId}/upload`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ media: mediaData }),
-      });
-
-      return uploaded;
+      // Server already saved media records; return the uploaded media
+      return data.data.media || [];
     } catch (error) {
       throw error;
     } finally {
@@ -249,7 +216,9 @@ export function JualanEditModal({
       await onSubmit(updatePayload);
       handleClose();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Gagal memperbarui barang");
+      alert(
+        error instanceof Error ? error.message : "Gagal memperbarui barang",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -278,7 +247,11 @@ export function JualanEditModal({
 
   const allMedia = [
     ...existingMedia.map((m) => ({ ...m, filename: m.alt_text || "image" })),
-    ...pendingImages.map((f, i) => ({ id: `pending-${i}`, url: URL.createObjectURL(f), filename: f.name })),
+    ...pendingImages.map((f, i) => ({
+      id: `pending-${i}`,
+      url: URL.createObjectURL(f),
+      filename: f.name,
+    })),
   ];
 
   return (
@@ -327,7 +300,9 @@ export function JualanEditModal({
                       <button
                         onClick={() =>
                           img.id.startsWith("pending-")
-                            ? handleRemovePendingImage(parseInt(img.id.replace("pending-", "")))
+                            ? handleRemovePendingImage(
+                                parseInt(img.id.replace("pending-", "")),
+                              )
                             : handleRemoveExistingMedia(img.id)
                         }
                         className="absolute right-1 top-1 rounded-full bg-black/50 p-1 text-white transition hover:bg-red-500"
@@ -484,7 +459,10 @@ export function JualanEditModal({
                         type="text"
                         value={formData.custom_unit}
                         onChange={(e) =>
-                          setFormData({ ...formData, custom_unit: e.target.value })
+                          setFormData({
+                            ...formData,
+                            custom_unit: e.target.value,
+                          })
                         }
                         className="h-11 w-full rounded-xl border border-app-input-border bg-app-surface px-3 text-sm text-app-body outline-none transition focus:border-app-primary focus:ring-2 focus:ring-app-primary/20"
                       />
@@ -541,11 +519,17 @@ export function JualanEditModal({
                     id="is_featured"
                     checked={formData.is_featured}
                     onChange={(e) =>
-                      setFormData({ ...formData, is_featured: e.target.checked })
+                      setFormData({
+                        ...formData,
+                        is_featured: e.target.checked,
+                      })
                     }
                     className="h-4 w-4 rounded border-app-input-border text-app-primary focus:ring-app-primary"
                   />
-                  <label htmlFor="is_featured" className="text-sm text-app-body">
+                  <label
+                    htmlFor="is_featured"
+                    className="text-sm text-app-body"
+                  >
                     Featured (unggulan)
                   </label>
                 </div>
@@ -580,7 +564,9 @@ export function JualanEditModal({
                 }
                 className="w-full"
               >
-                {isSubmitting || isUploading || isLoading ? "Menyimpan..." : "Simpan Perubahan"}
+                {isSubmitting || isUploading || isLoading
+                  ? "Menyimpan..."
+                  : "Simpan Perubahan"}
               </PrimaryButton>
             </div>
           </div>

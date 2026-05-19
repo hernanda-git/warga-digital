@@ -12,6 +12,7 @@ Single app (not a monorepo). Deployed on Vercel.
 - `npm run lint` — ESLint (`next lint`)
 - `npm run db:generate` — Regenerate Supabase TypeScript types. **Caveat**: the script uses PowerShell syntax (`2>nul`, `$env:SUPABASE_PROJECT_ID`). Run it in PowerShell on Windows, or rewrite the fallback chain for POSIX.
 - `node scripts/bump-version.js [major|minor|patch]` — Bumps `VERSION`, `package.json`, and `CHANGELOG.md`. Expects a `VERSION` file in repo root.
+- `npx tsx scripts/configure-r2-cors.ts` — Configures CORS on the R2 bucket for browser uploads. Requires `.env` with `R2_*` vars.
 
 ## Architecture & entrypoints
 - App routes live under `src/app/`. Major routes: `landing`, `profil`, `jualan`, `jasa`, `kas-rt`, `dompet`, `organisasi`, `artikel`, `auth`, `onboarding`, `admin`, `notifikasi`, `usaha`.

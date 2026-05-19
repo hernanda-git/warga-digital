@@ -4,7 +4,10 @@ import {
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { RequestChecksumCalculation } from "@aws-sdk/middleware-flexible-checksums";
+import {
+  RequestChecksumCalculation,
+  ResponseChecksumValidation,
+} from "@aws-sdk/middleware-flexible-checksums";
 
 // R2 Configuration
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
@@ -116,6 +119,8 @@ export function getR2Client(): S3Client {
       // Cloudflare R2 does not expect these, and since the payload isn't available
       // at signing time, the placeholder CRC (AAAAAA==) causes a 403 mismatch.
       requestChecksumCalculation: RequestChecksumCalculation.WHEN_REQUIRED,
+      // Also disable response checksum validation to avoid R2 compatibility issues.
+      responseChecksumValidation: ResponseChecksumValidation.WHEN_REQUIRED,
     });
   }
 
