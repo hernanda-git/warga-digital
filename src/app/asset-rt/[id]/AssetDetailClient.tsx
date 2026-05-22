@@ -391,7 +391,10 @@ function AddLogSheet({
       const uploadRes = await fetch(uploadUrl, {
         method: "PUT",
         body: form.imageFile,
-        headers: { "Content-Type": form.imageFile.type },
+        headers: {
+          "Content-Type": form.imageFile.type,
+          "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
+        },
       });
       if (!uploadRes.ok) throw new Error("Gagal mengunggah gambar");
 

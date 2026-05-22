@@ -96,6 +96,7 @@ export function useArticleImageUpload({
 
           xhr.open("PUT", uploadUrl);
           xhr.setRequestHeader("Content-Type", file.type);
+          xhr.setRequestHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD");
           xhr.send(file);
         });
 

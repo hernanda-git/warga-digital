@@ -78,6 +78,14 @@ export const DEFAULT_SIGNED_GET_URL_EXPIRY = 3600; // 1 hour in seconds
  */
 let r2ClientInstance: S3Client | null = null;
 
+const R2_CHECKSUM_HEADERS = [
+  "x-amz-checksum-crc32",
+  "x-amz-checksum-crc32c",
+  "x-amz-checksum-sha1",
+  "x-amz-checksum-sha256",
+  "x-amz-sdk-checksum-algorithm",
+];
+
 /**
  * Validates that all required R2 environment variables are set
  */
@@ -122,6 +130,23 @@ export function getR2Client(): S3Client {
       // Also disable response checksum validation to avoid R2 compatibility issues.
       responseChecksumValidation: ResponseChecksumValidation.WHEN_REQUIRED,
     });
+
+    // Strip checksum headers that the AWS SDK's flexible checksums middleware may
+    // add to PutObject requests. Cloudflare R2 does not support these headers, and
+    // when they leak into presigned URL signatures they cause 403 mismatches because
+    // the browser upload doesn't send them.
+    r2ClientInstance.middlewareStack.add(
+      (next) => async (args) => {
+        const request = args.request as { headers?: Record<string, string> };
+        if (request?.headers) {
+          for (const header of R2_CHECKSUM_HEADERS) {
+            delete request.headers[header];
+          }
+        }
+        return next(args);
+      },
+      { step: "finalizeRequest", priority: "low" },
+    );
   }
 
   return r2ClientInstance;

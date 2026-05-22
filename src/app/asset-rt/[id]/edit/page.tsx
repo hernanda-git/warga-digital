@@ -143,7 +143,10 @@ export default function EditAssetPage() {
       const uploadRes = await fetch(uploadUrl, {
         method: "PUT",
         body: imageFile,
-        headers: { "Content-Type": imageFile.type },
+        headers: {
+          "Content-Type": imageFile.type,
+          "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
+        },
       });
       if (!uploadRes.ok) throw new Error("Gagal mengunggah gambar");
 

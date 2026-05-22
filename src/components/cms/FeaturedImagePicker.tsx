@@ -67,6 +67,7 @@ export function FeaturedImagePicker({
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", uploadUrl);
         xhr.setRequestHeader("Content-Type", file.type);
+        xhr.setRequestHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD");
         xhr.onload = () =>
           xhr.status === 200 ? resolve() : reject(new Error(xhr.statusText));
         xhr.onerror = () => reject(new Error("Upload gagal"));

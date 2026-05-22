@@ -289,6 +289,7 @@ function ArticleImageUploader({
         xhr.addEventListener("timeout", () => reject(new Error("Timeout")));
         xhr.open("PUT", uploadUrl);
         xhr.setRequestHeader("Content-Type", file.type);
+        xhr.setRequestHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD");
         xhr.send(file);
       });
 

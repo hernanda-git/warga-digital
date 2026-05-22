@@ -374,6 +374,7 @@ export function GalleryUploader({
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", uploadUrl);
         xhr.setRequestHeader("Content-Type", item.file.type);
+        xhr.setRequestHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD");
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
             const pct = Math.round((e.loaded / e.total) * 100);
@@ -646,6 +647,7 @@ export function GalleryUploader({
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", uploadUrl);
         xhr.setRequestHeader("Content-Type", newFile.type);
+        xhr.setRequestHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD");
         xhr.onload = () =>
           xhr.status === 200 ? resolve() : reject(new Error(xhr.statusText));
         xhr.onerror = () => reject(new Error("Upload gagal"));

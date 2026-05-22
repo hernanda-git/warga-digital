@@ -217,6 +217,7 @@ export default function BrandingPage() {
         xhr.addEventListener("abort", () => reject(new Error("Dibatalkan")));
         xhr.open("PUT", uploadUrl);
         xhr.setRequestHeader("Content-Type", selectedFile.type);
+        xhr.setRequestHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD");
         xhr.send(selectedFile);
       });
 

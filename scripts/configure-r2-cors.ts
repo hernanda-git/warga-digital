@@ -78,7 +78,13 @@ async function main() {
         {
           AllowedOrigins: allowedOrigins,
           AllowedMethods: ["GET", "PUT", "POST", "HEAD", "DELETE"],
-          AllowedHeaders: ["*"],
+          AllowedHeaders: [
+            "*",
+            "x-amz-content-sha256",
+            "content-type",
+            "x-amz-checksum-crc32",
+            "x-amz-checksum-crc32c",
+          ],
           ExposeHeaders: ["ETag"],
           MaxAgeSeconds: 3600,
         },
