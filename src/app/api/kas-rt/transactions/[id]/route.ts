@@ -169,6 +169,7 @@ export async function PATCH(
     reference?: string | null;
     details?: string | null;
     category?: string | null;
+    asset_id?: string | null;
     transaction_details?:
       | {
           name: string;
@@ -199,6 +200,9 @@ export async function PATCH(
     const catRaw = getString("category");
     body.category =
       catRaw != null && String(catRaw).trim() ? String(catRaw).trim() : null;
+
+    const assetIdRaw = getString("asset_id");
+    body.asset_id = assetIdRaw?.trim() || null;
 
     const detailsRaw = getString("transaction_details");
     if (detailsRaw) {
@@ -289,6 +293,10 @@ export async function PATCH(
       body.category && body.category.trim() ? body.category.trim() : null;
   }
 
+  if (body.asset_id !== undefined) {
+    patch.asset_id = body.asset_id?.trim() || null;
+  }
+
   if (Object.keys(patch).length === 0) {
     return NextResponse.json(
       { message: "Tidak ada perubahan yang dikirim." },
@@ -301,7 +309,7 @@ export async function PATCH(
   // Verify the transaction belongs to this tenant/community and is not deleted
   const { data: existing, error: fetchError } = await supabase
     .from("kas_rt_transactions")
-    .select("id, title, amount, type, date")
+    .select("id, title, amount, type, date, asset_id")
     .eq("id", id)
     .eq("tenant_id", DEFAULT_TENANT_ID)
     .eq("community_id", DEFAULT_COMMUNITY_ID)
@@ -329,7 +337,7 @@ export async function PATCH(
     .eq("tenant_id", DEFAULT_TENANT_ID)
     .eq("community_id", DEFAULT_COMMUNITY_ID)
     .select(
-      "id, title, amount, type, date, reference, details, category, created_at, created_by",
+      "id, title, amount, type, date, reference, details, category, created_at, created_by, asset_id",
     )
     .single();
 
@@ -352,6 +360,22 @@ export async function PATCH(
     data.date,
     "UPDATED",
   );
+
+  // ── Asset log for expense with linked asset ──────────────────────────────
+  const newAssetId = patch.asset_id !== undefined ? (patch.asset_id as string | null) : existing.asset_id;
+
+  if (data.type === "expense" && newAssetId && newAssetId !== existing.asset_id) {
+    await supabase.from("rt_asset_logs").insert({
+      asset_id: newAssetId,
+      tenant_id: DEFAULT_TENANT_ID,
+      log_type: "expense",
+      notes: `Pengeluaran: ${data.title.trim()} - Rp ${Math.round(Number(data.amount)).toLocaleString("id-ID")}`,
+      transaction_id: data.id,
+      payment_amount: Number(data.amount),
+      payment_date: data.date,
+      logged_by: auth.userId,
+    });
+  }
 
   // ── Handle transaction details (expense breakdown) ───────────────────────────
   let savedTransactionDetails: {
@@ -537,6 +561,17 @@ export async function PATCH(
     }
   }
 
+  // ── Resolve asset name ───────────────────────────────────────────────────
+  let patchedAssetName: string | null = null;
+  if (data.asset_id) {
+    const { data: patchedAsset } = await supabase
+      .from("rt_assets")
+      .select("name")
+      .eq("id", data.asset_id)
+      .maybeSingle();
+    patchedAssetName = patchedAsset?.name ?? null;
+  }
+
   return NextResponse.json({
     id: data.id,
     title: data.title,
@@ -550,6 +585,8 @@ export async function PATCH(
     category: data.category ?? null,
     attachments: savedAttachments,
     transaction_details: savedTransactionDetails,
+    asset_id: data.asset_id,
+    asset_name: patchedAssetName,
   });
 }
 

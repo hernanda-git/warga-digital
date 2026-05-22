@@ -74,7 +74,8 @@ export type AssetLogType =
   | "general"
   | "image_attachment"
   | "quantity_change"
-  | "asset_update";
+  | "asset_update"
+  | "expense";
 
 /**
  * Maps the `is_used` boolean-or-null to a short status string stored in logs.

@@ -3,27 +3,25 @@
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
-import { findDuplicateTransactions } from "@/lib/kas-rt-utils";
 import { getDefaultFilterDates } from "@/lib/kas-rt-constants";
 import { usePullToRefresh } from "@/lib/hooks/use-pull-to-refresh";
 import { useKasRtTransactions } from "@/lib/hooks/use-kas-rt-transactions";
-import { useKasRtForm } from "@/lib/hooks/use-kas-rt-form";
+import { useKasRtNewTransaction } from "@/lib/hooks/use-kas-rt-new-transaction";
 import {
   KasRtHero,
   KasRtFilterBar,
   KasRtFilterSheet,
   KasRtDownloadSheet,
   KasRtTransactionList,
-  KasRtTransactionForm,
   KasRtDeleteConfirmDialog,
   KasRtDuplicateWarningDialog,
 } from "@/components/kas-rt";
+import { KasRtNewTransactionSheet } from "@/components/kas-rt/KasRtNewTransactionSheet";
 import {
   KasRtPageSkeleton,
   KasRtTransactionListSkeleton,
 } from "@/components/kas-rt/skeletons";
 import { KasRtBackToTop } from "@/components/kas-rt/KasRtBackToTop";
-import { ROUTES } from "@/config/landing";
 import type {
   KasRtDownloadState,
   TransactionItem,
@@ -93,8 +91,7 @@ export default function KasRtPageClient({
     },
   });
 
-  // ── Edit / delete state ────────────────────────────────────────────────────
-  const [editingTxId, setEditingTxId] = useState<string | null>(null);
+  // ── Delete state ──────────────────────────────────────────────────────────
   const [deletingTx, setDeletingTx] = useState<TransactionItem | null>(null);
   const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
 
@@ -111,29 +108,15 @@ export default function KasRtPageClient({
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
-  // ── Form state ──────────────────────────────────────────────────────────────
-  const [isFormOpen, setIsFormOpen] = useState(false);
-
-  // ── Form hook ──────────────────────────────────────────────────────────────
-  const formHook = useKasRtForm({
+  // ── New transaction form hook ─────────────────────────────────────────────
+  const formHook = useKasRtNewTransaction({
     categories,
     transactions,
-    editingTxId,
-    setEditingTxId,
     setTransactions,
     refreshData,
-    setIsFormOpen,
   });
 
-  const closeForm = useCallback(() => {
-    if (formHook.isSubmitting) return;
-    setIsFormOpen(false);
-    setEditingTxId(null);
-    formHook.resetFormState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formHook.isSubmitting, formHook.resetFormState]);
-
-  // ── Pull-to-refresh ────────────────────────────────────────────────────────
+  // ── Pull-to-refresh ──────────────────────────────────────────────────────
   const { pullDistance, onTouchStart, onTouchMove, onTouchEnd } =
     usePullToRefresh({
       onRefresh: refreshData,
@@ -209,68 +192,10 @@ export default function KasRtPageClient({
     }
   }, [deletingTx, setTransactions]);
 
-  // ── Duplicate check handler ───────────────────────────────────────────────
-  // Note: Expenses skip duplicate detection because expense transactions
-  // typically have unique descriptions and amounts (e.g., vendor payments),
-  // whereas income (IPL payments) often has duplicate entries from different
-  // houses paying the same amount on the same date.
-  const handleDuplicateCheck = useCallback(() => {
-    if (formHook.form.type === "expense") {
-      formHook.setFormStep((s) => (s + 1) as 1 | 2 | 3);
-      return;
-    }
-    const matches = findDuplicateTransactions(
-      transactions,
-      formHook.form.date,
-      formHook.form.reference,
-      editingTxId ?? undefined,
-      formHook.form.type,
-    );
-    if (matches.length > 0) {
-      formHook.setDuplicateWarning({
-        matches: matches as TransactionItem[],
-        onConfirm: () => {
-          formHook.setDuplicateWarning(null);
-          formHook.setFormStep(3);
-        },
-      });
-      return;
-    }
-    formHook.setFormStep((s) => (s + 1) as 1 | 2 | 3);
-  }, [formHook, transactions, editingTxId]);
-
-  // ── Reset filter handler ──────────────────────────────────────────────────
-  const handleResetFilter = useCallback(async () => {
-    await resetFilters();
-    // Scroll to top after resetting filters
-    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }, [resetFilters]);
-
-  // ── Navigation handlers ───────────────────────────────────────────────────
-  const handleOpenForm = useCallback(() => {
-    formHook.openForm();
-    setIsFormOpen(true);
-  }, [formHook]);
-
-  const handleOpenSummary = useCallback(() => {
-    router.push("/kas-rt/summary");
-  }, [router]);
-
-  const handleOpenHouseStatus = useCallback(() => {
-    router.push("/kas-rt/house-status");
-  }, [router]);
-
-  const handleOpenEditForm = useCallback(
-    (tx: TransactionItem) => {
-      formHook.openEditForm(tx);
-      setIsFormOpen(true);
-    },
-    [formHook],
-  );
-
   // ── Remove attachment handler ─────────────────────────────────────────────
   const handleRemoveAttachment = useCallback(
     async (attachmentId: string) => {
+      const editingTxId = formHook.editingTxId;
       if (!editingTxId) return;
       try {
         const res = await apiFetch(
@@ -302,8 +227,39 @@ export default function KasRtPageClient({
         );
       }
     },
-    [editingTxId, setTransactions],
+    [formHook.editingTxId, setTransactions],
   );
+
+  // ── Navigation handlers ───────────────────────────────────────────────────
+  const handleOpenForm = useCallback(() => {
+    formHook.openForm();
+  }, [formHook]);
+
+  const handleOpenEditForm = useCallback(
+    (tx: TransactionItem) => {
+      formHook.openEditForm(tx);
+    },
+    [formHook],
+  );
+
+  const handleOpenSummary = useCallback(() => {
+    router.push("/kas-rt/summary");
+  }, [router]);
+
+  const handleOpenHouseStatus = useCallback(() => {
+    router.push("/kas-rt/house-status");
+  }, [router]);
+
+  // ── Reset filter handler ──────────────────────────────────────────────────
+  const handleResetFilter = useCallback(async () => {
+    await resetFilters();
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [resetFilters]);
+
+  // ── Editing tx attachments ────────────────────────────────────────────────
+  const editingTxAttachments = formHook.editingTxId
+    ? (transactions.find((t) => t.id === formHook.editingTxId)?.attachments ?? null)
+    : null;
 
   // ── Loading state ─────────────────────────────────────────────────────────
   if (isPageLoading) {
@@ -393,46 +349,9 @@ export default function KasRtPageClient({
         onDownload={handleDownloadReport}
       />
 
-      <KasRtTransactionForm
-        isOpen={isFormOpen}
-        onClose={closeForm}
-        editingTxId={editingTxId}
-        editingTxAttachments={
-          editingTxId
-            ? (transactions.find((t) => t.id === editingTxId)?.attachments ??
-              null)
-            : null
-        }
-        form={formHook.form}
-        formStep={formHook.formStep}
-        isSubmitting={formHook.isSubmitting}
-        formError={formHook.formError}
-        isIncomeForm={formHook.isIncomeForm}
-        isExpenseForm={formHook.isExpenseForm}
-        visibleCategories={formHook.visibleCategories}
-        isStep1Valid={formHook.isStep1Valid}
-        isStep2Valid={formHook.isStep2Valid}
-        isFormValid={formHook.isFormValid}
-        fileInputRef={formHook.fileInputRef}
-        attachmentLabel={formHook.attachmentLabel}
-        setAttachmentLabel={formHook.setAttachmentLabel}
-        hasAttachment={formHook.hasAttachment}
-        setHasAttachment={formHook.setHasAttachment}
-        categoryDetails={formHook.categoryDetails}
-        defaultJumlahWarga={formHook.defaultJumlahWarga}
-        jumlahWarga={formHook.jumlahWarga}
-        setJumlahWarga={formHook.setJumlahWarga}
-        useAutoCalculate={formHook.useAutoCalculate}
-        setUseAutoCalculate={formHook.setUseAutoCalculate}
-        isLoadingCategoryDetails={formHook.isLoadingCategoryDetails}
-        expenseBreakdown={formHook.expenseBreakdown}
-        handleCategoryChange={formHook.handleCategoryChange}
-        handleTypeChange={formHook.handleTypeChange}
-        updateFormField={formHook.updateFormField}
-        setFormStep={formHook.setFormStep}
-        handleSubmit={formHook.handleSubmit}
-        onDuplicateCheck={handleDuplicateCheck}
-        placeholderTemplate={formHook.placeholderTemplate}
+      <KasRtNewTransactionSheet
+        {...formHook}
+        editingTxAttachments={editingTxAttachments}
         onRemoveAttachment={handleRemoveAttachment}
       />
 

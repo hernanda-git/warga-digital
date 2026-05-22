@@ -53,6 +53,8 @@ export interface TransactionItem {
   attachments: TransactionAttachment[];
   transaction_details?: TransactionDetail[];
   is_shadow?: boolean;
+  asset_id?: string | null;
+  asset_name?: string | null;
 }
 
 export interface KasRtFormState {

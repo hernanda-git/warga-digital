@@ -35,6 +35,7 @@ export async function POST(request: Request) {
         }[]
       | undefined;
     let files: File[] = [];
+    let assetId: string | null = null;
 
     if (contentType.includes("multipart/form-data")) {
       const form = await request.formData();
@@ -55,6 +56,9 @@ export async function POST(request: Request) {
       const catRaw = getString("category");
       category =
         catRaw != null && String(catRaw).trim() ? String(catRaw).trim() : null;
+
+      const assetIdRaw = getString("asset_id");
+      assetId = assetIdRaw?.trim() || null;
 
       const detailsRaw = getString("transaction_details");
       if (detailsRaw) {
@@ -196,9 +200,10 @@ export async function POST(request: Request) {
         details: detailsValue,
         category: category?.trim() || null,
         created_by: session.userId,
+        asset_id: type === "expense" && assetId ? assetId : null,
       })
       .select(
-        "id, title, amount, type, date, reference, details, category, created_at, created_by",
+        "id, title, amount, type, date, reference, details, category, created_at, created_by, asset_id",
       )
       .single();
 
@@ -250,6 +255,20 @@ export async function POST(request: Request) {
       },
       session.userId,
     );
+
+    // ── Insert rt_asset_log for expense transactions with linked asset ─────────
+    if (type === "expense" && assetId) {
+      await supabase.from("rt_asset_logs").insert({
+        asset_id: assetId,
+        tenant_id: tenantId,
+        log_type: "expense",
+        notes: `Pengeluaran: ${title.trim()} - Rp ${Math.round(amount).toLocaleString("id-ID")}`,
+        transaction_id: data.id,
+        payment_amount: amount,
+        payment_date: date,
+        logged_by: session.userId,
+      });
+    }
 
     const attachmentNames: string[] = [];
     const attachmentsToInsert: {
@@ -392,6 +411,17 @@ export async function POST(request: Request) {
       }
     }
 
+    // ── Resolve asset name ───────────────────────────────────────────────────
+    let assetName: string | null = null;
+    if (data.asset_id) {
+      const { data: asset } = await supabase
+        .from("rt_assets")
+        .select("name")
+        .eq("id", data.asset_id)
+        .maybeSingle();
+      assetName = asset?.name ?? null;
+    }
+
     return NextResponse.json({
       id: data.id,
       title: data.title,
@@ -405,6 +435,8 @@ export async function POST(request: Request) {
       category: data.category ?? null,
       attachments: attachmentPayload,
       transaction_details: savedTransactionDetails,
+      asset_id: data.asset_id,
+      asset_name: assetName,
     });
   } catch (error) {
     console.error("[kas-rt/transactions] POST failed:", error);
@@ -493,7 +525,7 @@ export async function GET(request: Request) {
     let query = supabase
       .from("kas_rt_transactions")
       .select(
-        "id, title, amount, type, date, created_at, created_by, reference, details, category, created_by_user:users!kas_rt_transactions_created_by_fkey(full_name), kas_rt_attachments(id, file_name, storage_path, mime_type), kas_rt_transaction_details(id, name, rate_per_warga, jumlah_warga, subtotal, sort_order)",
+        "id, title, amount, type, date, created_at, created_by, reference, details, category, asset_id, created_by_user:users!kas_rt_transactions_created_by_fkey(full_name), kas_rt_attachments(id, file_name, storage_path, mime_type), kas_rt_transaction_details(id, name, rate_per_warga, jumlah_warga, subtotal, sort_order), asset:rt_assets!kas_rt_transactions_asset_id_fkey(name)",
       )
       .eq("tenant_id", tenantId)
       .eq("community_id", communityId)
@@ -541,6 +573,10 @@ export async function GET(request: Request) {
         ? tx.created_by_user[0]
         : tx.created_by_user;
 
+      const assetData = Array.isArray(tx.asset)
+        ? tx.asset[0]
+        : tx.asset;
+
       return {
         id: tx.id,
         title: tx.title,
@@ -555,6 +591,8 @@ export async function GET(request: Request) {
         created_by_full_name: createdByUser?.full_name ?? null,
         attachments: attachmentPayload,
         transaction_details: tx.kas_rt_transaction_details ?? [],
+        asset_id: tx.asset_id ?? null,
+        asset_name: assetData?.name ?? null,
       };
     });
 
