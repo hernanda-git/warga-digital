@@ -21,6 +21,7 @@ import {
   DocumentTextIcon,
   PhotoIcon,
   PencilIcon,
+  BanknotesIcon,
 } from "@heroicons/react/24/outline";
 import type {
   AssetItem,
@@ -150,6 +151,16 @@ function logMeta(type: AssetLogType): LogMeta {
         color: "#F3F4F6",
         textColor: "#374151",
       };
+    case "expense":
+      return {
+        icon: BanknotesIcon,
+        label: "Pengeluaran",
+        color: "#FEE2E2",
+        textColor: "#DC2626",
+      };
+    default:
+      const _exhaustive: never = type;
+      throw new Error(`Unknown log type: ${_exhaustive}`);
   }
 }
 
