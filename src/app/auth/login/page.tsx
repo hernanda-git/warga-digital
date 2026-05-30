@@ -106,10 +106,10 @@ export default function LoginPage() {
   const initials = login.trim() ? login.trim().charAt(0).toUpperCase() : "?";
 
   return (
-    <main className="flex h-full flex-col overflow-hidden">
+    <main className="flex h-full flex-col overflow-hidden lg:flex-row">
       {/* ── Gradient hero ─────────────────────────────────────── */}
       <section
-        className="relative shrink-0 overflow-hidden px-5 pb-14 pt-8"
+        className="relative shrink-0 overflow-hidden px-5 pb-14 pt-8 lg:flex lg:w-1/2 lg:h-full lg:items-center lg:justify-center lg:rounded-none lg:px-16 lg:pb-0 lg:pt-0"
         style={{
           background:
             "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",
@@ -117,23 +117,23 @@ export default function LoginPage() {
       >
         {/* Decorative blobs */}
         <div
-          className="pointer-events-none absolute -right-14 -top-14 h-52 w-52 rounded-full bg-white/10"
+          className="pointer-events-none absolute -right-14 -top-14 h-52 w-52 rounded-full bg-white/10 lg:-right-20 lg:-top-20 lg:h-72 lg:w-72"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-white/[0.07]"
+          className="pointer-events-none absolute -bottom-12 -left-10 h-40 w-40 rounded-full bg-white/[0.07] lg:-bottom-16 lg:-left-16 lg:h-56 lg:w-56"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute bottom-16 right-10 h-20 w-20 rounded-full bg-white/[0.06]"
+          className="pointer-events-none absolute bottom-16 right-10 h-20 w-20 rounded-full bg-white/[0.06] lg:bottom-24 lg:right-16 lg:h-32 lg:w-32"
           aria-hidden
         />
 
         {/* Brand identity */}
         <div className="relative z-10 flex flex-col items-center gap-4 text-center">
           {/* Logo */}
-          <div className="flex h-[72px] w-[72px] items-center justify-center rounded-[22px] bg-white/25 shadow-xl backdrop-blur-sm">
-            <KeyIcon className="h-9 w-9 text-white" />
+          <div className="flex h-[72px] w-[72px] items-center justify-center rounded-[22px] bg-white/25 shadow-xl backdrop-blur-sm lg:h-24 lg:w-24 lg:rounded-[28px]">
+            <KeyIcon className="h-9 w-9 text-white lg:h-12 lg:w-12" />
           </div>
 
           {/* Name & community */}
@@ -144,7 +144,7 @@ export default function LoginPage() {
                 Sawangan Regensi · RT 03
               </span>
             </div>
-            <h1 className="text-[24px] font-extrabold leading-tight text-white">
+            <h1 className="text-[24px] font-extrabold leading-tight text-white lg:text-4xl">
               Warga Digital
             </h1>
             <p className="mt-1 text-sm text-white/70">
@@ -155,8 +155,8 @@ export default function LoginPage() {
       </section>
 
       {/* ── Form card ─────────────────────────────────────────── */}
-      <div className="relative -mt-6 flex flex-1 flex-col overflow-y-auto rounded-t-[2rem] bg-app-surface shadow-[0_-8px_40px_rgba(0,40,5,0.16)]">
-        <div className="px-5 pt-6 pb-10 lg:mx-auto lg:w-full lg:max-w-[28rem]">
+      <div className="relative -mt-6 flex flex-1 flex-col overflow-y-auto rounded-t-[2rem] bg-app-surface shadow-[0_-8px_40px_rgba(0,40,5,0.16)] lg:w-1/2 lg:rounded-none lg:shadow-none lg:-mt-0">
+        <div className="px-5 pt-6 pb-10 lg:mx-auto lg:my-auto lg:w-full lg:max-w-md lg:px-8 lg:py-12">
           {/* Step indicator */}
           <div className="mb-7 flex justify-center gap-2" aria-label="Langkah">
             {([1, 2] as const).map((s) => (
