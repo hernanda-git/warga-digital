@@ -9,6 +9,7 @@ import {
   ClipboardDocumentListIcon,
   ExclamationTriangleIcon,
   InformationCircleIcon,
+  NewspaperIcon,
   ShoppingCartIcon,
   UserGroupIcon,
 } from "@heroicons/react/24/outline";
@@ -21,6 +22,14 @@ export const LANDING_FEATURES = [
     href: "/asset-rt",
     icon: ClipboardDocumentListIcon,
     color: "text-blue-600 dark:text-blue-400",
+  },
+  {
+    id: "artikel",
+    label: "Artikel",
+    description: "Berita & pengumuman warga",
+    href: "/artikel",
+    icon: NewspaperIcon,
+    color: "text-pink-600 dark:text-pink-400",
   },
   {
     id: "kas-rt",
