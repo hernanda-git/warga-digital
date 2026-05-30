@@ -110,7 +110,7 @@ interface FeatureGridProps {
 
 export function FeatureGrid({ title = "Fitur" }: FeatureGridProps) {
   return (
-    <section className="px-4 py-4 lg:px-6" aria-labelledby="feature-grid-title">
+    <section className="px-4 py-4 lg:px-8 lg:py-6" aria-labelledby="feature-grid-title">
       <h2
         id="feature-grid-title"
         className="mb-3 text-lg font-bold text-app-title lg:text-xl"

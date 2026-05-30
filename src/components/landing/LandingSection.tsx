@@ -86,7 +86,7 @@ export function LandingSection({
       aria-labelledby={titleId}
     >
       {title && (
-        <div className="mb-3 flex items-center justify-between px-4 lg:px-6">
+        <div         className="mb-3 flex items-center justify-between px-4 lg:px-8">
           <h2
             id={titleId}
             className="text-lg font-bold text-app-title lg:text-xl"
@@ -105,7 +105,7 @@ export function LandingSection({
         </div>
       )}
 
-      <div className={contentClassName || (title ? "px-4 lg:px-6" : "")}>
+      <div className={contentClassName || (title ? "px-4 lg:px-8" : "")}>
         {children}
       </div>
     </section>

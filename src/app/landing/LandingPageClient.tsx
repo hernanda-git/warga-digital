@@ -118,7 +118,7 @@ export default function LandingPageClient({
       />
 
       {/* Main Content */}
-      <main className="flex-1 lg:max-w-4xl lg:mx-auto lg:w-full">
+      <main className="flex-1">
         {/* Feature Grid */}
         <FeatureGrid />
 
@@ -127,6 +127,7 @@ export default function LandingPageClient({
           title="Info Warga"
           viewAllText="Lihat semua"
           viewAllHref="/artikel"
+          className="lg:border-t lg:border-[var(--color-input-border)]"
         >
           {hasArticlesContent ? (
             <ResidentPostsSection
@@ -155,9 +156,10 @@ export default function LandingPageClient({
           title="Jual Beli RT 03"
           viewAllText="Lihat semua"
           viewAllHref={ROUTES.JUALAN}
+          className="lg:border-t lg:border-[var(--color-input-border)]"
         >
           {hasJualanContent ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {jualanGoods.map((goods) => (
                 <JualanCard
                   key={goods.id}
@@ -180,9 +182,10 @@ export default function LandingPageClient({
           title="Jasa RT 03"
           viewAllText="Lihat semua"
           viewAllHref="/jasa"
+          className="lg:border-t lg:border-[var(--color-input-border)]"
         >
           {hasDirectJasaContent ? (
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
               {jasaServices.map((service) => (
                 <JasaCard
                   key={service.id}
