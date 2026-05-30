@@ -63,11 +63,11 @@ function PostCard({ item, href }: { item: ResidentPostItem; href: string }) {
   return (
     <Link
       href={href}
-      className="block bg-app-surface rounded-2xl shadow-sm overflow-hidden group transition-all duration-300 active:scale-[0.98]"
+      className="block bg-app-surface rounded-2xl shadow-sm overflow-hidden group transition-all duration-300 active:scale-[0.98] lg:active:scale-[0.98] lg:hover:-translate-y-1 lg:transition-transform lg:duration-300"
     >
       <article>
         {item.imageUrl ? (
-          <div className="relative h-56 w-full">
+          <div className="relative h-56 w-full lg:h-48">
             <Image
               src={item.imageUrl}
               alt={item.title}
@@ -77,18 +77,18 @@ function PostCard({ item, href }: { item: ResidentPostItem; href: string }) {
             />
           </div>
         ) : (
-          <div className="relative h-56 w-full bg-app-primary-muted flex items-center justify-center">
+          <div className="relative h-56 w-full lg:h-48 bg-app-primary-muted flex items-center justify-center">
             <UserCircleIcon className="w-20 h-20 text-app-primary opacity-50" />
           </div>
         )}
 
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-[var(--color-title)] leading-tight mb-3 line-clamp-2 group-hover:text-app-primary transition-colors">
+        <div className="p-6 lg:p-5">
+          <h3 className="text-xl font-bold text-[var(--color-title)] leading-tight mb-3 line-clamp-2 lg:text-lg group-hover:text-app-primary transition-colors">
             {item.title}
           </h3>
 
           {displayContent && (
-            <p className="text-sm text-[var(--color-body-muted)] leading-relaxed mb-3 line-clamp-5">
+            <p className="text-sm text-[var(--color-body-muted)] leading-relaxed mb-3 line-clamp-5 lg:line-clamp-3">
               {displayContent}
             </p>
           )}
@@ -150,7 +150,7 @@ export function ResidentPostsSection({
       >
         {title}
       </h2>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4">
         {items.map((item) => (
           <PostCard key={item.id} item={item} href={detailHref(item.id)} />
         ))}

@@ -121,11 +121,11 @@ export function FeatureGrid({ title = "Fitur" }: FeatureGridProps) {
               key={feature.id}
               {...wrapperProps}
               aria-label={`${feature.label}: ${feature.description}`}
-              className="flex flex-col items-center gap-2 rounded-2xl bg-app-surface p-4 shadow-sm transition-shadow hover:shadow-md active:opacity-90"
+              className="flex flex-col items-center gap-2 rounded-2xl bg-app-surface p-4 shadow-sm transition-shadow hover:shadow-md active:opacity-90 lg:p-5 lg:hover:-translate-y-1 lg:transition-transform lg:duration-300"
             >
-              <Icon className={`h-9 w-9 ${feature.color}`} aria-hidden />
+              <Icon className={`h-9 w-9 ${feature.color} lg:h-10 lg:w-10`} aria-hidden />
               <span
-                className={`text-center text-sm font-semibold ${feature.color}`}
+                className={`text-center text-sm font-semibold ${feature.color} lg:text-base`}
               >
                 {feature.label}
               </span>
