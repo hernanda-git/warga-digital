@@ -157,16 +157,37 @@ export function ArtikelDetailClient({ article }: { article: Article }) {
         </div>
       )}
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
-        <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
+      <main className="w-full px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
+        <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-14">
 
           {/* Main content column */}
-          <div>
+          <div className="lg:max-w-prose">
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 lg:text-[2.5rem] lg:leading-tight">
               {article.title}
             </h1>
 
-            {/* Mobile meta row (simplified, same as before) */}
+            {/* Desktop meta row */}
+            <div className="hidden lg:flex items-center gap-4 text-sm text-gray-600 mb-8 pb-8 border-b border-gray-200">
+              <span className="font-semibold text-gray-900">
+                {article.author.name}
+              </span>
+              <span className="text-gray-300">&bull;</span>
+              <div className="flex items-center gap-1">
+                <CalendarDaysIcon className="h-4 w-4" />
+                <span>{formatDate(article.published_at)}</span>
+              </div>
+              {readingTime > 0 && (
+                <>
+                  <span className="text-gray-300">&bull;</span>
+                  <div className="flex items-center gap-1">
+                    <ClockIcon className="h-4 w-4" />
+                    <span>{readingTime} menit baca</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Mobile meta row */}
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-8 pb-8 border-b border-gray-200 lg:hidden">
               <div className="flex items-center gap-2">
                 {article.author.avatar_url ? (
@@ -312,7 +333,7 @@ export function ArtikelDetailClient({ article }: { article: Article }) {
 
           {/* Desktop sidebar */}
           <aside className="hidden lg:block">
-            <div className="sticky top-6 space-y-5">
+            <div className="sticky top-32 space-y-5">
               {/* Author card */}
               <div className="rounded-2xl border border-gray-200 bg-white p-5">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-3">
