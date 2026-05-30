@@ -161,7 +161,7 @@ export function ArtikelDetailClient({ article }: { article: Article }) {
         <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-14">
 
           {/* Main content column */}
-          <div className="lg:max-w-prose">
+          <div>
             <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 lg:text-[2.5rem] lg:leading-tight">
               {article.title}
             </h1>
