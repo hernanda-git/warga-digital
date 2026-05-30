@@ -58,6 +58,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
       content: article.content,
       excerpt: article.excerpt,
       featured_image_url: article.featured_image_url,
+      youtube_url: article.youtube_url ?? null,
       published_at: article.published_at,
       created_at: article.created_at,
       updated_at: article.updated_at,

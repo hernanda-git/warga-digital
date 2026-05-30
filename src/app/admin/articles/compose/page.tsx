@@ -31,6 +31,7 @@ interface ComposerState {
   content: string;
   status: "draft" | "published" | "archived";
   featuredImageUrl: string;
+  youtubeUrl: string;
   images: ArticleImage[];
 
   // UX state
@@ -76,6 +77,7 @@ function ArticleComposerContent() {
     "draft",
   );
   const [featuredImageUrl, setFeaturedImageUrl] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
   const [images, setImages] = useState<ArticleImage[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -152,6 +154,7 @@ function ArticleComposerContent() {
         setContent(article.content ?? "");
         setStatus(article.status ?? "draft");
         setFeaturedImageUrl(article.featured_image_url ?? "");
+        setYoutubeUrl(article.youtube_url ?? "");
         setImages(article.article_images ?? []);
         setIsDirty(false);
         setLastSavedAt(new Date());
@@ -241,6 +244,7 @@ function ArticleComposerContent() {
           excerpt: excerpt.trim() || undefined,
           content: content.trim() || undefined,
           featured_image_url: featuredImageUrl || undefined,
+          youtube_url: youtubeUrl || undefined,
           autosave: options.autosave ?? false,
         };
 
@@ -286,7 +290,7 @@ function ArticleComposerContent() {
         setIsSaving(false);
       }
     },
-    [title, slug, excerpt, content, featuredImageUrl, articleId],
+    [title, slug, excerpt, content, featuredImageUrl, youtubeUrl, articleId],
   );
 
   const performAutosave = useCallback(async () => {
@@ -464,6 +468,27 @@ function ArticleComposerContent() {
             rows={2}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        {/* YouTube URL */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Link YouTube (Opsional)
+          </label>
+          <input
+            type="url"
+            value={youtubeUrl}
+            onChange={(e) => {
+              setYoutubeUrl(e.target.value);
+              markDirty();
+            }}
+            placeholder="https://www.youtube.com/watch?v=..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="mt-1 text-xs text-gray-400">
+            Video akan ditampilkan di bawah judul artikel. Format yang didukung:
+            youtube.com/watch, youtu.be, youtube.com/embed, youtube.com/shorts
+          </p>
         </div>
 
         {/* Content */}

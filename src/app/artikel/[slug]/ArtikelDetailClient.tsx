@@ -24,6 +24,7 @@ interface Article {
   content: string | null;
   excerpt: string | null;
   featured_image_url: string | null;
+  youtube_url: string | null;
   published_at: string;
   updated_at: string;
   author: {
@@ -39,6 +40,29 @@ interface Article {
     height: number | null;
     sort_order: number;
   }>;
+}
+
+function getYouTubeEmbedUrl(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.replace("www.", "");
+    if (hostname === "youtube.com" || hostname === "youtube-nocookie.com") {
+      if (parsed.pathname === "/watch") {
+        return `https://www.youtube-nocookie.com/embed/${parsed.searchParams.get("v")}`;
+      }
+      if (parsed.pathname.startsWith("/embed/")) {
+        return `https://www.youtube-nocookie.com/embed/${parsed.pathname.split("/")[2]}`;
+      }
+      if (parsed.pathname.startsWith("/shorts/")) {
+        return `https://www.youtube-nocookie.com/embed/${parsed.pathname.split("/")[2]}`;
+      }
+    }
+    if (hostname === "youtu.be") {
+      return `https://www.youtube-nocookie.com/embed/${parsed.pathname.slice(1)}`;
+    }
+  } catch {}
+  return null;
 }
 
 export function ArtikelDetailClient({ article }: { article: Article }) {
@@ -171,6 +195,22 @@ export function ArtikelDetailClient({ article }: { article: Article }) {
             <span className="text-sm font-medium">Bagikan</span>
           </button>
         </div>
+
+        {(() => {
+          const embedUrl = getYouTubeEmbedUrl(article.youtube_url);
+          if (!embedUrl) return null;
+          return (
+            <div className="relative w-full aspect-video mb-8 rounded-xl overflow-hidden">
+              <iframe
+                src={embedUrl}
+                title={article.title}
+                className="absolute inset-0 w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          );
+        })()}
 
         {article.content && <MarkdownRenderer content={article.content} />}
 

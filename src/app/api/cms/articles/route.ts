@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
       status,
       featured_image_url,
       author_id,
+      youtube_url,
     } = body;
 
     if (!title || typeof title !== "string" || title.trim().length === 0) {
@@ -123,6 +124,7 @@ export async function POST(request: NextRequest) {
     if (content) insertData.content = content;
     if (status) insertData.status = status;
     if (featured_image_url) insertData.featured_image_url = featured_image_url;
+    if (youtube_url) insertData.youtube_url = youtube_url;
     if (status === "published") {
       insertData.published_at = new Date().toISOString();
     }

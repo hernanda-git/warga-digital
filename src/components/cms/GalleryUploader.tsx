@@ -35,11 +35,8 @@ interface UploadFile {
   id: string;
   file: File;
   preview: string;
-  progress: number;
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
-  objectKey?: string;
-  publicUrl?: string;
 }
 
 interface AltTextModalProps {
@@ -282,7 +279,6 @@ interface GalleryUploaderProps {
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
-const MAX_CONCURRENT = 3;
 
 export function GalleryUploader({
   articleId,
@@ -293,8 +289,8 @@ export function GalleryUploader({
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const abortControllers = useRef<Map<string, AbortController>>(new Map());
 
   // Modal state
   const [editingImage, setEditingImage] = useState<ArticleImage | null>(null);
@@ -334,120 +330,74 @@ export function GalleryUploader({
     return article_id;
   }, [articleId, onArticleIdCreated]);
 
-  const uploadAndSaveImage = async (
-    item: UploadFile,
-    targetArticleId: string,
-    sortOrder?: number
-  ) => {
-    const ac = new AbortController();
-    abortControllers.current.set(item.id, ac);
+  const uploadFiles = async (pendingFiles: UploadFile[], targetArticleId: string) => {
+    setIsUploading(true);
+    setGlobalError(null);
 
     setFiles((prev) =>
       prev.map((f) =>
-        f.id === item.id
-          ? { ...f, status: "uploading" as const, progress: 0 }
-          : f
+        f.status === "pending" ? { ...f, status: "uploading" as const } : f
       )
     );
 
     try {
-      // 1. Get signed URL
-      const urlRes = await apiFetch("/api/cms/articles/upload-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          articleId: targetArticleId,
-          filename: item.file.name,
-          contentType: item.file.type,
-          fileSize: item.file.size,
-        }),
-        signal: ac.signal,
-      });
-      if (!urlRes.ok) {
-        const err = await urlRes.json();
-        throw new Error(err.error || "Gagal mendapatkan URL");
-      }
-      const { uploadUrl, publicUrl, objectKey } = await urlRes.json();
+      const formData = new FormData();
+      pendingFiles.forEach((pf) => formData.append("files", pf.file));
 
-      // 2. Upload to R2 with progress
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", item.file.type);
-        xhr.setRequestHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD");
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const pct = Math.round((e.loaded / e.total) * 100);
-            setFiles((prev) =>
-              prev.map((f) => (f.id === item.id ? { ...f, progress: pct } : f))
-            );
-          }
-        };
-        xhr.onload = () =>
-          xhr.status === 200 ? resolve() : reject(new Error(xhr.statusText));
-        xhr.onerror = () => reject(new Error("Upload gagal"));
-        xhr.send(item.file);
-      });
-
-      // 3. Save to database immediately
-      const saveRes = await apiFetch(
-        `/api/cms/articles/${targetArticleId}/images`,
+      const res = await apiFetch(
+        `/api/cms/articles/${targetArticleId}/images/upload`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            objectKey,
-            url: publicUrl,
-            mimeType: item.file.type,
-            altText: "",
-            sortOrder,
-          }),
+          body: formData,
         }
       );
 
-      if (!saveRes.ok) {
-        const err = await saveRes.json();
-        throw new Error(err.error || "Gagal menyimpan gambar ke database");
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Gagal mengunggah gambar");
       }
 
-      const { image } = await saveRes.json();
+      const { images } = await res.json();
 
-      // 4. Update parent component
-      onImagesUpdated([...existingImages, image]);
+      if (images.length > 0) {
+        onImagesUpdated([...existingImages, ...images]);
+      }
 
       setFiles((prev) =>
         prev.map((f) =>
-          f.id === item.id
-            ? { ...f, status: "done" as const, objectKey, publicUrl }
+          f.status === "uploading"
+            ? { ...f, status: "done" as const }
             : f
         )
       );
 
-      toast.success("Gambar berhasil diunggah");
+      if (images.length < pendingFiles.length) {
+        toast.warning(`${images.length} dari ${pendingFiles.length} gambar berhasil diunggah`);
+      } else {
+        toast.success(`${images.length} gambar berhasil diunggah`);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Upload gagal";
       setFiles((prev) =>
         prev.map((f) =>
-          f.id === item.id
+          f.status === "uploading"
             ? { ...f, status: "error" as const, error: msg }
             : f
         )
       );
       toast.error(msg);
     } finally {
-      abortControllers.current.delete(item.id);
+      setIsUploading(false);
     }
   };
 
   const handleFiles = async (newFiles: FileList | File[]) => {
-    setGlobalError(null);
     const valid = Array.from(newFiles)
       .filter((f) => ALLOWED_TYPES.includes(f.type) && f.size <= MAX_SIZE)
       .map((file) => ({
         id: crypto.randomUUID(),
         file,
         preview: URL.createObjectURL(file),
-        progress: 0,
         status: "pending" as const,
       }));
 
@@ -461,24 +411,7 @@ export function GalleryUploader({
 
     try {
       const targetId = await ensureArticleId();
-
-      const pending = valid.filter((v) => v.status === "pending");
-      let running = 0;
-      const queue = [...pending];
-
-      const runNext = () => {
-        if (queue.length === 0) return;
-        const next = queue.shift()!;
-        running++;
-        uploadAndSaveImage(next, targetId).finally(() => {
-          running--;
-          runNext();
-        });
-      };
-
-      for (let i = 0; i < Math.min(MAX_CONCURRENT, pending.length); i++) {
-        runNext();
-      }
+      await uploadFiles(valid, targetId);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan";
       setGlobalError(message);
@@ -493,28 +426,25 @@ export function GalleryUploader({
   };
 
   const removeFile = (id: string) => {
-    const ac = abortControllers.current.get(id);
-    if (ac) {
-      ac.abort();
-      abortControllers.current.delete(id);
-    }
+    const file = files.find((f) => f.id === id);
+    if (file?.preview) URL.revokeObjectURL(file.preview);
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
   const retryFile = async (id: string) => {
     const file = files.find((f) => f.id === id);
     if (!file) return;
+    setGlobalError(null);
+    setFiles((prev) =>
+      prev.map((f) =>
+        f.id === id
+          ? { ...f, status: "pending" as const, error: undefined }
+          : f
+      )
+    );
     try {
-      setGlobalError(null);
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.id === id
-            ? { ...f, status: "pending" as const, error: undefined }
-            : f
-        )
-      );
       const targetId = await ensureArticleId();
-      uploadAndSaveImage({ ...file, status: "pending" as const }, targetId);
+      await uploadFiles([{ ...file, status: "pending" as const }], targetId);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan";
       setGlobalError(message);
@@ -621,44 +551,38 @@ export function GalleryUploader({
     if (!articleId) return;
 
     try {
-      // 1. Get signed URL for replacement
-      const urlRes = await apiFetch(
-        `/api/cms/articles/${articleId}/images`,
+      // Upload new file to R2 server-side and create a new record
+      const formData = new FormData();
+      formData.append("files", newFile);
+
+      const uploadRes = await apiFetch(
+        `/api/cms/articles/${articleId}/images/upload`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            imageId: existingImage.id,
-            newFilename: newFile.name,
-            newContentType: newFile.type,
-          }),
+          body: formData,
         }
       );
 
-      if (!urlRes.ok) {
-        const err = await urlRes.json();
-        throw new Error(err.error || "Gagal mendapatkan URL");
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json();
+        throw new Error(err.error || "Gagal mengunggah gambar");
       }
 
-      const { uploadUrl, publicUrl, oldObjectKey } = await urlRes.json();
+      const { images } = await uploadRes.json();
 
-      // 2. Upload to R2
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", newFile.type);
-        xhr.setRequestHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD");
-        xhr.onload = () =>
-          xhr.status === 200 ? resolve() : reject(new Error(xhr.statusText));
-        xhr.onerror = () => reject(new Error("Upload gagal"));
-        xhr.send(newFile);
-      });
+      if (!images || images.length === 0) {
+        throw new Error("Gagal mengunggah gambar");
+      }
 
-      // 3. Update UI with new URL
+      // Delete old image
+      await apiFetch(
+        `/api/cms/articles/${articleId}/images/${existingImage.id}`,
+        { method: "DELETE" }
+      );
+
+      // Update UI: replace old image with new one
       const updatedImages = existingImages.map((img) =>
-        img.id === existingImage.id
-          ? { ...img, url: publicUrl, mime_type: newFile.type }
-          : img
+        img.id === existingImage.id ? images[0] : img
       );
       onImagesUpdated(updatedImages);
 
@@ -702,8 +626,6 @@ export function GalleryUploader({
       toast.error("Gagal mengubah urutan gambar");
     }
   };
-
-  const uploadingCount = files.filter((f) => f.status === "uploading").length;
 
   const allImages = useMemo(() => {
     return [...existingImages, ...files.filter((f) => f.status === "done")];
@@ -771,7 +693,7 @@ export function GalleryUploader({
       {files.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-            Mengunggah
+            {isUploading ? "Mengunggah..." : "Menunggu Unggah"}
           </h4>
           {files.map((item) => (
             <div
@@ -779,14 +701,8 @@ export function GalleryUploader({
               className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200"
             >
               {item.status === "uploading" && (
-                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 relative overflow-hidden">
-                  <span className="text-xs text-gray-500 z-10">
-                    {item.progress}%
-                  </span>
-                  <div
-                    className="absolute inset-0 bg-blue-100 transition-all"
-                    style={{ width: `${item.progress}%` }}
-                  />
+                <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                  <ArrowPathIcon className="h-5 w-5 text-blue-500 animate-spin" />
                 </div>
               )}
               {item.status === "done" && (
@@ -814,14 +730,6 @@ export function GalleryUploader({
                 </span>
                 {item.status === "error" && (
                   <span className="text-xs text-red-500">{item.error}</span>
-                )}
-                {item.status === "uploading" && (
-                  <div className="mt-1.5 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 transition-all"
-                      style={{ width: `${item.progress}%` }}
-                    />
-                  </div>
                 )}
               </div>
 

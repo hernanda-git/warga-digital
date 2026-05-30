@@ -7,28 +7,26 @@ import {
   XMarkIcon,
   ArrowPathIcon,
 } from "@heroicons/react/24/outline";
+import { apiFetch } from "@/lib/api-client";
 import { toast } from "sonner";
 
 export interface UploadFile {
   id: string;
   file: File;
-  status: "pending" | "uploading" | "success" | "failed" | "cancelled";
-  progress: number;
+  status: "pending" | "uploading" | "success" | "failed";
   error?: string;
   publicUrl?: string;
-  objectKey?: string;
 }
 
 interface CMSImageUploaderProps {
   articleId: string;
   onUploadComplete?: (uploadedFiles: UploadFile[]) => void;
-  maxFileSize?: number; // in bytes, default 5MB
+  maxFileSize?: number;
   maxFiles?: number;
   allowedTypes?: string[];
-  concurrency?: number;
 }
 
-const DEFAULT_MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const DEFAULT_MAX_FILE_SIZE = 10 * 1024 * 1024;
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_ALLOWED_TYPES = [
   "image/jpeg",
@@ -37,7 +35,6 @@ const DEFAULT_ALLOWED_TYPES = [
   "image/webp",
   "image/gif",
 ];
-const DEFAULT_CONCURRENCY = 3;
 
 export function CMSImageUploader({
   articleId,
@@ -45,25 +42,19 @@ export function CMSImageUploader({
   maxFileSize = DEFAULT_MAX_FILE_SIZE,
   maxFiles = DEFAULT_MAX_FILES,
   allowedTypes = DEFAULT_ALLOWED_TYPES,
-  concurrency = DEFAULT_CONCURRENCY,
 }: CMSImageUploaderProps) {
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
 
   const validateFile = useCallback(
     (file: File): string | null => {
-      // Check file type
       if (!allowedTypes.includes(file.type)) {
         return `Invalid file type. Allowed types: ${allowedTypes.join(", ")}`;
       }
-
-      // Check file size
       if (file.size > maxFileSize) {
         return `File size exceeds ${maxFileSize / 1024 / 1024}MB limit`;
       }
-
       return null;
     },
     [allowedTypes, maxFileSize],
@@ -77,7 +68,6 @@ export function CMSImageUploader({
       const errors: string[] = [];
 
       Array.from(selectedFiles).forEach((file) => {
-        // Check max files limit
         if (files.length + newFiles.length >= maxFiles) {
           errors.push(`Maximum ${maxFiles} files allowed`);
           return;
@@ -93,7 +83,6 @@ export function CMSImageUploader({
           id: crypto.randomUUID(),
           file,
           status: "pending",
-          progress: 0,
         });
       });
 
@@ -132,186 +121,65 @@ export function CMSImageUploader({
     [handleFileSelect],
   );
 
-  const uploadSingleFile = useCallback(
-    async (uploadFile: UploadFile): Promise<void> => {
-      const { file, id } = uploadFile;
-      const abortController = new AbortController();
-      abortControllersRef.current.set(id, abortController);
-
-      try {
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === id ? { ...f, status: "uploading", progress: 0 } : f,
-          ),
-        );
-
-        // Step 1: Request signed URL
-        const response = await fetch("/api/cms/articles/upload-url", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            articleId,
-            filename: file.name,
-            contentType: file.type,
-            fileSize: file.size,
-          }),
-          signal: abortController.signal,
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to get upload URL");
-        }
-
-        const { uploadUrl, publicUrl, objectKey } = await response.json();
-
-        setFiles((prev) =>
-          prev.map((f) => (f.id === id ? { ...f, progress: 30 } : f)),
-        );
-
-        // Step 2: Upload to R2 with progress tracking
-        const xhr = new XMLHttpRequest();
-
-        const uploadPromise = new Promise<void>((resolve, reject) => {
-          xhr.upload.addEventListener("progress", (e) => {
-            if (e.lengthComputable) {
-              const progress = 30 + Math.round((e.loaded / e.total) * 70);
-              setFiles((prev) =>
-                prev.map((f) => (f.id === id ? { ...f, progress } : f)),
-              );
-            }
-          });
-
-          xhr.addEventListener("load", () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve();
-            } else {
-              reject(new Error(`Upload failed with status ${xhr.status}`));
-            }
-          });
-
-          xhr.addEventListener("error", () => {
-            reject(new Error("Network error during upload"));
-          });
-
-          xhr.addEventListener("abort", () => {
-            reject(new Error("Upload cancelled"));
-          });
-
-          xhr.open("PUT", uploadUrl);
-          xhr.setRequestHeader("Content-Type", file.type);
-          xhr.setRequestHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD");
-          xhr.send(file);
-        });
-
-        // Handle abort
-        abortController.signal.addEventListener("abort", () => {
-          xhr.abort();
-        });
-
-        await uploadPromise;
-
-        // Success
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === id
-              ? {
-                  ...f,
-                  status: "success",
-                  progress: 100,
-                  publicUrl,
-                  objectKey,
-                }
-              : f,
-          ),
-        );
-      } catch (error) {
-        if (abortController.signal.aborted) {
-          setFiles((prev) =>
-            prev.map((f) => (f.id === id ? { ...f, status: "cancelled" } : f)),
-          );
-        } else {
-          const errorMessage =
-            error instanceof Error ? error.message : "Upload failed";
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === id
-                ? {
-                    ...f,
-                    status: "failed",
-                    error: errorMessage,
-                  }
-                : f,
-            ),
-          );
-          toast.error(`${file.name}: ${errorMessage}`);
-        }
-      } finally {
-        abortControllersRef.current.delete(id);
-      }
-    },
-    [articleId],
-  );
-
   const uploadAllFiles = useCallback(async () => {
     const pendingFiles = files.filter((f) => f.status === "pending");
-
-    if (pendingFiles.length === 0) {
-      return;
-    }
+    if (pendingFiles.length === 0) return;
 
     setIsUploading(true);
 
     try {
-      // Upload with concurrency limit
-      const chunks: UploadFile[][] = [];
-      for (let i = 0; i < pendingFiles.length; i += concurrency) {
-        chunks.push(pendingFiles.slice(i, i + concurrency));
+      const formData = new FormData();
+      pendingFiles.forEach((pf) => formData.append("files", pf.file));
+
+      const res = await apiFetch(
+        `/api/cms/articles/${articleId}/images/upload`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Upload failed");
       }
 
-      for (const chunk of chunks) {
-        await Promise.all(chunk.map((file) => uploadSingleFile(file)));
-      }
+      const { images } = await res.json();
 
-      // Check if all uploads completed
-      const updatedFiles = files.filter((f) => f.status === "success");
-      if (updatedFiles.length > 0) {
-        onUploadComplete?.(updatedFiles);
-        toast.success(`${updatedFiles.length} file(s) uploaded successfully`);
+      // Mark uploaded files as success
+      setFiles((prev) =>
+        prev.map((f) => {
+          if (f.status === "pending" || f.status === "uploading") {
+            const uploaded = images?.find(() => true);
+            return {
+              ...f,
+              status: "success" as const,
+              publicUrl: uploaded?.url || undefined,
+            };
+          }
+          return f;
+        }),
+      );
+
+      const succeeded = files.filter((f) => f.status === "success");
+      if (succeeded.length > 0 || images?.length > 0) {
+        onUploadComplete?.(files.map((f) => ({ ...f, status: "success" as const })));
+        toast.success(`${images?.length || 0} file(s) uploaded successfully`);
       }
     } catch (error) {
-      toast.error("Some uploads failed. Please retry failed files.");
-    } finally {
-      setIsUploading(false);
-    }
-  }, [files, concurrency, uploadSingleFile, onUploadComplete]);
-
-  const retryUpload = useCallback(
-    (id: string) => {
-      const file = files.find((f) => f.id === id);
-      if (!file) return;
-
+      const message = error instanceof Error ? error.message : "Upload failed";
       setFiles((prev) =>
         prev.map((f) =>
-          f.id === id
-            ? { ...f, status: "pending", progress: 0, error: undefined }
+          f.status === "pending" || f.status === "uploading"
+            ? { ...f, status: "failed" as const, error: message }
             : f,
         ),
       );
-
-      uploadSingleFile(file);
-    },
-    [files, uploadSingleFile],
-  );
-
-  const cancelUpload = useCallback((id: string) => {
-    const abortController = abortControllersRef.current.get(id);
-    if (abortController) {
-      abortController.abort();
+      toast.error(message);
+    } finally {
+      setIsUploading(false);
     }
-  }, []);
+  }, [files, articleId, onUploadComplete]);
 
   const removeFile = useCallback((id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
@@ -323,7 +191,6 @@ export function CMSImageUploader({
 
   return (
     <div className="space-y-4">
-      {/* Drop Zone */}
       <div
         className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
           isUploading
@@ -357,7 +224,6 @@ export function CMSImageUploader({
         </p>
       </div>
 
-      {/* File List */}
       {files.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
@@ -388,7 +254,6 @@ export function CMSImageUploader({
                 key={file.id}
                 className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg"
               >
-                {/* Thumbnail */}
                 <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-md overflow-hidden">
                   {file.status === "success" && file.publicUrl ? (
                     <Image
@@ -401,12 +266,15 @@ export function CMSImageUploader({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <CloudArrowUpIcon className="h-6 w-6 text-gray-400" />
+                      {file.status === "uploading" ? (
+                        <ArrowPathIcon className="h-6 w-6 text-blue-400 animate-spin" />
+                      ) : (
+                        <CloudArrowUpIcon className="h-6 w-6 text-gray-400" />
+                      )}
                     </div>
                   )}
                 </div>
 
-                {/* File Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {file.file.name}
@@ -414,52 +282,16 @@ export function CMSImageUploader({
                   <p className="text-xs text-gray-500">
                     {(file.file.size / 1024).toFixed(1)} KB
                   </p>
-
-                  {/* Progress Bar */}
-                  {file.status === "uploading" && (
-                    <div className="mt-1.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-blue-600 transition-all duration-300"
-                        style={{ width: `${file.progress}%` }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Status */}
                   {file.status === "failed" && file.error && (
                     <p className="mt-1 text-xs text-red-600">{file.error}</p>
                   )}
                   {file.status === "success" && (
-                    <p className="mt-1 text-xs text-green-600">
-                      Uploaded successfully
-                    </p>
-                  )}
-                  {file.status === "cancelled" && (
-                    <p className="mt-1 text-xs text-gray-500">Cancelled</p>
+                    <p className="mt-1 text-xs text-green-600">Uploaded</p>
                   )}
                 </div>
 
-                {/* Actions */}
                 <div className="flex items-center gap-1">
-                  {file.status === "uploading" && (
-                    <button
-                      onClick={() => cancelUpload(file.id)}
-                      className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                      title="Cancel upload"
-                    >
-                      <XMarkIcon className="h-5 w-5" />
-                    </button>
-                  )}
-                  {file.status === "failed" && (
-                    <button
-                      onClick={() => retryUpload(file.id)}
-                      className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                      title="Retry upload"
-                    >
-                      <ArrowPathIcon className="h-5 w-5" />
-                    </button>
-                  )}
-                  {file.status !== "uploading" && (
+                  {(file.status === "pending" || file.status === "failed") && (
                     <button
                       onClick={() => removeFile(file.id)}
                       className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"

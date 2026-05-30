@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
-import { deleteObjects, generateObjectKey } from "@/lib/r2";
+import { deleteObjects, generateObjectKey, serverUpload, getPublicUrl } from "@/lib/r2";
 import { requireAdmin } from "@/lib/auth/admin-guard";
 
 type RouteContext = { params: Promise<{ articleId: string }> };
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 async function handleImageCreate(
   request: NextRequest,
   articleId: string,
-  body: { objectKey: string; url: string; mimeType: string; altText?: string },
+  body: { objectKey: string; url: string; mimeType: string; altText?: string; sizeBytes?: number; width?: number; height?: number },
 ) {
   const { objectKey, url, mimeType, altText } = body;
 
@@ -106,6 +106,9 @@ async function handleImageCreate(
       url: url,
       mime_type: mimeType,
       alt_text: altText || null,
+      size_bytes: body.sizeBytes || 0,
+      width: body.width || null,
+      height: body.height || null,
       sort_order: newSortOrder,
     })
     .select()
@@ -158,49 +161,16 @@ async function handleImageReplace(
       return NextResponse.json({ error: "Image not found" }, { status: 404 });
     }
 
-    // 2. Generate new object key (immutable - never overwrite)
+    // 2. Generate new object key
     const newObjectKey = generateObjectKey(articleId, newFilename);
 
-    // 3. Generate signed URL for new upload
-    const { uploadUrl, publicUrl } = await fetch(
-      "/api/cms/articles/upload-url",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          articleId,
-          filename: newFilename,
-          contentType: newContentType,
-        }),
-      },
-    ).then((res) => res.json());
-
-    // 4. Update database with new metadata (old object remains for now)
-    const { data: updatedImage, error: updateError } = await supabase
-      .from("article_images")
-      .update({
-        object_key: newObjectKey,
-        url: publicUrl,
-        mime_type: newContentType,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", imageId)
-      .select()
-      .single();
-
-    if (updateError) {
-      return NextResponse.json(
-        { error: "Failed to update image metadata" },
-        { status: 500 },
-      );
-    }
-
-    // 5. Queue old object for deletion (could be done via background job)
-    // For now, we'll just log it. In production, this should go to a queue.
+    // 3. Return new object key and public URL template
+    // The caller must upload the file and update the DB record
+    const publicUrl = getPublicUrl(newObjectKey);
 
     return NextResponse.json({
-      image: updatedImage,
-      uploadUrl,
+      objectKey: newObjectKey,
+      publicUrl,
       oldObjectKey: existingImage.object_key,
     });
   } catch (error) {

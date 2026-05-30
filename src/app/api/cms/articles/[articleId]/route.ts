@@ -70,7 +70,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     const body = await request.json();
-    const { title, slug, excerpt, content, status, featured_image_url } = body;
+    const { title, slug, excerpt, content, status, featured_image_url, youtube_url } = body;
 
     const supabase = createServerClient();
 
@@ -108,6 +108,10 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     if (featured_image_url !== undefined) {
       updateData.featured_image_url =
         featured_image_url === "" ? null : featured_image_url;
+    }
+
+    if (youtube_url !== undefined) {
+      updateData.youtube_url = youtube_url === "" ? null : youtube_url;
     }
 
     if (status !== undefined) {
@@ -184,6 +188,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       content,
       status,
       featured_image_url,
+      youtube_url,
       autosave,
     } = body;
 
@@ -222,6 +227,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (featured_image_url !== undefined) {
       updateData.featured_image_url =
         featured_image_url === "" ? null : featured_image_url;
+    }
+
+    if (youtube_url !== undefined) {
+      updateData.youtube_url = youtube_url === "" ? null : youtube_url;
     }
 
     if (status !== undefined) {

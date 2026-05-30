@@ -45,34 +45,23 @@ export function FeaturedImagePicker({
         onArticleIdCreated?.(article_id);
       }
 
-      // Get signed upload URL
-      const urlRes = await apiFetch("/api/cms/articles/upload-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          articleId: targetArticleId,
-          filename: file.name,
-          contentType: file.type,
-          fileSize: file.size,
-        }),
-      });
-      if (!urlRes.ok) {
-        const err = await urlRes.json();
-        throw new Error(err.error || "Gagal mendapatkan URL upload");
-      }
-      const { uploadUrl, publicUrl } = await urlRes.json();
+      // Upload server-side (avoids CORS issues with direct R2 uploads)
+      const formData = new FormData();
+      formData.append("files", file);
+      formData.append("featured", "true");
 
-      // Upload directly to R2
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.setRequestHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD");
-        xhr.onload = () =>
-          xhr.status === 200 ? resolve() : reject(new Error(xhr.statusText));
-        xhr.onerror = () => reject(new Error("Upload gagal"));
-        xhr.send(file);
-      });
+      const uploadRes = await apiFetch(
+        `/api/cms/articles/${targetArticleId}/images/upload`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json();
+        throw new Error(err.error || "Gagal mengunggah gambar");
+      }
+      const { url: publicUrl } = await uploadRes.json();
 
       // Update article with featured_image_url
       const patchRes = await apiFetch(`/api/cms/articles/${targetArticleId}`, {

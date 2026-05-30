@@ -181,10 +181,7 @@ interface UploadFile {
   id: string;
   file: File;
   status: "pending" | "uploading" | "success" | "failed";
-  progress: number;
   error?: string;
-  publicUrl?: string;
-  objectKey?: string;
 }
 
 interface ArticleImageUploaderProps {
@@ -200,7 +197,6 @@ function ArticleImageUploader({
   const [isUploading, setIsUploading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const abortControllers = useRef<Map<string, AbortController>>(new Map());
 
   const ALLOWED_TYPES = [
     "image/jpeg",
@@ -223,109 +219,65 @@ function ArticleImageUploader({
         return;
       }
       if (file.size > MAX_SIZE) {
-        alert(`${file.name}: ukuran maksimal 5MB`);
+        alert(`${file.name}: ukuran maksimal 10MB`);
         return;
       }
       newFiles.push({
         id: crypto.randomUUID(),
         file,
         status: "pending",
-        progress: 0,
       });
     });
 
     setFiles((prev) => [...prev, ...newFiles]);
   };
 
-  const uploadFile = async (uploadFile: UploadFile) => {
-    const { file, id } = uploadFile;
-    const ac = new AbortController();
-    abortControllers.current.set(id, ac);
+  const uploadAll = async () => {
+    const pending = files.filter((f) => f.status === "pending");
+    if (pending.length === 0) return;
+
+    setIsUploading(true);
+    setGlobalError(null);
 
     setFiles((prev) =>
       prev.map((f) =>
-        f.id === id ? { ...f, status: "uploading", progress: 0 } : f,
+        f.status === "pending" ? { ...f, status: "uploading" } : f,
       ),
     );
 
     try {
-      const urlRes = await fetch("/api/cms/articles/upload-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          articleId,
-          filename: file.name,
-          contentType: file.type,
-          fileSize: file.size,
-        }),
-        signal: ac.signal,
-      });
+      const formData = new FormData();
+      pending.forEach((pf) => formData.append("files", pf.file));
 
-      if (!urlRes.ok) {
-        const err = await urlRes.json();
-        throw new Error(err.error || "Gagal mendapatkan URL upload");
+      const res = await apiFetch(
+        `/api/cms/articles/${articleId}/images/upload`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Upload gagal");
       }
-
-      const { uploadUrl, publicUrl, objectKey } = await urlRes.json();
-
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const progress = Math.round((e.loaded / e.total) * 100);
-            setFiles((prev) =>
-              prev.map((f) => (f.id === id ? { ...f, progress } : f)),
-            );
-          }
-        });
-        xhr.addEventListener("load", () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve();
-          else reject(new Error(`Upload gagal: ${xhr.status}`));
-        });
-        xhr.addEventListener("error", () => {
-          reject(new Error("Network error"));
-        });
-        xhr.addEventListener("abort", () => reject(new Error("Dibatalkan")));
-        xhr.addEventListener("timeout", () => reject(new Error("Timeout")));
-        xhr.open("PUT", uploadUrl);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.setRequestHeader("x-amz-content-sha256", "UNSIGNED-PAYLOAD");
-        xhr.send(file);
-      });
 
       setFiles((prev) =>
         prev.map((f) =>
-          f.id === id
-            ? { ...f, status: "success", progress: 100, publicUrl, objectKey }
-            : f,
+          f.status === "uploading" ? { ...f, status: "success" } : f,
         ),
       );
     } catch (err) {
-      if (ac.signal.aborted) {
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === id ? { ...f, status: "failed", error: "Dibatalkan" } : f,
-          ),
-        );
-      } else {
-        const msg = err instanceof Error ? err.message : "Upload gagal";
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === id ? { ...f, status: "failed", error: msg } : f,
-          ),
-        );
-      }
+      const msg = err instanceof Error ? err.message : "Upload gagal";
+      setGlobalError(msg);
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.status === "uploading" ? { ...f, status: "failed", error: msg } : f,
+        ),
+      );
     } finally {
-      abortControllers.current.delete(id);
+      setIsUploading(false);
     }
-  };
-
-  const uploadAll = async () => {
-    const pending = files.filter((f) => f.status === "pending");
-    if (pending.length === 0) return;
-    setIsUploading(true);
-    await Promise.all(pending.map((f) => uploadFile(f)));
-    setIsUploading(false);
   };
 
   const retryUpload = (id: string) => {
@@ -334,64 +286,18 @@ function ArticleImageUploader({
       setFiles((prev) =>
         prev.map((x) =>
           x.id === id
-            ? { ...x, status: "pending", progress: 0, error: undefined }
+            ? { ...x, status: "pending", error: undefined }
             : x,
         ),
       );
-      void uploadFile({ ...f, status: "pending", progress: 0 });
     }
-  };
-
-  const cancelUpload = (id: string) => {
-    abortControllers.current.get(id)?.abort();
   };
 
   const removeFile = (id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
-  const handleDone = async () => {
-    const done = files.filter(
-      (f) => f.status === "success" && f.objectKey && f.publicUrl,
-    );
-
-    if (done.length > 0) {
-      setIsUploading(true);
-      setGlobalError(null);
-      try {
-        const res = await apiFetch(
-          `/api/cms/articles/${articleId}/images/batch`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              images: done.map((f, i) => ({
-                object_key: f.objectKey,
-                url: f.publicUrl,
-                mime_type: f.file.type,
-                sort_order: i,
-              })),
-            }),
-          },
-        );
-
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Gagal menyimpan gambar ke database");
-        }
-      } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : "Gagal menyimpan gambar ke database";
-        setGlobalError(message);
-        setIsUploading(false);
-        return;
-      } finally {
-        setIsUploading(false);
-      }
-    }
-
+  const handleDone = () => {
     setFiles([]);
     onUploadComplete();
   };
@@ -453,18 +359,12 @@ function ArticleImageUploader({
                   Unggah Semua
                 </button>
               )}
-              {files.every(
-                (f) => f.status === "success" || f.status === "failed",
-              ) && (
+              {files.every((f) => f.status !== "pending") && (
                 <button
                   onClick={() => void handleDone()}
-                  disabled={isUploading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
                 >
-                  {isUploading && (
-                    <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                  )}
-                  {isUploading ? "Menyimpan..." : "Selesai"}
+                  Selesai
                 </button>
               )}
             </div>
@@ -475,19 +375,15 @@ function ArticleImageUploader({
               key={f.id}
               className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg"
             >
-              <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-md overflow-hidden relative">
-                {f.publicUrl ? (
-                  <Image
-                    src={f.publicUrl}
-                    alt={f.file.name}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
+              <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-md overflow-hidden flex items-center justify-center">
+                {f.status === "uploading" ? (
+                  <ArrowPathIcon className="h-5 w-5 text-blue-400 animate-spin" />
+                ) : f.status === "success" ? (
+                  <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                ) : f.status === "failed" ? (
+                  <XMarkIcon className="h-5 w-5 text-red-400" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <PhotoIcon className="w-5 h-5" />
-                  </div>
+                  <PhotoIcon className="w-5 h-5 text-gray-400" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -497,21 +393,11 @@ function ArticleImageUploader({
                 <p className="text-xs text-gray-500">
                   {(f.file.size / 1024).toFixed(1)} KB
                 </p>
-                {f.status === "uploading" && (
-                  <div className="mt-1.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-600 transition-all duration-300"
-                      style={{ width: `${f.progress}%` }}
-                    />
-                  </div>
-                )}
                 {f.status === "failed" && (
                   <p className="mt-1 text-xs text-red-600">{f.error}</p>
                 )}
                 {f.status === "success" && (
-                  <p className="mt-1 text-xs text-green-600 flex items-center gap-1">
-                    <CheckCircleIcon className="h-3 w-3" /> Berhasil
-                  </p>
+                  <p className="mt-1 text-xs text-green-600">Berhasil</p>
                 )}
               </div>
               <div className="flex gap-1.5">
@@ -522,15 +408,6 @@ function ArticleImageUploader({
                     title="Coba lagi"
                   >
                     <ArrowPathIcon className="h-4 w-4" />
-                  </button>
-                )}
-                {f.status === "pending" && (
-                  <button
-                    onClick={() => cancelUpload(f.id)}
-                    className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-md"
-                    title="Batalkan"
-                  >
-                    <XMarkIcon className="h-4 w-4" />
                   </button>
                 )}
                 <button

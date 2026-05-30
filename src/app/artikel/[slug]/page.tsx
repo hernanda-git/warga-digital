@@ -11,6 +11,7 @@ interface Article {
   content: string | null;
   excerpt: string | null;
   featured_image_url: string | null;
+  youtube_url: string | null;
   published_at: string;
   updated_at: string;
   author: {
@@ -116,6 +117,7 @@ export default async function ArtikelDetailPage({
     content: article.content,
     excerpt: article.excerpt,
     featured_image_url: article.featured_image_url,
+    youtube_url: article.youtube_url ?? null,
     published_at: article.published_at,
     updated_at: article.updated_at,
     author: {
