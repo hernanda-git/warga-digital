@@ -67,7 +67,7 @@ function PostCard({ item, href }: { item: ResidentPostItem; href: string }) {
     >
       <article>
         {item.imageUrl ? (
-          <div className="relative h-56 w-full lg:h-48">
+          <div className="relative h-56 w-full lg:aspect-video lg:h-auto">
             <Image
               src={item.imageUrl}
               alt={item.title}
@@ -77,7 +77,7 @@ function PostCard({ item, href }: { item: ResidentPostItem; href: string }) {
             />
           </div>
         ) : (
-          <div className="relative h-56 w-full lg:h-48 bg-app-primary-muted flex items-center justify-center">
+          <div className="relative h-56 w-full lg:aspect-video lg:h-auto bg-app-primary-muted flex items-center justify-center">
             <UserCircleIcon className="w-20 h-20 text-app-primary opacity-50" />
           </div>
         )}
