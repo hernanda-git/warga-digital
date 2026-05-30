@@ -155,7 +155,7 @@ export default function ArtikelPage() {
     <div className="min-h-screen bg-app-surface-alt">
       {/* Hero Section */}
       <section
-        className="relative shrink-0 overflow-hidden px-4 pb-5 pt-5 text-white lg:px-6 lg:py-8"
+        className="relative shrink-0 overflow-hidden px-4 pb-5 pt-5 text-white lg:px-10 lg:py-12"
         style={{
           background:
             "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",
@@ -164,11 +164,11 @@ export default function ArtikelPage() {
       >
         {/* Decorative blobs */}
         <div
-          className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10"
+          className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 lg:-right-20 lg:-top-20 lg:h-64 lg:w-64"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-white/10"
+          className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-white/10 lg:-bottom-12 lg:-left-12 lg:h-48 lg:w-48"
           aria-hidden
         />
 
@@ -196,28 +196,33 @@ export default function ArtikelPage() {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">
                   Warga Digital
                 </p>
-                <h1 className="text-lg font-extrabold leading-tight text-white">
+                <h1 className="text-lg font-extrabold leading-tight text-white lg:text-3xl">
                   {isAuthenticated ? "Artikel" : "Berita & Informasi Terbaru"}
                 </h1>
               </div>
             </div>
 
-            {/* Right: Refresh Button */}
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={loading || isRefreshing}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 disabled:opacity-50"
-              aria-label="Muat ulang"
-            >
-              <ArrowPathIcon
-                className={`h-4 w-4 text-white ${loading || isRefreshing ? "animate-spin" : ""}`}
-              />
-            </button>
+            {/* Right: Community Badge + Refresh */}
+            <div className="flex items-center gap-3">
+              <span className="hidden lg:inline-flex rounded-full bg-white/15 px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white/80 backdrop-blur-sm">
+                Warga Digital &middot; Sawangan Regensi RT 03
+              </span>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={loading || isRefreshing}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 disabled:opacity-50"
+                aria-label="Muat ulang"
+              >
+                <ArrowPathIcon
+                  className={`h-4 w-4 text-white ${loading || isRefreshing ? "animate-spin" : ""}`}
+                />
+              </button>
+            </div>
           </div>
 
           {/* Dynamic Subtitle */}
-          <p className="mt-3 text-[13px] font-medium text-white/80 leading-relaxed">
+          <p className="mt-3 text-[13px] font-medium text-white/80 leading-relaxed lg:text-base lg:max-w-2xl">
             {isAuthenticated
               ? totalArticles === 0
                 ? `Daftar lengkap seluruh artikel yang berisi berita, acara, panduan, dan informasi dari pengurus ${communityName || "Warga Digital"}. Belum ada artikel yang telah di publish.`
@@ -227,23 +232,23 @@ export default function ArtikelPage() {
 
           {/* Stats Pills */}
           {isAuthenticated && (
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-2 lg:flex lg:gap-3">
               {/* Total Articles */}
-              <div className="rounded-xl bg-white/15 px-3 py-2.5 text-center backdrop-blur-sm">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/60">
+              <div className="rounded-xl bg-white/15 px-3 py-2.5 text-center backdrop-blur-sm lg:px-5 lg:py-3 lg:text-left">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/60 lg:text-[10px]">
                   Total
                 </p>
-                <p className="mt-1 text-sm font-extrabold leading-tight text-white">
+                <p className="mt-1 text-sm font-extrabold leading-tight text-white lg:text-lg">
                   {loading ? "—" : totalArticles}
                 </p>
               </div>
 
               {/* This Week */}
-              <div className="rounded-xl bg-white/15 px-3 py-2.5 text-center backdrop-blur-sm">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/60">
-                  Baru
+              <div className="rounded-xl bg-white/15 px-3 py-2.5 text-center backdrop-blur-sm lg:px-5 lg:py-3 lg:text-left">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/60 lg:text-[10px]">
+                  Baru (Minggu ini)
                 </p>
-                <p className="mt-1 text-sm font-extrabold leading-tight text-white">
+                <p className="mt-1 text-sm font-extrabold leading-tight text-white lg:text-lg">
                   {loading ? "—" : articlesThisWeek}
                 </p>
               </div>
@@ -253,7 +258,7 @@ export default function ArtikelPage() {
       </section>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-md px-4 py-6 lg:max-w-4xl lg:px-6 lg:py-6">
+      <main className="mx-auto max-w-md px-4 py-6 lg:max-w-6xl lg:px-10 lg:py-10">
         {articles.length === 0 ? (
           <div className="text-center py-16">
             <div className="mx-auto w-24 h-24 rounded-full bg-app-primary-muted flex items-center justify-center mb-4">
@@ -279,7 +284,7 @@ export default function ArtikelPage() {
                   <article
                     key={article.id}
                     onClick={() => handleArticleClick(article.slug)}
-                    className="relative bg-app-surface rounded-2xl shadow-sm overflow-hidden group cursor-pointer transition-all duration-300 active:scale-[0.98]"
+                    className="relative bg-app-surface rounded-2xl shadow-sm overflow-hidden group cursor-pointer transition-all duration-300 active:scale-[0.98] lg:hover:-translate-y-1 lg:shadow-md lg:hover:shadow-lg"
                   >
                     {navigatingSlug === article.slug && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
@@ -369,7 +374,7 @@ export default function ArtikelPage() {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-40"
+                  className="rounded-xl px-4 py-2.5 text-sm font-semibold transition-all disabled:opacity-40 lg:px-5"
                   style={{
                     border: "1.5px solid var(--color-input-border)",
                     color: "var(--color-body)",
@@ -379,7 +384,51 @@ export default function ArtikelPage() {
                   ← Sebelumnya
                 </button>
 
-                <span className="text-xs font-medium text-[var(--color-body-muted)]">
+                {/* Page number buttons (desktop only) */}
+                <div className="hidden lg:flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (pageNum) => {
+                      const isActive = pageNum === currentPage;
+                      // Show first, last, current, and neighbors; hide others with ellipsis
+                      const isFirst = pageNum === 1;
+                      const isLast = pageNum === totalPages;
+                      const isNeighbor =
+                        Math.abs(pageNum - currentPage) <= 1;
+                      const isEllipsis =
+                        pageNum === currentPage - 2 ||
+                        pageNum === currentPage + 2;
+
+                      if (!isFirst && !isLast && !isNeighbor && !isEllipsis)
+                        return null;
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-semibold transition-all ${
+                            isActive
+                              ? "text-white shadow-sm"
+                              : "text-[var(--color-body)] hover:bg-[var(--color-surface-alt)]"
+                          }`}
+                          style={
+                            isActive
+                              ? {
+                                  background:
+                                    "var(--color-primary)",
+                                  boxShadow:
+                                    "0 4px 12px -4px var(--color-primary-shadow)",
+                                }
+                              : undefined
+                          }
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    },
+                  )}
+                </div>
+
+                <span className="text-xs font-medium text-[var(--color-body-muted)] lg:hidden">
                   {currentPage} / {totalPages}
                 </span>
 
@@ -388,7 +437,7 @@ export default function ArtikelPage() {
                     setCurrentPage((p) => Math.min(totalPages, p + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-40"
+                  className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-40 lg:px-5"
                   style={{
                     background: "var(--color-primary)",
                     boxShadow: "0 4px 12px -4px var(--color-primary-shadow)",
@@ -401,6 +450,16 @@ export default function ArtikelPage() {
           </>
         )}
       </main>
+
+      {/* Desktop brand footer */}
+      <footer className="hidden lg:block border-t border-[var(--color-input-border)] bg-app-surface py-6 text-center">
+        <p className="text-xs font-semibold text-app-body-muted">
+          Warga Digital &middot; Sawangan Regensi RT 03
+        </p>
+        <p className="mt-1 text-[10px] text-app-body-muted/60">
+          &copy; {new Date().getFullYear()} Warga Digital. All rights reserved.
+        </p>
+      </footer>
     </div>
   );
 }
