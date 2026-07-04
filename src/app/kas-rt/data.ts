@@ -388,6 +388,8 @@ export async function fetchKasRtHouseStatuses(): Promise<
       .select("amount, date, reference, is_shadow")
       .eq("tenant_id", DEFAULT_TENANT_ID)
       .eq("community_id", DEFAULT_COMMUNITY_ID)
+      .eq("is_shadow", false)
+      .is("deleted_at", null)
       .gte("date", `${currentYear}-01-01`)
       .lt("date", `${currentYear + 1}-01-01`)
       .in("reference", blokList);

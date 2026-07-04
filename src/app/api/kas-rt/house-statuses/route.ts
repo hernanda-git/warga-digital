@@ -57,6 +57,8 @@ export async function GET(request: Request) {
       .select("amount, date, reference, is_shadow")
       .eq("tenant_id", tenantId)
       .eq("community_id", communityId)
+      .eq("is_shadow", false)
+      .is("deleted_at", null)
       .gte("date", "2026-01-01")
       .lt("date", "2027-01-01")
       .in("reference", blokList);
