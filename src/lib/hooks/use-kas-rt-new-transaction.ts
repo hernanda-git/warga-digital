@@ -280,6 +280,10 @@ export function useKasRtNewTransaction({
     setAttachmentLabel(NO_FILE_SELECTED_LABEL);
     setHasAttachment(false);
     setAssetId(tx.asset_id ?? "");
+    setCategoryDetails([]);
+    setDefaultJumlahWarga(0);
+    setJumlahWarga("");
+    setUseAutoCalculate(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
     setIsOpen(true);
   }, [categories]);
@@ -323,8 +327,10 @@ export function useKasRtNewTransaction({
     setCategoryDetails([]);
     setDefaultJumlahWarga(0);
     setJumlahWarga("");
-    setUseAutoCalculate(true);
-  }, []);
+    if (!isEditMode) {
+      setUseAutoCalculate(true);
+    }
+  }, [isEditMode]);
 
   const setAmount = useCallback((amount: string) => {
     setForm((prev) => ({ ...prev, amount }));

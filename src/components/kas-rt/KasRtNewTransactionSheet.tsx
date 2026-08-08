@@ -104,76 +104,62 @@ export function KasRtNewTransactionSheet({
 
         <div className="flex-1 overflow-y-auto px-5 pb-6">
           {!isEditMode && (
-            <>
-              <div className="mb-5">
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
-                  Jenis Transaksi
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {TRANSACTION_TYPE_OPTIONS.map(({ value, label }) => {
-                    const active = form.type === value;
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => setType(value as "income" | "expense")}
-                        className={`rounded-2xl border py-3 text-sm font-bold transition active:scale-95 ${
-                          active ? "shadow-sm" : "bg-white text-app-body-muted"
-                        }`}
-                        style={
-                          active
-                            ? {
-                                background: accentBg,
-                                borderColor: accentBorder,
-                                color: value === "income" ? "var(--color-primary)" : "#dc2626",
-                              }
-                            : { borderColor: "var(--color-input-border)" }
-                        }
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
+            <div className="mb-5">
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
+                Jenis Transaksi
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {TRANSACTION_TYPE_OPTIONS.map(({ value, label }) => {
+                  const active = form.type === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setType(value as "income" | "expense")}
+                      className={`rounded-2xl border py-3 text-sm font-bold transition active:scale-95 ${
+                        active ? "shadow-sm" : "bg-white text-app-body-muted"
+                      }`}
+                      style={
+                        active
+                          ? {
+                              background: accentBg,
+                              borderColor: accentBorder,
+                              color: value === "income" ? "var(--color-primary)" : "#dc2626",
+                            }
+                          : { borderColor: "var(--color-input-border)" }
+                      }
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
-
-              <div className="mb-5">
-                <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
-                  Kategori <span className="font-normal normal-case text-red-500">*</span>
-                </p>
-                {visibleCategories.length === 0 ? (
-                  <div className="animate-pulse rounded-2xl bg-app-surface-alt p-8" />
-                ) : (
-                  <div className="grid max-h-44 grid-cols-2 gap-2 overflow-y-auto">
-                    {visibleCategories.map((cat) => {
-                      const isSelected = form.categoryId === cat.id;
-                      return (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          onClick={() => setCategoryId(cat.id)}
-                          className={`rounded-2xl border px-3 py-2.5 text-left text-sm font-medium transition active:scale-[0.97] ${
-                            isSelected ? "shadow-sm" : "bg-white text-app-body"
-                          }`}
-                          style={
-                            isSelected
-                              ? {
-                                  background: accentBg,
-                                  borderColor: accentBorder,
-                                  color: isIncomeForm ? "var(--color-primary)" : "#dc2626",
-                                }
-                              : { borderColor: "var(--color-input-border)" }
-                          }
-                        >
-                          {cat.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </>
+            </div>
           )}
+
+          <div className="mb-5">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
+              Kategori <span className="font-normal normal-case text-red-500">*</span>
+            </p>
+            {visibleCategories.length === 0 ? (
+              <div className="animate-pulse rounded-2xl bg-app-surface-alt p-8" />
+            ) : (
+              <select
+                value={form.categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full rounded-2xl border bg-white px-4 py-3 text-sm font-semibold text-app-title focus:outline-none"
+                style={{ borderColor: "var(--color-input-border)" }}
+                onFocus={(e) => applyFocusRing(e.currentTarget)}
+                onBlur={(e) => clearFocusRing(e.currentTarget)}
+              >
+                {visibleCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
 
           {isEditMode && (
             <div className="mb-5">
