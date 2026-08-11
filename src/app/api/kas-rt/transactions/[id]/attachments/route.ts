@@ -8,7 +8,15 @@ import {
   DEFAULT_COMMUNITY_ID,
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
-import { serverUpload, getPublicUrl, getPublicUrlSafe, deleteObjects } from "@/lib/r2";
+import {
+  serverUpload,
+  getPublicUrl,
+  getPublicUrlSafe,
+  deleteObjects,
+  sanitizeFilename,
+  ALLOWED_ATTACHMENT_TYPES,
+} from "@/lib/r2";
+import { validateFileContent } from "@/lib/validation/image-validation";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -110,8 +118,18 @@ export async function POST(
     );
   }
 
-  // Validate file sizes
+  // Validate file types and sizes
   for (const file of files) {
+    if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type as any)) {
+      return NextResponse.json(
+        {
+          message: `Tipe file ${file.name} tidak didukung. Hanya gambar (JPEG, PNG, WebP, HEIC) dan PDF yang diperbolehkan.`,
+          fileName: file.name,
+        },
+        { status: 400 },
+      );
+    }
+
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
         {
@@ -121,76 +139,83 @@ export async function POST(
         { status: 400 },
       );
     }
+
+    const contentValidation = await validateFileContent(file, file.type);
+    if (!contentValidation.valid) {
+      return NextResponse.json(
+        {
+          message: `Konten file ${file.name} tidak sesuai dengan format yang dideklarasikan.`,
+          fileName: file.name,
+        },
+        { status: 400 },
+      );
+    }
   }
 
-  const attachmentsToInsert: {
-    transaction_id: string;
-    file_name: string;
-    storage_path: string;
-    mime_type: string | null;
-    size_bytes: number;
-  }[] = [];
+  const uploadedKeys: string[] = [];
 
-  const uploadedAttachments: {
-    file_name: string;
-    url: string | null;
-    mime_type: string | null;
-  }[] = [];
+  try {
+    const attachmentsToInsert: {
+      transaction_id: string;
+      file_name: string;
+      storage_path: string;
+      mime_type: string | null;
+      size_bytes: number;
+    }[] = [];
 
-  for (const file of files) {
-    try {
+    for (const file of files) {
       const extension =
         file.name.includes(".") && file.name.split(".").length > 1
           ? file.name.split(".").pop()
           : "bin";
-      const objectKey = `kas-rt/${transactionId}/${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2)}.${extension}`;
+      const sanitizedName = sanitizeFilename(file.name);
+      const objectKey = `kas-rt/${transactionId}/${crypto.randomUUID()}-${sanitizedName || `file.${extension}`}`;
 
-      const fileBuffer = Buffer.from(await file.arrayBuffer());
-      await serverUpload(fileBuffer, objectKey, file.type || "application/octet-stream", "public, max-age=3600");
+      const buffer = new Uint8Array(await file.arrayBuffer());
+      await serverUpload(buffer, objectKey, file.type, "public, max-age=3600");
+      uploadedKeys.push(objectKey);
 
       attachmentsToInsert.push({
         transaction_id: transactionId,
         file_name: file.name,
         storage_path: objectKey,
-        mime_type: file.type || null,
+        mime_type: file.type,
         size_bytes: file.size,
       });
-    } catch (err) {
-      console.error(`[kas-rt/attachments] Upload failed for "${file.name}":`, err);
-      return NextResponse.json(
-        { message: `Terjadi kesalahan saat mengunggah file ${file.name}.` },
-        { status: 500 },
-      );
     }
-  }
 
-  if (attachmentsToInsert.length > 0) {
     const { error: attachmentError } = await supabase
       .from("kas_rt_attachments")
       .insert(attachmentsToInsert);
 
     if (attachmentError) {
+      await deleteObjects(uploadedKeys);
       return NextResponse.json(
         { message: "Gagal menyimpan data lampiran." },
         { status: 500 },
       );
     }
-  }
 
-  for (const att of attachmentsToInsert) {
-    uploadedAttachments.push({
+    const uploadedAttachments = attachmentsToInsert.map((att) => ({
       file_name: att.file_name,
       url: getPublicUrlSafe(att.storage_path),
       mime_type: att.mime_type,
-    });
-  }
+    }));
 
-  return NextResponse.json({
-    success: true,
-    attachments: uploadedAttachments,
-  });
+    return NextResponse.json({
+      success: true,
+      attachments: uploadedAttachments,
+    });
+  } catch (err) {
+    console.error(`[kas-rt/attachments] Upload failed:`, err);
+    if (uploadedKeys.length > 0) {
+      await deleteObjects(uploadedKeys);
+    }
+    return NextResponse.json(
+      { message: "Terjadi kesalahan saat mengunggah file." },
+      { status: 500 },
+    );
+  }
 }
 
 // ── DELETE /api/kas-rt/transactions/[id]/attachments ─────────────────────────

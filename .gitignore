@@ -39,3 +39,7 @@ next-env.d.ts
 
 .env*
 next.config.ts*
+
+# Local CLI/editor tooling
+.commandcode/
+.kilo/

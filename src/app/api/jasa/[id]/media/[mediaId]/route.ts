@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
-import { deleteObject } from "@/lib/r2";
+import { deleteObject, extractObjectKey } from "@/lib/r2";
 
 export async function DELETE(
   request: Request,
@@ -50,10 +50,7 @@ export async function DELETE(
       );
     }
 
-    const baseUrl = process.env.R2_PUBLIC_BASE_URL;
-    const objectKey = baseUrl && media.url.startsWith(baseUrl)
-      ? media.url.replace(baseUrl + "/", "")
-      : null;
+    const objectKey = extractObjectKey(media.url);
 
     if (objectKey) {
       await deleteObject(objectKey);

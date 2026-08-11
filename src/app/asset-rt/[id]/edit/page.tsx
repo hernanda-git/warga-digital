@@ -125,32 +125,20 @@ export default function EditAssetPage() {
     if (!imageFile) return existingImageUrl || null;
     setImageUploading(true);
     try {
-      const signedRes = await apiFetch("/api/asset-rt/upload", {
+      // Server-side upload (no browser→R2 CORS/presigned issues)
+      const body = new FormData();
+      body.append("file", imageFile);
+
+      const res = await apiFetch("/api/asset-rt/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: imageFile.name,
-          contentType: imageFile.type,
-          size: imageFile.size,
-        }),
+        body,
       });
-      const signedData = await signedRes.json();
-      if (!signedData.success)
-        throw new Error("Gagal mendapatkan URL unggahan");
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error?.message ?? "Gagal mengunggah gambar");
+      }
 
-      const { uploadUrl, publicUrl } = signedData.data;
-
-      const uploadRes = await fetch(uploadUrl, {
-        method: "PUT",
-        body: imageFile,
-        headers: {
-          "Content-Type": imageFile.type,
-          "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
-        },
-      });
-      if (!uploadRes.ok) throw new Error("Gagal mengunggah gambar");
-
-      return publicUrl;
+      return data.data.url;
     } catch (err) {
       setSubmitError(
         err instanceof Error ? err.message : "Gagal mengunggah gambar",

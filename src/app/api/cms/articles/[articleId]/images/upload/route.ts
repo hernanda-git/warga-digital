@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
-import { serverUpload, getPublicUrl, generateObjectKey } from "@/lib/r2";
+import {
+  serverUpload,
+  getPublicUrl,
+  generateObjectKey,
+  deleteObjects,
+} from "@/lib/r2";
+import { validateImageFile } from "@/lib/validation/image-validation";
 import type { ArticleImage } from "@/types/article-image";
 
 type RouteContext = { params: Promise<{ articleId: string }> };
@@ -60,18 +66,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (isFeatured) {
       const file = files[0];
 
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        return NextResponse.json(
-          { error: `Invalid file type: ${file.type}` },
-          { status: 400 },
-        );
-      }
-
-      if (file.size > MAX_FILE_SIZE) {
-        return NextResponse.json(
-          { error: `File too large: ${(file.size / 1024 / 1024).toFixed(2)}MB. Max 10MB.` },
-          { status: 400 },
-        );
+      const validation = await validateImageFile(file, MAX_FILE_SIZE);
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
       }
 
       const objectKey = generateObjectKey(articleId, file.name);
@@ -82,24 +79,29 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ url: publicUrl, objectKey });
     }
 
-    // Gallery mode: upload multiple files and create records
+    // Gallery mode: validate all files first, then upload
+    for (const file of files) {
+      const validation = await validateImageFile(file, MAX_FILE_SIZE);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { error: `File "${file.name}": ${validation.error}` },
+          { status: 400 },
+        );
+      }
+    }
+
+    const uploadedKeys: string[] = [];
     const uploadedImages: ArticleImage[] = [];
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        continue;
-      }
-
-      if (file.size > MAX_FILE_SIZE) {
-        continue;
-      }
-
-      try {
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
         const objectKey = generateObjectKey(articleId, file.name);
         const buffer = new Uint8Array(await file.arrayBuffer());
+
         await serverUpload(buffer, objectKey, file.type);
+        uploadedKeys.push(objectKey);
+
         const publicUrl = getPublicUrl(objectKey);
 
         const { data: nextOrder } = await supabase
@@ -127,12 +129,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
           .select()
           .single();
 
-        if (insertError) continue;
+        if (insertError) {
+          throw new Error(`Failed to insert image record: ${insertError.message}`);
+        }
 
         uploadedImages.push(image);
-      } catch {
-        continue;
       }
+    } catch (err) {
+      // Rollback: delete any R2 objects that were successfully uploaded
+      if (uploadedKeys.length > 0) {
+        await deleteObjects(uploadedKeys);
+      }
+      throw err;
     }
 
     return NextResponse.json({ images: uploadedImages }, { status: 201 });

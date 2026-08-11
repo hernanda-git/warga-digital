@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
-import { deleteObject } from "@/lib/r2";
+import { deleteObject, extractObjectKey } from "@/lib/r2";
 import {
   successResponse,
   errorResponse,
@@ -52,7 +52,7 @@ export async function DELETE(
       return forbiddenResponse("Anda bukan pemilik barang ini");
     }
 
-    const objectKey = extractObjectKeyFromUrl(media.url);
+    const objectKey = extractObjectKey(media.url);
 
     if (objectKey) {
       try {
@@ -92,16 +92,4 @@ export async function DELETE(
   }
 }
 
-function extractObjectKeyFromUrl(url: string): string | null {
-  try {
-    const r2PublicUrl = process.env.R2_PUBLIC_BASE_URL;
-    if (!r2PublicUrl || !url.startsWith(r2PublicUrl)) {
-      return null;
-    }
 
-    const path = url.replace(r2PublicUrl + "/", "");
-    return path;
-  } catch {
-    return null;
-  }
-}

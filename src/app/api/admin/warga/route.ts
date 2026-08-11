@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
     100,
     Math.max(1, parseInt(url.searchParams.get("limit") ?? "30", 10)),
   );
+  const sort = (url.searchParams.get("sort") ?? "newest").trim();
 
   // ── 3. Fetch all active tenant_users with joined user info ─────────────────
   const { data: tuRows, error: tuError } = await supabase
@@ -180,7 +181,24 @@ export async function GET(request: NextRequest) {
   });
   const blokList = Array.from(blokSet).sort();
 
-  // ── 10. Paginate ───────────────────────────────────────────────────────────
+  // ── 10. Sort ────────────────────────────────────────────────────────────────
+  filtered.sort((a, b) => {
+    switch (sort) {
+      case "oldest":
+        return (a.joined_at ?? "").localeCompare(b.joined_at ?? "");
+      case "name-asc":
+        return a.full_name.localeCompare(b.full_name, "id");
+      case "name-desc":
+        return b.full_name.localeCompare(a.full_name, "id");
+      case "active":
+        return (b.last_active_at ?? "").localeCompare(a.last_active_at ?? "");
+      case "newest":
+      default:
+        return (b.joined_at ?? "").localeCompare(a.joined_at ?? "");
+    }
+  });
+
+  // ── 11. Paginate ───────────────────────────────────────────────────────────
   const total = filtered.length;
   const offset = (page - 1) * limit;
   const warga = filtered.slice(offset, offset + limit);

@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowPathIcon,
   ChevronLeftIcon,
+  ChevronRightIcon,
   MagnifyingGlassIcon,
   ExclamationCircleIcon,
   CheckCircleIcon,
@@ -20,6 +21,7 @@ import {
   ExclamationTriangleIcon,
   UserCircleIcon,
   HomeModernIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 import { PageLoader, Avatar } from "@/components/ui";
 import { apiFetch } from "@/lib/api-client";
@@ -139,6 +141,14 @@ export default function AdminManageUsersPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [users, setUsers] = useState<UserItem[]>([]);
   const [query, setQuery] = useState("");
+  const [queryInput, setQueryInput] = useState("");
+  const [blokList, setBlokList] = useState<string[]>([]);
+  const [activeBlok, setActiveBlok] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalAll, setTotalAll] = useState(0);
+  const [total, setTotal] = useState(0);
   const [acting, setActing] = useState(false);
   const [actingUserId, setActingUserId] = useState<string | null>(null);
 
@@ -177,6 +187,7 @@ export default function AdminManageUsersPage() {
   const [houseLoading, setHouseLoading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setHasMounted(true);
@@ -226,9 +237,19 @@ export default function AdminManageUsersPage() {
     setError(null);
 
     try {
-      const res = await apiFetch("/api/admin/warga?limit=500");
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: "30",
+        sort: sortBy,
+      });
+      if (query) params.set("q", query);
+      if (activeBlok) params.set("blok", activeBlok);
+
+      const res = await apiFetch(`/api/admin/warga?${params.toString()}`);
       const body = (await res.json().catch(() => ({}))) as {
         warga?: UserItem[];
+        meta?: { total: number; totalAll: number; page: number; limit: number; hasMore: boolean };
+        blokList?: string[];
         error?: string;
       };
 
@@ -237,13 +258,17 @@ export default function AdminManageUsersPage() {
         return;
       }
       setUsers(body.warga ?? []);
+      setBlokList(body.blokList ?? []);
+      setTotalAll(body.meta?.totalAll ?? 0);
+      setTotal(body.meta?.total ?? 0);
+      setHasMore(body.meta?.hasMore ?? false);
     } catch {
       setError("Gagal memuat daftar user. Periksa koneksi Anda.");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [page, query, activeBlok, sortBy]);
 
   useEffect(() => {
     if (!checkingAccess && isAuthenticated) {
@@ -251,17 +276,28 @@ export default function AdminManageUsersPage() {
     }
   }, [checkingAccess, isAuthenticated, loadUsers]);
 
-  const filteredUsers = useMemo(() => {
-    const q = query.toLowerCase().trim();
-    if (!q) return users;
-    return users.filter(
-      (u) =>
-        u.full_name.toLowerCase().includes(q) ||
-        (u.username && u.username.toLowerCase().includes(q)) ||
-        (u.wa_number && u.wa_number.includes(q)) ||
-        (u.blok_rumah && u.blok_rumah.toLowerCase().includes(q)),
-    );
-  }, [users, query]);
+  // Reset page to 1 when filters change (but not on page change itself)
+  const prevFiltersRef = useRef({ query, activeBlok, sortBy });
+  useEffect(() => {
+    const prev = prevFiltersRef.current;
+    if (prev.query !== query || prev.activeBlok !== activeBlok || prev.sortBy !== sortBy) {
+      setPage(1);
+    }
+    prevFiltersRef.current = { query, activeBlok, sortBy };
+  }, [query, activeBlok, sortBy]);
+
+  const handleSearchInput = useCallback((value: string) => {
+    setQueryInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setQuery(value);
+    }, 300);
+  }, []);
+
+  const clearSearch = useCallback(() => {
+    setQueryInput("");
+    setQuery("");
+  }, []);
 
   const openModal = useCallback((user: UserItem) => {
     setSelectedUser(user);
@@ -573,42 +609,228 @@ export default function AdminManageUsersPage() {
     return <PageLoader message="Memuat halaman kelola user..." />;
   }
 
-  const hasActiveFilter = !!query;
+  const hasActiveFilter = !!query || !!activeBlok;
   const isActive = selectedUser?.status === "ACTIVE";
+  const totalPages = Math.max(1, Math.ceil(total / 30));
 
   return (
     <main className="flex h-full min-h-0 flex-col bg-app-surface-alt">
-      <header className="flex shrink-0 items-center justify-between border-b border-[var(--color-input-border)] bg-app-surface/90 px-4 py-3 backdrop-blur-sm lg:hidden">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => router.push("/admin")}
-            className="flex h-8 w-8 items-center justify-center rounded-xl bg-app-surface-alt transition hover:bg-app-primary-muted active:scale-95"
-            aria-label="Kembali ke admin"
+      {/* ── Gradient Hero ─────────────────────────────────────────────────── */}
+      <section
+        className="relative shrink-0 overflow-hidden px-4 pb-5 pt-4 text-white"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%)",
+        }}
+        aria-label="Header halaman kelola user"
+      >
+        {/* Decorative blobs */}
+        <div
+          className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full bg-white/10"
+          aria-hidden
+        />
+
+        <div className="relative z-10">
+          {/* Nav row */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => router.push("/admin")}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 lg:hidden"
+              aria-label="Kembali ke admin"
+            >
+              <ChevronLeftIcon className="h-5 w-5 text-white" />
+            </button>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/70">
+                Admin RT · Kelola
+              </p>
+              <h1 className="truncate text-lg font-extrabold leading-tight text-white">
+                Kelola User
+              </h1>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void loadUsers(true)}
+              disabled={refreshing || loading}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm transition hover:bg-white/30 active:scale-90 disabled:opacity-50"
+              aria-label="Segarkan data"
+            >
+              <ArrowPathIcon
+                className={`h-4 w-4 text-white ${refreshing ? "animate-spin" : ""}`}
+              />
+            </button>
+          </div>
+
+          {/* Stats strip */}
+          <div
+            className="mt-4 grid grid-cols-3 gap-2"
+            aria-label="Ringkasan user"
           >
-            <ChevronLeftIcon className="h-4 w-4 text-app-body-muted" />
-          </button>
-          <div>
-            <h1 className="text-[13px] font-bold tracking-tight text-app-title">
-              Kelola User
-            </h1>
-            <p className="text-[10px] text-app-body-muted">
-              {users.length} user terdaftar
-            </p>
+            {/* Total */}
+            <div className="rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur-sm">
+              <p className="text-[10px] font-medium leading-tight text-white/70">
+                Total
+              </p>
+              {loading && !refreshing ? (
+                <div className="mx-auto mt-1 h-[18px] w-10 animate-pulse rounded-md bg-white/20" />
+              ) : (
+                <p className="text-base font-extrabold leading-tight text-white">
+                  {totalAll}
+                </p>
+              )}
+            </div>
+
+            {/* Ditampilkan */}
+            <div className="rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur-sm">
+              <p className="text-[10px] font-medium leading-tight text-white/70">
+                Ditampilkan
+              </p>
+              {loading && !refreshing ? (
+                <div className="mx-auto mt-1 h-[18px] w-10 animate-pulse rounded-md bg-white/20" />
+              ) : (
+                <p className="text-base font-extrabold leading-tight text-white">
+                  {total}
+                </p>
+              )}
+            </div>
+
+            {/* Blok */}
+            <div className="rounded-xl bg-white/15 px-2 py-2 text-center backdrop-blur-sm">
+              <p className="text-[10px] font-medium leading-tight text-white/70">
+                Blok
+              </p>
+              {loading && !refreshing ? (
+                <div className="mx-auto mt-1 h-[18px] w-10 animate-pulse rounded-md bg-white/20" />
+              ) : (
+                <p className="text-base font-extrabold leading-tight text-white">
+                  {blokList.length}
+                </p>
+              )}
+            </div>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => loadUsers(true)}
-          disabled={refreshing || loading}
-          className="flex h-8 w-8 items-center justify-center rounded-xl bg-app-surface-alt transition hover:bg-app-primary-muted active:scale-95 disabled:opacity-40"
-          aria-label="Muat ulang"
+      </section>
+
+      {/* ── Sticky Search + Filter Bar ────────────────────────────────────── */}
+      <div className="shrink-0 space-y-2.5 bg-app-surface-alt px-4 pb-3 pt-3 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.08)] lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6">
+        {/* Error banner */}
+        {error && (
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3">
+            <p className="text-[13px] text-red-600">{error}</p>
+            <button
+              type="button"
+              onClick={() => void loadUsers(true)}
+              className="shrink-0 text-xs font-semibold text-red-500 underline underline-offset-2"
+            >
+              Coba lagi
+            </button>
+          </div>
+        )}
+
+        {/* Search input */}
+        <div
+          className="flex items-center gap-2.5 rounded-2xl border bg-app-surface px-3.5 py-2.5 shadow-sm"
+          style={{ borderColor: "var(--color-input-border)" }}
         >
-          <ArrowPathIcon
-            className={`h-4 w-4 text-app-body-muted ${refreshing ? "animate-spin" : ""}`}
+          <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-app-body-muted/60" />
+          <input
+            type="search"
+            value={queryInput}
+            onChange={(e) => handleSearchInput(e.target.value)}
+            placeholder="Cari nama, username, WA, atau blok..."
+            className="flex-1 bg-transparent text-sm text-app-body placeholder:text-app-body-muted/50 outline-none"
           />
-        </button>
-      </header>
+          {queryInput && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="text-app-body-muted/60 hover:text-app-body-muted"
+              aria-label="Hapus pencarian"
+            >
+              <XMarkIcon className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Filter pills — blok rumah */}
+        {blokList.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setActiveBlok("")}
+              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-95 ${
+                !activeBlok
+                  ? "text-white shadow-sm"
+                  : "bg-app-surface text-app-body-muted hover:bg-app-surface-alt"
+              }`}
+              style={
+                !activeBlok ? { background: "var(--color-primary)" } : undefined
+              }
+            >
+              Semua
+            </button>
+
+            {blokList.map((blok) => {
+              const isActiveBlok = activeBlok.toLowerCase() === blok.toLowerCase();
+              return (
+                <button
+                  key={blok}
+                  type="button"
+                  onClick={() => setActiveBlok(isActiveBlok ? "" : blok)}
+                  className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-95 ${
+                    isActiveBlok
+                      ? "text-white shadow-sm"
+                      : "bg-app-surface text-app-body-muted hover:bg-app-surface-alt"
+                  }`}
+                  style={
+                    isActiveBlok
+                      ? { background: "var(--color-primary)" }
+                      : undefined
+                  }
+                >
+                  {blok}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Sort controls */}
+        <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
+          {[
+            { value: "newest", label: "Terbaru" },
+            { value: "oldest", label: "Terlama" },
+            { value: "name-asc", label: "Nama A-Z" },
+            { value: "name-desc", label: "Nama Z-A" },
+            { value: "active", label: "Aktif Terakhir" },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setSortBy(opt.value)}
+              className={`shrink-0 rounded-xl px-3 py-2 text-xs font-semibold transition active:scale-95 ${
+                sortBy === opt.value
+                  ? "bg-app-primary text-white shadow-sm"
+                  : "bg-app-surface text-app-body-muted hover:bg-app-surface-alt"
+              }`}
+              style={
+                sortBy !== opt.value
+                  ? { border: "1px solid var(--color-input-border)" }
+                  : undefined
+              }
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {(actionError || successMessage) && (
         <div className="shrink-0 px-4 pt-3 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6">
@@ -641,77 +863,137 @@ export default function AdminManageUsersPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-3 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <ArrowPathIcon className="h-6 w-6 animate-spin text-app-primary-muted" />
-            <p className="mt-3 text-[12px] text-app-body-muted">
-              Memuat daftar user...
-            </p>
+        {loading && !refreshing ? (
+          /* Skeletons */
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="animate-pulse rounded-2xl bg-app-surface p-3 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 shrink-0 rounded-xl bg-app-surface-alt" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="h-3.5 w-32 rounded-md bg-app-surface-alt" />
+                    <div className="h-2.5 w-48 rounded-md bg-app-surface-alt/60" />
+                    <div className="h-2.5 w-24 rounded-md bg-app-surface-alt/40" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12">
             <ExclamationCircleIcon className="h-8 w-8 text-red-400" />
             <p className="mt-3 text-[12px] text-red-600">{error}</p>
           </div>
-        ) : filteredUsers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <p className="text-[12px] text-app-body-muted">
-              {hasActiveFilter ? "Tidak ada user yang cocok" : "Tidak ada user"}
-            </p>
+        ) : users.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-[var(--color-input-border)] bg-app-surface py-12 text-center">
+            <UsersIcon className="h-10 w-10 text-app-body-muted/30" aria-hidden />
+            <div>
+              <p className="text-sm font-bold text-app-body-muted">
+                {hasActiveFilter ? "Tidak ada user yang cocok" : "Belum ada user"}
+              </p>
+              <p className="mt-1 text-xs text-app-body-muted/70">
+                {hasActiveFilter
+                  ? "Coba ubah filter atau pencarian Anda"
+                  : "User yang bergabung akan muncul di sini"}
+              </p>
+            </div>
+            {hasActiveFilter && (
+              <button
+                type="button"
+                onClick={() => {
+                  clearSearch();
+                  setActiveBlok("");
+                }}
+                className="mt-1 text-xs font-semibold underline underline-offset-2"
+                style={{ color: "var(--color-primary)" }}
+              >
+                Reset Filter
+              </button>
+            )}
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            {filteredUsers.map((user) => (
-              <button
-                key={user.user_id}
-                type="button"
-                onClick={() => openModal(user)}
-                className="w-full rounded-2xl bg-app-surface p-3 text-left shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition active:scale-[0.98] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
-              >
-                <div className="flex items-start gap-3">
-                  <Avatar
-                    name={user.full_name}
-                    src={user.profile_picture_url}
-                    size={40}
-                    className="rounded-xl"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-[13px] font-semibold text-app-title">
-                        {user.full_name}
-                      </p>
-                      {user.status !== "ACTIVE" && (
-                        <span className="shrink-0 rounded-md bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-700">
-                          {user.status}
+          <>
+            <div className="flex flex-col gap-2">
+              {users.map((user) => (
+                <button
+                  key={user.user_id}
+                  type="button"
+                  onClick={() => openModal(user)}
+                  className="w-full rounded-2xl bg-app-surface p-3 text-left shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition active:scale-[0.98] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+                >
+                  <div className="flex items-start gap-3">
+                    <Avatar
+                      name={user.full_name}
+                      src={user.profile_picture_url}
+                      size={40}
+                      className="rounded-xl"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-[13px] font-semibold text-app-title">
+                          {user.full_name}
+                        </p>
+                        {user.status !== "ACTIVE" && (
+                          <span className="shrink-0 rounded-md bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-amber-700">
+                            {user.status}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-app-body-muted">
+                        <span className="flex items-center gap-1">
+                          <EnvelopeIcon className="h-3 w-3" />
+                          {maskEmail(user.email)}
                         </span>
-                      )}
+                        {user.username && <span>@{user.username}</span>}
+                        <span>{maskWA(user.wa_number)}</span>
+                        <span>{user.blok_rumah || "No blok"}</span>
+                      </div>
+                      <p className="mt-1 text-[10px] text-app-body-muted/70">
+                        Bergabung: {formatJoinedDate(user.joined_at)}
+                        {user.roles.length > 0 && (
+                          <>
+                            {" "}
+                            &middot; {user.roles.map(formatRoleName).join(", ")}
+                          </>
+                        )}
+                      </p>
+                      <p className="mt-0.5 text-[10px] text-app-body-muted/70">
+                        Terakhir Aktif: {formatLastActive(user.last_active_at)}
+                      </p>
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-app-body-muted">
-                      <span className="flex items-center gap-1">
-                        <EnvelopeIcon className="h-3 w-3" />
-                        {maskEmail(user.email)}
-                      </span>
-                      {user.username && <span>@{user.username}</span>}
-                      <span>{maskWA(user.wa_number)}</span>
-                      <span>{user.blok_rumah || "No blok"}</span>
-                    </div>
-                    <p className="mt-1 text-[10px] text-app-body-muted/70">
-                      Bergabung: {formatJoinedDate(user.joined_at)}
-                      {user.roles.length > 0 && (
-                        <>
-                          {" "}
-                          &middot; {user.roles.map(formatRoleName).join(", ")}
-                        </>
-                      )}
-                    </p>
-                    <p className="mt-0.5 text-[10px] text-app-body-muted/70">
-                      Terakhir Aktif: {formatLastActive(user.last_active_at)}
-                    </p>
                   </div>
-                </div>
-              </button>
-            ))}
-          </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--color-input-border)] bg-app-surface text-app-body transition active:scale-95 disabled:opacity-40"
+                >
+                  <ChevronLeftIcon className="h-4 w-4" />
+                </button>
+                <p className="text-xs font-medium text-app-body-muted">
+                  Halaman {page} dari {totalPages}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={!hasMore}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--color-input-border)] bg-app-surface text-app-body transition active:scale-95 disabled:opacity-40"
+                >
+                  <ChevronRightIcon className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

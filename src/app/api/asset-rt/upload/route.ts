@@ -4,10 +4,12 @@ import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/admin-guard";
 import {
-  generateSignedUploadUrl,
-  isAllowedContentType,
-  isValidFileSize,
+  serverUpload,
+  getPublicUrl,
+  sanitizeFilename,
+  ALLOWED_IMAGE_TYPES,
 } from "@/lib/r2";
+import { validateImageFile } from "@/lib/validation/image-validation";
 import {
   successResponse,
   errorResponse,
@@ -16,13 +18,7 @@ import {
   forbiddenResponse,
 } from "@/lib/api-response";
 
-function sanitizeFilename(filename: string): string {
-  return filename
-    .toLowerCase()
-    .replace(/[^a-z0-9.-]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
+const MAX_ASSET_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 
 function generateObjectKey(filename: string): string {
   const now = new Date();
@@ -36,7 +32,14 @@ function generateObjectKey(filename: string): string {
 
 /**
  * POST /api/asset-rt/upload
- * Generate a signed R2 upload URL for direct browser upload.
+ *
+ * Server-side asset image upload. Accepts multipart/form-data with:
+ *   - file: a single image file (JPEG, PNG, WebP, GIF, HEIC, AVIF)
+ *
+ * This performs the R2 upload on the server (using the service-role R2
+ * credentials) instead of returning a presigned URL for the browser to PUT
+ * directly. That avoids the production CORS / presigned-checksum 403 failures
+ * that the browser→R2 PUT path was hitting (see jualan fix 7536ea7).
  */
 export async function POST(request: NextRequest) {
   try {
@@ -54,34 +57,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
-    const { filename, contentType, size } = body;
+    // Parse multipart form data
+    const formData = await request.formData();
+    const files = formData
+      .getAll("file")
+      .filter((value): value is File => value instanceof File);
 
-    if (!filename || !contentType) {
-      return badRequestResponse("Filename and content type are required.");
+    if (files.length === 0) {
+      return badRequestResponse("Tidak ada file yang diunggah.");
     }
 
-    if (!isAllowedContentType(contentType)) {
+    if (files.length > 1) {
+      return badRequestResponse("Hanya satu gambar yang diperbolehkan.");
+    }
+
+    const file = files[0];
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type as any)) {
       return badRequestResponse(
-        `Tipe file tidak diizinkan: ${contentType}. Hanya JPEG, PNG, WebP, dan GIF yang diperbolehkan.`,
+        `Tipe file tidak diizinkan: ${file.type}. Hanya JPEG, PNG, WebP, GIF, HEIC, dan AVIF yang diperbolehkan.`,
       );
     }
 
-    if (size && !isValidFileSize(size)) {
+    if (file.size > MAX_ASSET_IMAGE_SIZE) {
       return badRequestResponse(
-        `Ukuran file terlalu besar: ${(size / 1024 / 1024).toFixed(2)}MB. Maksimal 10MB.`,
+        `Ukuran file terlalu besar: ${(file.size / 1024 / 1024).toFixed(2)}MB. Maksimal 10MB.`,
       );
     }
 
-    const objectKey = generateObjectKey(filename);
-    const { uploadUrl, publicUrl } = await generateSignedUploadUrl(
-      objectKey,
-      contentType,
-    );
+    const validation = await validateImageFile(file, MAX_ASSET_IMAGE_SIZE);
+    if (!validation.valid) {
+      return badRequestResponse(
+        `File "${file.name}": ${validation.error ?? "Validasi gagal"}`,
+      );
+    }
+
+    const objectKey = generateObjectKey(file.name);
+    const buffer = new Uint8Array(await file.arrayBuffer());
+    await serverUpload(buffer, objectKey, file.type);
+
+    const publicUrl = getPublicUrl(objectKey);
 
     return successResponse({
-      uploadUrl,
-      publicUrl,
+      url: publicUrl,
       objectKey,
     });
   } catch (error) {

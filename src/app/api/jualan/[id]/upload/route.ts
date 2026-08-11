@@ -5,9 +5,13 @@ import crypto from "crypto";
 import {
   serverUpload,
   getPublicUrl,
+  getPublicUrlSafe,
   isAllowedContentType,
   isValidFileSize,
+  sanitizeFilename,
+  extractObjectKey,
 } from "@/lib/r2";
+import { validateImageFile } from "@/lib/validation/image-validation";
 import {
   successResponse,
   errorResponse,
@@ -77,6 +81,16 @@ export async function POST(
     const needsPrimary = existingMediaCount === 0;
 
     // Process each file: validate, upload to R2, and save media record
+    // Validate all files first (type, size, magic bytes)
+    for (const file of files) {
+      const validation = await validateImageFile(file);
+      if (!validation.valid) {
+        return badRequestResponse(
+          `File "${file.name}": ${validation.error}`,
+        );
+      }
+    }
+
     const uploadedMedia: Array<{
       id: string;
       url: string;
@@ -87,23 +101,6 @@ export async function POST(
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-
-      // Validate content type
-      if (!isAllowedContentType(file.type)) {
-        // Clean up any already-uploaded files on failure
-        await cleanupUploadedMedia(supabase, resolvedParams.id, uploadedMedia);
-        return badRequestResponse(
-          `Tipe file tidak diizinkan: ${file.type}. Hanya JPEG, PNG, WebP, dan GIF yang diperbolehkan.`,
-        );
-      }
-
-      // Validate file size
-      if (!isValidFileSize(file.size)) {
-        await cleanupUploadedMedia(supabase, resolvedParams.id, uploadedMedia);
-        return badRequestResponse(
-          `Ukuran file terlalu besar: ${(file.size / 1024 / 1024).toFixed(2)}MB. Maksimal 10MB.`,
-        );
-      }
 
       try {
         // Generate object key
@@ -174,7 +171,7 @@ async function cleanupUploadedMedia(
 
   // Delete R2 objects
   for (const media of uploadedMedia) {
-    const key = extractObjectKeyFromUrl(media.url);
+    const key = extractObjectKey(media.url);
     if (key) {
       try {
         await deleteR2Object(key);
@@ -204,21 +201,6 @@ async function deleteR2Object(objectKey: string): Promise<void> {
 }
 
 /**
- * Extract the R2 object key from a public URL
- */
-function extractObjectKeyFromUrl(publicUrl: string): string | null {
-  try {
-    const baseUrl = process.env.R2_PUBLIC_BASE_URL;
-    if (baseUrl && publicUrl.startsWith(baseUrl)) {
-      return publicUrl.replace(baseUrl + "/", "");
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Generate a deterministic object key for jualan images
  * Format: jualan/{itemId}/{yyyy}/{MM}/{dd}/{uuid}-{sanitized-filename}
  */
@@ -231,12 +213,4 @@ function generateObjectKey(itemId: string, filename: string): string {
   const sanitized = sanitizeFilename(filename);
 
   return `jualan/${itemId}/${year}/${month}/${day}/${uniqueId}-${sanitized}`;
-}
-
-function sanitizeFilename(filename: string): string {
-  return filename
-    .toLowerCase()
-    .replace(/[^a-z0-9.-]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
 }

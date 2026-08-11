@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { requireCanManageOrganisation } from "../../require-manage";
-import { serverUpload, getPublicUrl } from "@/lib/r2";
+import { serverUpload, getPublicUrl, MAX_AVATAR_FILE_SIZE, ALLOWED_IMAGE_TYPES } from "@/lib/r2";
+import { validateImageFile } from "@/lib/validation/image-validation";
 
 export async function POST(request: Request) {
   const forbidden = await requireCanManageOrganisation();
@@ -26,17 +27,14 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json(
-        { message: "File harus berupa gambar (JPG, PNG, dll)." },
-        { status: 400 },
-      );
+    const validation = await validateImageFile(file, MAX_AVATAR_FILE_SIZE);
+    if (!validation.valid) {
+      return NextResponse.json({ message: validation.error }, { status: 400 });
     }
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type as any)) {
       return NextResponse.json(
-        { message: "Ukuran file maksimal 5MB." },
+        { message: "File harus berupa gambar (JPG, PNG, WebP, GIF, HEIC, AVIF)." },
         { status: 400 },
       );
     }

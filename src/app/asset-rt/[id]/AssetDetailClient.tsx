@@ -384,32 +384,20 @@ function AddLogSheet({
     if (!form.imageFile) return null;
     setImageUploading(true);
     try {
-      const signedRes = await apiFetch("/api/asset-rt/upload", {
+      // Server-side upload (no browser→R2 CORS/presigned issues)
+      const body = new FormData();
+      body.append("file", form.imageFile);
+
+      const res = await apiFetch("/api/asset-rt/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: form.imageFile.name,
-          contentType: form.imageFile.type,
-          size: form.imageFile.size,
-        }),
+        body,
       });
-      const signedData = await signedRes.json();
-      if (!signedData.success)
-        throw new Error("Gagal mendapatkan URL unggahan");
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error?.message ?? "Gagal mengunggah gambar");
+      }
 
-      const { uploadUrl, publicUrl } = signedData.data;
-
-      const uploadRes = await fetch(uploadUrl, {
-        method: "PUT",
-        body: form.imageFile,
-        headers: {
-          "Content-Type": form.imageFile.type,
-          "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
-        },
-      });
-      if (!uploadRes.ok) throw new Error("Gagal mengunggah gambar");
-
-      return publicUrl;
+      return data.data.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal mengunggah gambar");
       return null;
