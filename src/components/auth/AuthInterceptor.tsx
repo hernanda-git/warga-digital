@@ -85,11 +85,46 @@ export function AuthInterceptor() {
       handleUnauthorized as EventListener,
     );
 
+    // ── Silent keep-alive ──────────────────────────────────────────────────
+    // Re-issue the wd_session cookie while the tab is open so a returning
+    // visit (esp. after the browser/app was closed overnight) never lands on
+    // /auth/login. Without this, mobile Safari / Android Chrome / PWA /
+    // webviews can evict the cookie and the user is force-logged-out.
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    async function keepAlive() {
+      try {
+        // 401 here just means the session already expired — AuthInterceptor's
+        // 401 handler is NOT triggered for /api/auth/refresh (see
+        // IGNORED_URL_PATTERNS), so this is safe to call blindly.
+        await fetch("/api/auth/refresh", {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+      } catch {
+        // Network blip — try again on the next tick. Never force a redirect.
+      }
+    }
+
+    // Refresh on mount (covers a fresh page load after the app was killed).
+    keepAlive();
+    // Refresh whenever the tab regains focus (covers returning from background).
+    window.addEventListener("focus", keepAlive);
+    window.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") keepAlive();
+    });
+    // Refresh on a 30-min heartbeat (well inside any browser eviction window).
+    intervalId = setInterval(keepAlive, 30 * 60 * 1000);
+
     return () => {
       window.removeEventListener(
         AUTH_UNAUTHORIZED_EVENT,
         handleUnauthorized as EventListener,
       );
+      window.removeEventListener("focus", keepAlive);
+      window.removeEventListener("visibilitychange", keepAlive);
+      if (intervalId) clearInterval(intervalId);
     };
   }, [router, pathname, clearUser]);
 
