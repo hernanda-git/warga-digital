@@ -22,6 +22,7 @@ const PUBLIC_PAGE_PATHS = new Set([
   "/auth/forgot-pin",
   "/auth/reset-pin",
   "/artikel",
+  "/pending",
 ]);
 
 /**
@@ -133,6 +134,21 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   if (!payload) {
     // Token is malformed, tampered, or expired.
     return unauthenticated(request);
+  }
+
+  // ── 3b. Pending approval lock ───────────────────────────────────────────
+  // JWTs with appr=0 belong to not-yet-approved registrations. They may use
+  // public pages (/, /artikel/**, /pending, auth flows) and /api/auth/* +
+  // /api/artikel* (already passed through above), but nothing else:
+  // pages bounce to /pending, APIs get a JSON 401 the client can recognise.
+  // Tokens without the claim predate the lock and pass through (backward
+  // compatible). The claim can be stale — /api/auth/status heals it after
+  // approval — so this gate fails CLOSED (pending-looking stays locked).
+  if (payload.approved === false) {
+    if (isApiRoute(pathname)) {
+      return NextResponse.json({ error: "PendingApproval" }, { status: 401 });
+    }
+    return NextResponse.redirect(new URL("/pending", request.url));
   }
 
   // ── 4. Pass through with identity headers ────────────────────────────────
