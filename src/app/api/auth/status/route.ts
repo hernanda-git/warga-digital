@@ -24,7 +24,8 @@ import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
  *   send the user back to login.
  */
 export async function GET() {
-  const session = await getSessionFromCookie();
+  // Opt in: this endpoint exists precisely to serve pending sessions.
+  const session = await getSessionFromCookie({ allowPending: true });
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

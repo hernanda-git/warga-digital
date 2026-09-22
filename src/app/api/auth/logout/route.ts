@@ -7,7 +7,8 @@ import { getSessionFromCookie, clearSessionCookie, destroySession } from "@/lib/
  */
 export async function POST() {
   try {
-    const session = await getSessionFromCookie();
+    // Opt in so pending users can cleanly destroy their DB session row too.
+    const session = await getSessionFromCookie({ allowPending: true });
     if (session) {
       await destroySession(session.sessionId);
     }

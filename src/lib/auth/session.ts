@@ -89,14 +89,22 @@ export async function setSessionCookie(jwt: string) {
   cookieStore.set(SESSION_COOKIE, jwt, buildCookieOptions());
 }
 
-export async function getSessionFromCookie(): Promise<{
+export async function getSessionFromCookie(opts?: {
+  /**
+   * Opt in to resolving PENDING/REJECTED sessions (auth status + logout
+   * flows only). Default false: unapproved registrations resolve as
+   * unauthenticated, which fail-closes EVERY data/write API and page guard
+   * without per-route changes — including routes added in the future.
+   */
+  allowPending?: boolean;
+}): Promise<{
   userId: string;
   sessionId: string;
   /**
    * Approval claim carried by the JWT. `true` when the claim is missing
    * (pre-approval-lock token — backward compatible) or explicitly 1.
-   * NOTE: this is the state at issuance and may be stale; authoritative
-   * checks must use requireApprovedUser() (DB) instead.
+   * NOTE: informational only. Enforcement lives in the PENDING/REJECTED
+   * null-out below (DB state), never in this claim.
    */
   approved: boolean;
 } | null> {
@@ -120,6 +128,25 @@ export async function getSessionFromCookie(): Promise<{
 
   if (!session || new Date(session.expires_at) < new Date()) {
     return null;
+  }
+
+  // ── Registration approval lock (fail-closed choke point) ────────────────
+  // PENDING/REJECTED users resolve as unauthenticated unless the caller opts
+  // in via { allowPending: true } (only /api/auth/status and /api/auth/logout
+  // do). This single gate covers all 80+ session-guarded routes — reads and
+  // writes — with no per-route edits and no way for new routes to forget it.
+  // Pre-existing ACTIVE/INACTIVE users are unaffected (only affirmative
+  // PENDING/REJECTED nulled out). Rejected users normally have no session row
+  // at all (deleted at reject time); this covers stragglers.
+  if (!opts?.allowPending) {
+    const { data: account } = await supabase
+      .from("users")
+      .select("status")
+      .eq("id", session.user_id)
+      .maybeSingle();
+    if (account && (account.status === "PENDING" || account.status === "REJECTED")) {
+      return null;
+    }
   }
 
   // NOTE: cookie re-issuance is intentionally NOT done here. This function is
