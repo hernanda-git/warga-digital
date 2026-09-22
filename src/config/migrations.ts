@@ -1120,6 +1120,15 @@ UNION ALL SELECT 'kas_rt_transaction_categories', COUNT(*)::text FROM kas_rt_tra
 ORDER BY tbl;
 `.trim();
 
+const APPROVAL_STATUS_ENUM_SQL = `
+ALTER TYPE user_status ADD VALUE IF NOT EXISTS 'PENDING';
+ALTER TYPE user_status ADD VALUE IF NOT EXISTS 'REJECTED';
+ALTER TYPE tenant_user_status ADD VALUE IF NOT EXISTS 'PENDING';
+ALTER TYPE tenant_user_status ADD VALUE IF NOT EXISTS 'REJECTED';
+ALTER TYPE user_house_status ADD VALUE IF NOT EXISTS 'PENDING';
+ALTER TYPE user_house_status ADD VALUE IF NOT EXISTS 'REJECTED';
+`.trim();
+
 export const MIGRATION_PHASES: MigrationPhase[] = [
   {
     id: 1,
@@ -1189,5 +1198,11 @@ export const MIGRATION_PHASES: MigrationPhase[] = [
     label: "Verifikasi",
     description: "Memverifikasi hasil migrasi dengan menghitung baris per tabel",
     steps: [{ id: "verify", sql: VERIFICATION_SQL }],
+  },
+  {
+    id: 11,
+    label: "Approval Status Enum",
+    description: "Menambah nilai PENDING/REJECTED pada enum status untuk alur persetujuan registrasi",
+    steps: [{ id: "approval-status-enum", sql: APPROVAL_STATUS_ENUM_SQL }],
   },
 ];
