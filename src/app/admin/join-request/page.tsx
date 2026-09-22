@@ -30,6 +30,7 @@ interface JoinRequestItem {
   houseId: string;
   blokRumah: string;
   requestedAt: string;
+  approvalCase?: "FIRST_OCCUPANT" | "JOIN";
 }
 
 function formatDateTime(iso: string): string {
@@ -253,6 +254,24 @@ export default function AdminJoinRequestPage() {
                     <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
                       <ClockIcon className="h-3 w-3" />
                       Pending
+                    </span>
+                  </div>
+                  <div className="mt-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        req.approvalCase === "FIRST_OCCUPANT"
+                          ? "bg-violet-100 text-violet-700"
+                          : "bg-sky-100 text-sky-700"
+                      }`}
+                      title={
+                        req.approvalCase === "FIRST_OCCUPANT"
+                          ? "Penghuni pertama rumah ini — hanya admin yang menyetujui, pendaftar menjadi kepala keluarga"
+                          : "Rumah sudah berpenghuni — kepala keluarga atau admin menyetujui, pendaftar menjadi anggota"
+                      }
+                    >
+                      {req.approvalCase === "FIRST_OCCUPANT"
+                        ? "Penghuni pertama · jadi Kepala Keluarga"
+                        : "Gabung rumah · jadi Anggota"}
                     </span>
                   </div>
 
