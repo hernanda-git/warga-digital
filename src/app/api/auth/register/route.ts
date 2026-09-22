@@ -8,8 +8,11 @@ import {
 import {
   DEFAULT_TENANT_ID,
   DEFAULT_COMMUNITY_ID,
-  DEFAULT_ROLE_WARGA_ID,
 } from "@/lib/constants/seed-ids";
+import {
+  getHouseOccupancy,
+  toApprovalCase,
+} from "@/lib/auth/registration-approval";
 import { parseBlokRumah } from "@/lib/blok-rumah";
 import { hashPin } from "@/lib/crypto";
 import { createSession, setSessionCookie } from "@/lib/auth/session";
@@ -39,23 +42,6 @@ interface RegisterPayload {
   familyMembers: FamilyMemberInput[];
   pin: string;
   confirmPin: string;
-}
-
-/* ──────────────────────────────────────────────────────────────────────────
-   Helper: assign default WARGA role (idempotent)
-   ──────────────────────────────────────────────────────────────────────── */
-async function assignDefaultWargaRole(
-  supabase: ReturnType<typeof createServerClient>,
-  tenantUserId: string,
-) {
-  const { error: roleErr } = await supabase.from("tenant_user_roles").insert({
-    tenant_user_id: tenantUserId,
-    role_id: DEFAULT_ROLE_WARGA_ID,
-  });
-  if (roleErr && roleErr.code !== "23505") {
-    // Non-unique errors are unexpected; swallow to avoid breaking registration
-    console.error("assignDefaultWargaRole error:", roleErr);
-  }
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
@@ -473,18 +459,13 @@ export async function POST(request: NextRequest) {
     }
 
     /* ════════════════════════════════════════════════════════════════════════
-       PHASE 4 — Check house ownership status
-       ══════════════════════════════════════════════════════════════════════ */
-    const { data: ownerRow } = await supabase
-      .from("user_houses")
-      .select("user_id")
-      .eq("house_id", houseId)
-      .eq("relationship", "OWNER")
-      .eq("status", "ACTIVE")
-      .limit(1)
-      .maybeSingle();
-
-    const hasExistingOwner = !!ownerRow?.user_id;
+       PHASE 4 — Read live house occupancy (approval case routing)
+       ══════════════════════════════════════════════════════════════════════
+       FIRST_OCCUPANT: no ACTIVE link at all → admin approval, requester OWNER.
+       JOIN: house occupied → head of household (OWNER) or admin approves. */
+    const occupancy = await getHouseOccupancy(supabase, tenantId, houseId);
+    const approvalCase = toApprovalCase(occupancy);
+    const ownerUserId = occupancy.ownerUserId;
 
     /* ════════════════════════════════════════════════════════════════════════
        PHASE 5 — Create all records (best-effort sequential, fail on any error)
@@ -494,7 +475,9 @@ export async function POST(request: NextRequest) {
     let caughtError: string | null = null;
 
     try {
-      // 5a — Create main user with PIN, active immediately
+      // 5a — Create main user with PIN, PENDING until approved.
+      // Login is allowed while pending (waiting room) but all data/write
+      // APIs and pages are locked until approval flips statuses to ACTIVE.
       const now = new Date().toISOString();
       const pinHash = hashPin(pinStr);
 
@@ -508,7 +491,7 @@ export async function POST(request: NextRequest) {
           username: normalizedUsername ?? undefined,
           community_id: communityId,
           pin_hash: pinHash,
-          status: "ACTIVE",
+          status: "PENDING",
           wa_verified_at: now,
         })
         .select("id, full_name")
@@ -526,13 +509,13 @@ export async function POST(request: NextRequest) {
       }
       mainUserId = newUser.id;
 
-      // 5b — Create tenant_users for main user
+      // 5b — Create tenant_users for main user (PENDING until approved)
       const { data: mainTu, error: tuErr } = await supabase
         .from("tenant_users")
         .insert({
           tenant_id: tenantId,
           user_id: mainUserId,
-          status: "ACTIVE",
+          status: "PENDING",
         })
         .select("id")
         .single();
@@ -541,11 +524,11 @@ export async function POST(request: NextRequest) {
         throw new Error("Gagal mendaftarkan ke tenant");
       }
 
-      // 5c — Assign default WARGA role to main user
-      await assignDefaultWargaRole(supabase, mainTu.id);
+      // 5c — WARGA role is granted at approval time (see respond routes),
+      // never at registration: a pending user must hold no permissions.
 
-      // 5d — Create user_houses for main user (OWNER or FAMILY)
-      const mainRelationship = hasExistingOwner ? "FAMILY" : "OWNER";
+      // 5d — Create user_houses for main user, PENDING (OWNER or FAMILY)
+      const mainRelationship = occupancy.hasOccupants ? "FAMILY" : "OWNER";
       const { error: uhErr } = await supabase.from("user_houses").insert({
         id: uuidv7(),
         tenant_id: tenantId,
@@ -553,7 +536,7 @@ export async function POST(request: NextRequest) {
         house_id: houseId,
         relationship: mainRelationship,
         is_primary: true,
-        status: "ACTIVE",
+        status: "PENDING",
         created_by: mainUserId,
       });
 
@@ -561,27 +544,28 @@ export async function POST(request: NextRequest) {
         throw new Error("Gagal mengaitkan ke rumah");
       }
 
-      // 5e — If house has an owner, create house_join_requests PENDING
-      let requestId: string | null = null;
-      if (hasExistingOwner) {
-        requestId = uuidv7();
-        const { error: reqErr } = await supabase
-          .from("house_join_requests")
-          .insert({
-            id: requestId,
-            house_id: houseId,
-            requester_user_id: mainUserId,
-            status: "PENDING",
-          });
+      // 5e — ALWAYS create a house_join_requests PENDING row. Nothing in this
+      // registration grants access; approval (Task: respond routes) flips the
+      // PENDING rows to ACTIVE.
+      // FIRST_OCCUPANT → only an admin can approve (requester becomes OWNER).
+      // JOIN → head of household (OWNER) or an admin approves (requester FAMILY).
+      const requestId: string = uuidv7();
+      const { error: reqErr } = await supabase.from("house_join_requests").insert({
+        id: requestId,
+        house_id: houseId,
+        requester_user_id: mainUserId,
+        status: "PENDING",
+      });
 
-        if (reqErr) {
-          throw new Error("Gagal mengirim permintaan bergabung");
-        }
+      if (reqErr) {
+        throw new Error("Gagal mengirim permintaan persetujuan");
+      }
 
-        // Notify the owner
+      if (ownerUserId) {
+        // Notify the head of household
         await supabase.from("notifications").insert({
           tenant_id: tenantId,
-          recipient_user_id: ownerRow.user_id,
+          recipient_user_id: ownerUserId,
           actor_user_id: mainUserId,
           type: "RUMAH",
           priority: "NORMAL",
@@ -621,13 +605,14 @@ export async function POST(request: NextRequest) {
           throw new Error(`Gagal menambah anggota: ${m.fullName}`);
         }
 
-        // Family member -> tenant_users
+        // Family member -> tenant_users (PENDING: locked with the main request,
+        // approved together; role granted at approval time, never here)
         const { data: famTu, error: famTuErr } = await supabase
           .from("tenant_users")
           .insert({
             tenant_id: tenantId,
             user_id: famUserId,
-            status: "ACTIVE",
+            status: "PENDING",
           })
           .select("id")
           .single();
@@ -638,9 +623,7 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        await assignDefaultWargaRole(supabase, famTu.id);
-
-        // Family member -> user_houses (FAMILY, non-primary)
+        // Family member -> user_houses (FAMILY, non-primary, PENDING)
         const { error: famUhErr } = await supabase.from("user_houses").insert({
           id: uuidv7(),
           tenant_id: tenantId,
@@ -648,7 +631,7 @@ export async function POST(request: NextRequest) {
           house_id: houseId,
           relationship: "FAMILY",
           is_primary: false,
-          status: "ACTIVE",
+          status: "PENDING",
           created_by: mainUserId,
         });
 
@@ -667,33 +650,40 @@ export async function POST(request: NextRequest) {
         .from("user_badges")
         .insert({ user_id: mainUserId, badge_id: 2 });
 
-      // 5h — Notify admins (best-effort)
+      // 5h — Notify admins (best-effort). Every registration now needs
+      // approval: FIRST_OCCUPANT waits on an admin, JOIN on the head of
+      // household (who was notified in 5e) or an admin.
       await notifyAdmins(supabase, {
         tenant_id: tenantId,
         actor_user_id: mainUserId,
         type: "SYSTEM",
         priority: "NORMAL",
-        title: hasExistingOwner
-          ? "Warga Baru Terdaftar (Menunggu Persetujuan)"
-          : "Warga Baru Terdaftar",
-        body: hasExistingOwner
-          ? `${trimmedName} baru saja mendaftar dengan blok rumah ${normalizedBlok} dan menunggu persetujuan bergabung.`
-          : `${trimmedName} baru saja mendaftar dengan blok rumah ${normalizedBlok}.`,
-        action_url: "/admin/warga",
+        title:
+          approvalCase === "FIRST_OCCUPANT"
+            ? "Penghuni Pertama Menunggu Persetujuan"
+            : "Warga Baru Menunggu Persetujuan",
+        body:
+          approvalCase === "FIRST_OCCUPANT"
+            ? `${trimmedName} mendaftar sebagai penghuni pertama rumah ${normalizedBlok} dan menunggu persetujuan admin.`
+            : `${trimmedName} baru saja mendaftar dengan blok rumah ${normalizedBlok} dan menunggu persetujuan.`,
+        action_url: "/admin/join-request",
         entity_table: "users",
         entity_id: mainUserId,
         dedupe_key: `new_user:${mainUserId}:registered`,
         metadata: {
           blokRumah: normalizedBlok,
-          requiresApproval: hasExistingOwner,
+          requiresApproval: true,
+          approvalCase,
         },
         created_by: mainUserId,
       });
 
       /* ══════════════════════════════════════════════════════════════════════
-         PHASE 6 — Create session and set cookie
+         PHASE 6 — Create PENDING session and set cookie
+         The user lands in the waiting room (/pending). Data pages/APIs stay
+         locked until approval; see middleware + requireApprovedUser().
          ════════════════════════════════════════════════════════════════════ */
-      const jwt = await createSession(mainUserId);
+      const jwt = await createSession(mainUserId, false);
       await setSessionCookie(jwt);
 
       return NextResponse.json({
@@ -702,7 +692,8 @@ export async function POST(request: NextRequest) {
         fullName: trimmedName,
         houseId,
         blokRumah: normalizedBlok,
-        requiresApproval: hasExistingOwner,
+        requiresApproval: true,
+        approvalCase,
         requestId,
       });
     } catch (err) {

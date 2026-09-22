@@ -356,9 +356,10 @@ export default function RegisterWizardPage() {
       setUser({ id: data.userId, fullName: data.fullName });
 
       if (data.requiresApproval === true) {
-        // User created but needs owner approval
-        setRequiresApproval(true);
-        setBlokOwnerName(data.ownerFullName ?? blokOwnerInfo);
+        // Account is PENDING — hand off to the waiting room, which owns
+        // status polling, cookie rotation, and the berita link.
+        router.replace("/pending");
+        return;
       } else {
         // Full access granted
         setOnboardingCompleted(true);
