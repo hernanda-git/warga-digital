@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
         .from("users")
         .select("id, full_name, pin_hash, status")
         .in("wa_number", variants)
+        .neq("status", "REJECTED")
         .limit(1);
 
       if (!fetchError && data && data.length > 0) {
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
             .from("users")
             .select("id, full_name, pin_hash, status")
             .eq("wa_number", canonical)
+            .neq("status", "REJECTED")
             .maybeSingle();
           if (!fbErr && fb) user = fb;
         }
@@ -67,6 +69,7 @@ export async function POST(request: NextRequest) {
         .select("id, full_name, pin_hash, status")
         .ilike("email", login)
         .not("email", "is", null)
+        .neq("status", "REJECTED")
         .maybeSingle();
       if (!fetchError) user = row;
     } else {
@@ -76,6 +79,7 @@ export async function POST(request: NextRequest) {
         .select("id, full_name, pin_hash, status")
         .ilike("username", login)
         .not("username", "is", null)
+        .neq("status", "REJECTED")
         .maybeSingle();
       if (!fetchError) user = row;
     }

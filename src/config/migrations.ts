@@ -1129,6 +1129,13 @@ ALTER TYPE user_house_status ADD VALUE IF NOT EXISTS 'PENDING';
 ALTER TYPE user_house_status ADD VALUE IF NOT EXISTS 'REJECTED';
 `.trim();
 
+const REJECTED_REREGISTER_SQL = `
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_key;
+CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique_live ON users (email) WHERE status <> 'REJECTED';
+CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique_live ON users (username) WHERE status <> 'REJECTED';
+`.trim();
+
 export const MIGRATION_PHASES: MigrationPhase[] = [
   {
     id: 1,
@@ -1204,5 +1211,11 @@ export const MIGRATION_PHASES: MigrationPhase[] = [
     label: "Approval Status Enum",
     description: "Menambah nilai PENDING/REJECTED pada enum status untuk alur persetujuan registrasi",
     steps: [{ id: "approval-status-enum", sql: APPROVAL_STATUS_ENUM_SQL }],
+  },
+  {
+    id: 12,
+    label: "Rejected Re-register",
+    description: "Unik email/username hanya untuk baris non-REJECTED agar identitas ditolak bisa daftar ulang",
+    steps: [{ id: "rejected-reregister", sql: REJECTED_REREGISTER_SQL }],
   },
 ];

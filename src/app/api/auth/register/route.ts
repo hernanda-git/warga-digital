@@ -131,12 +131,17 @@ async function checkDbDuplicates(
   supabase: ReturnType<typeof createServerClient>,
   identifiers: ReturnType<typeof collectIdentifiers>,
 ): Promise<string | null> {
+  // NOTE: rows with users.status = 'REJECTED' are ignored everywhere here so
+  // a rejected identity can re-register. Table-level uniqueness for
+  // non-rejected rows is enforced by partial unique indexes (migration
+  // phase 12); wa_number has no DB constraint and relies on this check.
   // ── WhatsApp numbers ─────────────────────────────────────────────────────
   if (identifiers.waNumbers.length > 0) {
     const { data: rows } = await supabase
       .from("users")
       .select("wa_number")
-      .in("wa_number", identifiers.waNumbers);
+      .in("wa_number", identifiers.waNumbers)
+      .neq("status", "REJECTED");
 
     if (rows && rows.length > 0) {
       return `Nomor WhatsApp ${rows[0].wa_number} sudah terdaftar. Gunakan nomor lain atau login.`;
@@ -151,7 +156,8 @@ async function checkDbDuplicates(
         const { data: rows } = await supabase
           .from("users")
           .select("email")
-          .eq("email", email);
+          .eq("email", email)
+          .neq("status", "REJECTED");
 
         if (rows && rows.length > 0) {
           return `Email ${email} sudah terdaftar. Gunakan email lain atau login.`;
@@ -166,13 +172,24 @@ async function checkDbDuplicates(
   if (emailConflict) return emailConflict;
 
   // ── Usernames (case-insensitive via RPC) ─────────────────────────────────
+  // The RPC shape is opaque, so a hit is confirmed against non-rejected rows
+  // before rejecting the registration (a REJECTED row alone must not block).
   for (const username of identifiers.usernames) {
     const { data: rows } = await supabase.rpc("get_user_by_username_lower", {
       login_input: username,
     });
 
     if (Array.isArray(rows) && rows.length > 0) {
-      return `Username @${username} sudah dipakai. Pilih username lain.`;
+      const { data: live } = await supabase
+        .from("users")
+        .select("id")
+        .ilike("username", username)
+        .not("username", "is", null)
+        .neq("status", "REJECTED")
+        .limit(1);
+      if (live && live.length > 0) {
+        return `Username @${username} sudah dipakai. Pilih username lain.`;
+      }
     }
   }
 

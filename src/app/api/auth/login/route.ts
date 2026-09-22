@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
         .from("users")
         .select("id, full_name, pin_hash, status")
         .in("wa_number", variants)
+        .neq("status", "REJECTED")
         .limit(1);
 
       if (!fetchError && data && data.length > 0) {
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
             .from("users")
             .select("id, full_name, pin_hash, status")
             .eq("wa_number", canonical)
+            .neq("status", "REJECTED")
             .maybeSingle();
           if (!fbErr && fb) {
             user = fb;
@@ -92,22 +94,26 @@ export async function POST(request: NextRequest) {
       }
     } else if (loginTrimmed.includes("@")) {
       // Treat an email address as an email identifier (case-insensitive).
+      // REJECTED rows are skipped so a re-registered identity resolves live.
       const { data: row, error: fetchError } = await supabase
         .from("users")
         .select("id, full_name, pin_hash, status")
         .ilike("email", loginTrimmed)
         .not("email", "is", null)
+        .neq("status", "REJECTED")
         .maybeSingle();
       if (!fetchError) {
         user = row;
       }
     } else {
-      // Treat as username (case-insensitive)
+      // Treat as username (case-insensitive). REJECTED rows are skipped so a
+      // re-registered identity resolves live.
       const { data: row, error: fetchError } = await supabase
         .from("users")
         .select("id, full_name, pin_hash, status")
         .ilike("username", loginTrimmed)
         .not("username", "is", null)
+        .neq("status", "REJECTED")
         .maybeSingle();
       if (!fetchError) {
         user = row;
