@@ -38,7 +38,7 @@ export default function LoginPage() {
     setError("");
     const trimmed = login.trim();
     if (!trimmed) {
-      setError("Isi Username atau Nomor WhatsApp untuk melanjutkan.");
+      setError("Isi email, Username, atau Nomor WhatsApp untuk melanjutkan.");
       return;
     }
     setLoading(true);
@@ -85,7 +85,8 @@ export default function LoginPage() {
       }
       setUser({ id: data.userId, fullName: data.fullName });
       setOnboardingCompleted(true);
-      router.replace("/landing");
+      // Pending accounts go to the waiting room; approved accounts continue.
+      router.replace(data.approved === false ? "/pending" : "/landing");
     } catch {
       setError("Terjadi kesalahan. Coba lagi.");
     } finally {
@@ -182,7 +183,7 @@ export default function LoginPage() {
                   Masuk ke akun
                 </h2>
                 <p className="mt-1 text-sm text-app-body-muted">
-                  Gunakan Username atau Nomor WhatsApp yang terdaftar.
+                  Gunakan email, Username, atau Nomor WhatsApp yang terdaftar.
                 </p>
               </div>
 
@@ -197,6 +198,8 @@ export default function LoginPage() {
                 />
                 <p className="text-xs leading-relaxed text-app-body-muted">
                   Isi salah satu:{" "}
+                  <strong className="font-semibold text-app-body">Email</strong>{" "}
+                  atau{" "}
                   <strong className="font-semibold text-app-body">
                     Username
                   </strong>{" "}
@@ -211,7 +214,7 @@ export default function LoginPage() {
               {/* Input */}
               <div>
                 <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
-                  Username atau Nomor WhatsApp
+                  Email, Username, atau Nomor WhatsApp
                 </label>
                 <input
                   ref={loginInputRef}
@@ -221,7 +224,7 @@ export default function LoginPage() {
                     setLogin(e.target.value);
                     setError("");
                   }}
-                  placeholder="Contoh: budi_santoso atau 08123456789"
+                  placeholder="Contoh: dedi@email.com atau 08123456789"
                   className="w-full rounded-2xl border bg-white px-4 py-3.5 text-sm font-semibold text-app-title placeholder:font-normal placeholder:text-app-body-muted/50 focus:outline-none"
                   style={{ borderColor: "var(--color-input-border)" }}
                   onFocus={(e) => {

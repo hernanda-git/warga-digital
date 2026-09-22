@@ -90,6 +90,17 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+    } else if (loginTrimmed.includes("@")) {
+      // Treat an email address as an email identifier (case-insensitive).
+      const { data: row, error: fetchError } = await supabase
+        .from("users")
+        .select("id, full_name, pin_hash, status")
+        .ilike("email", loginTrimmed)
+        .not("email", "is", null)
+        .maybeSingle();
+      if (!fetchError) {
+        user = row;
+      }
     } else {
       // Treat as username (case-insensitive)
       const { data: row, error: fetchError } = await supabase
@@ -120,7 +131,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (user.status !== "ACTIVE") {
+    if (user.status === "REJECTED") {
+      return NextResponse.json(
+        {
+          error:
+            "Pendaftaran Anda ditolak. Hubungi pengurus RT untuk informasi lebih lanjut.",
+        },
+        { status: 400 },
+      );
+    }
+    if (user.status !== "ACTIVE" && user.status !== "PENDING") {
       return NextResponse.json(
         {
           error: "Akun belum aktif. Verifikasi nomor WhatsApp terlebih dahulu.",
@@ -132,17 +152,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "PIN salah." }, { status: 401 });
     }
 
+    // ── Resolve approval ───────────────────────────────────────────────────
+    // PENDING users may log in, but only for the waiting room (/pending):
+    // their JWT carries approved=false and middleware + API gates lock them
+    // out of everything else. ACTIVE users resolve against their tenant row;
+    // accounts without a tenant row keep today's behaviour (approved).
+    const { data: loginTenant } = await supabase
+      .from("tenant_users")
+      .select("id, tenant_id, status")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const approved =
+      user.status === "PENDING"
+        ? false
+        : loginTenant
+          ? loginTenant.status === "ACTIVE"
+          : true;
+
     // ── Create session ─────────────────────────────────────────────────────
-    const jwt = await createSession(user.id);
+    const jwt = await createSession(user.id, approved);
     await setSessionCookie(jwt);
 
     // ── Set community name cookie ─────────────────────────────────────────
     // Already have supabase client from earlier in the function
-    const { data: tenantUser } = await supabase
-      .from("tenant_users")
-      .select("tenant_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const tenantUser = loginTenant;
 
     if (tenantUser?.tenant_id) {
       const { data: community } = await supabase
@@ -163,6 +196,7 @@ export async function POST(request: NextRequest) {
       success: true,
       userId: user.id,
       fullName: user.full_name,
+      approved,
     });
   } catch (err) {
     const errorDetails =

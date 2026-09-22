@@ -60,6 +60,15 @@ export async function POST(request: NextRequest) {
           if (!fbErr && fb) user = fb;
         }
       }
+    } else if (login.includes("@")) {
+      // Treat an email address as an email identifier (case-insensitive).
+      const { data: row, error: fetchError } = await supabase
+        .from("users")
+        .select("id, full_name, pin_hash, status")
+        .ilike("email", login)
+        .not("email", "is", null)
+        .maybeSingle();
+      if (!fetchError) user = row;
     } else {
       // Treat as username (case-insensitive)
       const { data: row, error: fetchError } = await supabase
@@ -93,7 +102,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (user.status !== "ACTIVE") {
+    if (user.status === "REJECTED") {
+      return NextResponse.json(
+        {
+          exists: true,
+          canProceed: false,
+          error:
+            "Pendaftaran Anda ditolak. Hubungi pengurus RT untuk informasi lebih lanjut.",
+        },
+        { status: 400 },
+      );
+    }
+
+    if (user.status !== "ACTIVE" && user.status !== "PENDING") {
       return NextResponse.json(
         {
           exists: true,
