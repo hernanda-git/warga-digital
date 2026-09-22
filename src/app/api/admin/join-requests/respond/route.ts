@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uuidv7 } from "uuidv7";
 import { getSessionFromCookie } from "@/lib/auth/session";
 import { createServerClient } from "@/lib/supabase/server";
 import { DEFAULT_TENANT_ID } from "@/lib/constants/seed-ids";
 import { requireAdmin } from "@/lib/auth/admin-guard";
+import {
+  approveRegistrationRequest,
+  rejectRegistrationRequest,
+} from "@/lib/auth/registration-approval";
 
 /**
  * POST /api/admin/join-requests/respond
  * Body: { requestId: string, action: 'approve' | 'reject' }
+ *
+ * Admin can approve ANY pending request: JOIN (head of household did not act)
+ * and FIRST_OCCUPANT (empty house — admin-only by design).
  */
 export async function POST(request: NextRequest) {
   try {
@@ -73,114 +79,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = new Date().toISOString();
-
-    if (action === "reject") {
-      const { error: updateErr } = await supabase
-        .from("house_join_requests")
-        .update({
-          status: "REJECTED",
-          responded_at: now,
-          responded_by: session.userId,
-        })
-        .eq("id", requestId);
-
-      if (updateErr) {
-        return NextResponse.json(
-          { error: "Gagal menolak permintaan" },
-          { status: 500 },
-        );
+    // Status flipping (PENDING → ACTIVE/REJECTED, role grant, notifications,
+    // forced logout on reject) is shared with the owner route.
+    try {
+      if (action === "reject") {
+        await rejectRegistrationRequest(supabase, joinRequest, house, session.userId);
+        return NextResponse.json({ success: true, action: "reject" });
       }
 
-      const { error: notifErr } = await supabase.from("notifications").insert({
-        tenant_id: house.tenant_id,
-        recipient_user_id: joinRequest.requester_user_id,
-        actor_user_id: session.userId,
-        type: "RUMAH",
-        priority: "NORMAL",
-        title: "Permintaan Ditolak",
-        body: `Permintaan bergabung ke rumah ${house.blok_rumah ?? "-"} ditolak.`,
-        action_url: "/profil",
-        entity_table: "house_join_requests",
-        entity_id: requestId,
-        dedupe_key: `house_join_request:${requestId}:reject`,
-        metadata: { requestId, houseId: house.id, action: "reject" },
-        created_by: session.userId,
-      });
-      if (notifErr) {
-      }
-
-      return NextResponse.json({ success: true, action: "reject" });
-    }
-
-    const { data: existingLink } = await supabase
-      .from("user_houses")
-      .select("id")
-      .eq("tenant_id", house.tenant_id)
-      .eq("user_id", joinRequest.requester_user_id)
-      .eq("house_id", joinRequest.house_id)
-      .maybeSingle();
-
-    if (existingLink) {
-      return NextResponse.json(
-        { error: "Pengguna sudah terdaftar di rumah ini" },
-        { status: 400 },
+      const { relationship } = await approveRegistrationRequest(
+        supabase,
+        joinRequest,
+        house,
+        session.userId,
       );
+      return NextResponse.json({ success: true, action: "approve", relationship });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Terjadi kesalahan saat memproses permintaan";
+      console.error("admin/join-requests/respond error:", message);
+      return NextResponse.json({ error: message }, { status: 500 });
     }
-
-    const { error: insertErr } = await supabase.from("user_houses").insert({
-      id: uuidv7(),
-      tenant_id: house.tenant_id,
-      user_id: joinRequest.requester_user_id,
-      house_id: joinRequest.house_id,
-      relationship: "FAMILY",
-      is_primary: true,
-      status: "ACTIVE",
-      created_by: session.userId,
-    });
-
-    if (insertErr) {
-      return NextResponse.json(
-        { error: "Gagal menambahkan anggota" },
-        { status: 500 },
-      );
-    }
-
-    const { error: updateErr } = await supabase
-      .from("house_join_requests")
-      .update({
-        status: "APPROVED",
-        responded_at: now,
-        responded_by: session.userId,
-      })
-      .eq("id", requestId);
-
-    if (updateErr) {
-      return NextResponse.json(
-        { error: "Gagal memperbarui permintaan" },
-        { status: 500 },
-      );
-    }
-
-    const { error: notifErr } = await supabase.from("notifications").insert({
-      tenant_id: house.tenant_id,
-      recipient_user_id: joinRequest.requester_user_id,
-      actor_user_id: session.userId,
-      type: "RUMAH",
-      priority: "NORMAL",
-      title: "Permintaan Disetujui",
-      body: `Anda sudah ditambahkan ke rumah ${house.blok_rumah ?? "-"}.`,
-      action_url: "/profil",
-      entity_table: "house_join_requests",
-      entity_id: requestId,
-      dedupe_key: `house_join_request:${requestId}:approve`,
-      metadata: { requestId, houseId: house.id, action: "approve" },
-      created_by: session.userId,
-    });
-    if (notifErr) {
-    }
-
-    return NextResponse.json({ success: true, action: "approve" });
   } catch (err) {
     return NextResponse.json(
       { error: "Terjadi kesalahan saat memproses permintaan" },

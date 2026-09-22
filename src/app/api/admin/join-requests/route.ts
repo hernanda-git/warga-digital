@@ -12,6 +12,7 @@ type JoinRequestItem = {
   houseId: string;
   blokRumah: string;
   requestedAt: string;
+  approvalCase: "FIRST_OCCUPANT" | "JOIN";
 };
 
 /**
@@ -71,6 +72,18 @@ export async function GET() {
     return NextResponse.json({ items: [], meta: { total: 0 } });
   }
 
+  // Approval case per request: a house with no ACTIVE occupant links is a
+  // FIRST_OCCUPANT request (admin-only); otherwise JOIN (owner or admin).
+  const { data: occupantLinks } = await supabase
+    .from("user_houses")
+    .select("house_id")
+    .in(
+      "house_id",
+      scopedRequests.map((r) => r.house_id),
+    )
+    .eq("status", "ACTIVE");
+  const occupiedHouseIds = new Set((occupantLinks ?? []).map((l) => l.house_id));
+
   const { data: users, error: userErr } = await supabase
     .from("users")
     .select("id, full_name, wa_number")
@@ -97,6 +110,7 @@ export async function GET() {
       houseId: r.house_id,
       blokRumah: house?.blok_rumah ?? "—",
       requestedAt: r.created_at,
+      approvalCase: occupiedHouseIds.has(r.house_id) ? "JOIN" : "FIRST_OCCUPANT",
     };
   });
 
