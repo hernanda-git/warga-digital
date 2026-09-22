@@ -56,7 +56,7 @@ export function buildCookieOptions(): {
   };
 }
 
-export async function createSession(userId: string): Promise<string> {
+export async function createSession(userId: string, approved: boolean = true): Promise<string> {
   const supabase = createServerClient();
   const sessionId = uuidv7();
   const rawToken = crypto.randomUUID() + crypto.randomUUID();
@@ -79,7 +79,7 @@ export async function createSession(userId: string): Promise<string> {
 
   await supabase.from("users").update({ last_active_at: now }).eq("id", userId);
 
-  const jwt = await signSessionToken(sessionId, userId);
+  const jwt = await signSessionToken(sessionId, userId, approved);
   return jwt;
 }
 
@@ -92,6 +92,13 @@ export async function setSessionCookie(jwt: string) {
 export async function getSessionFromCookie(): Promise<{
   userId: string;
   sessionId: string;
+  /**
+   * Approval claim carried by the JWT. `true` when the claim is missing
+   * (pre-approval-lock token — backward compatible) or explicitly 1.
+   * NOTE: this is the state at issuance and may be stale; authoritative
+   * checks must use requireApprovedUser() (DB) instead.
+   */
+  approved: boolean;
 } | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
@@ -122,7 +129,11 @@ export async function getSessionFromCookie(): Promise<{
   // endpoint (see src/app/api/auth/refresh/route.ts), driven by the client
   // keep-alive in AuthInterceptor. That path owns a writable NextResponse and
   // correctly persists the refreshed Set-Cookie.
-  return { userId: payload.userId, sessionId: payload.sessionId };
+  return {
+    userId: payload.userId,
+    sessionId: payload.sessionId,
+    approved: payload.approved ?? true,
+  };
 }
 
 /**
