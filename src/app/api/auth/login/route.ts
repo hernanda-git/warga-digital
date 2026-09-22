@@ -121,6 +121,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Second chance: a REJECTED-only identity must surface the "ditolak"
+    // message below (not 404). Live lookup above already covers every
+    // non-REJECTED row, so anything found here is a rejected identity
+    // (or an inconsistency — downstream status branches decide).
+    if (!user) {
+      if (looksLikePhone(loginTrimmed)) {
+        const variants = getWaNumberVariants(loginTrimmed);
+        const { data } = await supabase
+          .from("users")
+          .select("id, full_name, pin_hash, status")
+          .in("wa_number", variants)
+          .limit(1);
+        if (data && data.length > 0) user = data[0];
+      } else if (loginTrimmed.includes("@")) {
+        const { data } = await supabase
+          .from("users")
+          .select("id, full_name, pin_hash, status")
+          .ilike("email", loginTrimmed)
+          .not("email", "is", null)
+          .maybeSingle();
+        if (data) user = data;
+      } else {
+        const { data } = await supabase
+          .from("users")
+          .select("id, full_name, pin_hash, status")
+          .ilike("username", loginTrimmed)
+          .not("username", "is", null)
+          .maybeSingle();
+        if (data) user = data;
+      }
+    }
+
     if (!user) {
       return NextResponse.json(
         { error: "Username atau nomor WhatsApp tidak ditemukan." },

@@ -1132,8 +1132,12 @@ ALTER TYPE user_house_status ADD VALUE IF NOT EXISTS 'REJECTED';
 const REJECTED_REREGISTER_SQL = `
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
 ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_key;
+DROP INDEX IF EXISTS idx_users_wa_number_unique;
+DROP INDEX IF EXISTS idx_users_username_lower;
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique_live ON users (email) WHERE status <> 'REJECTED';
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique_live ON users (username) WHERE status <> 'REJECTED';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_wa_number_unique_live ON users (wa_number) WHERE wa_number IS NOT NULL AND status <> 'REJECTED';
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower_live ON users (lower(username::text)) WHERE username IS NOT NULL AND status <> 'REJECTED';
 `.trim();
 
 export const MIGRATION_PHASES: MigrationPhase[] = [

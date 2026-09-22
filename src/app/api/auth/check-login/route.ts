@@ -84,6 +84,37 @@ export async function POST(request: NextRequest) {
       if (!fetchError) user = row;
     }
 
+    // Second chance: a REJECTED-only identity must surface the "ditolak"
+    // branch below (not 404). The live lookup above already covers every
+    // non-REJECTED row.
+    if (!user) {
+      if (looksLikePhone(login)) {
+        const variants = getWaNumberVariants(login);
+        const { data } = await supabase
+          .from("users")
+          .select("id, full_name, pin_hash, status")
+          .in("wa_number", variants)
+          .limit(1);
+        if (data && data.length > 0) user = data[0];
+      } else if (login.includes("@")) {
+        const { data } = await supabase
+          .from("users")
+          .select("id, full_name, pin_hash, status")
+          .ilike("email", login)
+          .not("email", "is", null)
+          .maybeSingle();
+        if (data) user = data;
+      } else {
+        const { data } = await supabase
+          .from("users")
+          .select("id, full_name, pin_hash, status")
+          .ilike("username", login)
+          .not("username", "is", null)
+          .maybeSingle();
+        if (data) user = data;
+      }
+    }
+
     if (!user) {
       return NextResponse.json(
         {
