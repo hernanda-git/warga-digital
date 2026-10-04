@@ -55,9 +55,17 @@ let cookie = null;
 const log = (...a) => console.log(...a);
 
 async function api(path, init = {}) {
-  const res = await fetch(`${BASE}${path}`, {
+  const sep = path.includes("?") ? "&" : "?";
+  const res = await fetch(`${BASE}${path}${sep}_t=${Date.now()}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...(cookie ? { Cookie: cookie } : {}), ...(init.headers || {}) },
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+      ...(cookie ? { Cookie: cookie } : {}),
+      ...(init.headers || {}),
+    },
   });
   let body = null;
   try { body = await res.json(); } catch { body = null; }
