@@ -539,11 +539,7 @@ export default function HouseStatusClient({
                     : "bg-amber-600 hover:bg-amber-700"
                 }`}
               >
-                {isSubmitting
-                  ? "Menyimpan..."
-                  : selectedMonths.length === 0 && dialogTarget.overrideId
-                    ? "Batalkan penyesuaian"
-                    : "Simpan"}
+                {isSubmitting ? "Menyimpan..." : "Adjust"}
               </button>
             </div>
           </div>
