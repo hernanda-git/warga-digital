@@ -36,7 +36,6 @@ export default function HouseStatusClient({
 
   // ── Mark/revoke dialog state ─────────────────────────────────────────────
   const [dialogTarget, setDialogTarget] = useState<HouseTransactionStatus | null>(null);
-  const [mode, setMode] = useState<"mark" | "revoke">("mark");
   const [reason, setReason] = useState("PEMBEBASAN");
   const [notes, setNotes] = useState("");
   const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
@@ -58,27 +57,15 @@ export default function HouseStatusClient({
     }
   }, []);
 
-  const openMark = useCallback((house: HouseTransactionStatus) => {
+  const openAdjust = useCallback((house: HouseTransactionStatus) => {
     setDialogTarget(house);
-    setMode("mark");
-    setReason("PEMBEBASAN");
-    setNotes("");
-    // Default to the months that are still uncovered, so the common case
-    // (settle the rest of the year) is one click.
-    const covered = new Set(
-      coveredMonthNumbers(house.total2026, house.overrideMonthNumbers),
-    );
+    // Pre-select what this house currently has credited, so Adjust opens on the
+    // current state. Deselecting everything revokes the adjustment.
     setSelectedMonths(
-      Array.from({ length: IPL_MONTHS_PER_YEAR }, (_, i) => i + 1).filter(
-        (m) => !covered.has(m),
-      ),
+      [...(house.overrideMonthNumbers ?? [])].sort((a, b) => a - b),
     );
-    setFormError("");
-  }, []);
-
-  const openRevoke = useCallback((house: HouseTransactionStatus) => {
-    setDialogTarget(house);
-    setMode("revoke");
+    setReason(house.overrideReason ?? "PEMBEBASAN");
+    setNotes("");
     setFormError("");
   }, []);
 
@@ -95,15 +82,38 @@ export default function HouseStatusClient({
     setFormError("");
   }, []);
 
-  const submitMark = useCallback(async () => {
+  const submitAdjust = useCallback(async () => {
     if (!dialogTarget) return;
     setFormError("");
 
+    // No months selected = remove the adjustment (soft revoke, keeps audit).
     if (selectedMonths.length === 0) {
-      setFormError("Pilih minimal satu bulan yang ditanggung.");
+      if (!dialogTarget.overrideId) {
+        setFormError("Pilih minimal satu bulan yang ditanggung.");
+        return;
+      }
+      setIsSubmitting(true);
+      try {
+        const res = await fetch(
+          `/api/kas-rt/house-payment-overrides/${dialogTarget.overrideId}`,
+          { method: "DELETE" },
+        );
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          setFormError(data.message ?? "Gagal membatalkan penyesuaian.");
+          return;
+        }
+        closeDialog();
+        await refetch();
+      } catch {
+        setFormError("Gagal membatalkan penyesuaian.");
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
-    if (!notes.trim()) {
+
+    if (!notes.trim() && !dialogTarget.overrideId) {
       setFormError("Catatan wajib diisi agar penyesuaian dapat diaudit.");
       return;
     }
@@ -119,7 +129,10 @@ export default function HouseStatusClient({
           year: new Date().getFullYear(),
           credited_month_numbers: selectedMonths,
           reason,
-          notes: notes.trim(),
+          notes:
+            notes.trim() ||
+            dialogTarget.overrideNotes ||
+            "Penyesuaian bulan oleh pengurus RT.",
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -134,33 +147,14 @@ export default function HouseStatusClient({
     } finally {
       setIsSubmitting(false);
     }
-  }, [dialogTarget, selectedMonths, notes, reason, closeDialog, refetch]);
-
-  const submitRevoke = useCallback(async () => {
-    if (!dialogTarget?.overrideId) {
-      setFormError("Penyesuaian aktif tidak ditemukan untuk rumah ini.");
-      return;
-    }
-    setIsSubmitting(true);
-    setFormError("");
-    try {
-      const res = await fetch(
-        `/api/kas-rt/house-payment-overrides/${dialogTarget.overrideId}`,
-        { method: "DELETE" },
-      );
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setFormError(data.message ?? "Gagal membatalkan penyesuaian.");
-        return;
-      }
-      closeDialog();
-      await refetch();
-    } catch {
-      setFormError("Gagal membatalkan penyesuaian.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [dialogTarget, closeDialog, refetch]);
+  }, [
+    dialogTarget,
+    selectedMonths,
+    notes,
+    reason,
+    closeDialog,
+    refetch,
+  ]);
 
   if (!canView) {
     return (
@@ -378,8 +372,7 @@ export default function HouseStatusClient({
                           key={status.blokRumah}
                           data={status}
                           canManage={canManage}
-                          onMarkPaid={openMark}
-                          onRevoke={openRevoke}
+                          onAdjust={openAdjust}
                         />
                       ))}
                     </div>
@@ -435,104 +428,91 @@ export default function HouseStatusClient({
         </div>
       </div>
 
-      {/* ── Mark / revoke dialog ─────────────────────────────────────────── */}
+      {/* ── Adjust dialog ────────────────────────────────────────────────── */}
       {dialogTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            {mode === "mark" ? (
-              <>
-                <h3 className="text-[15px] font-bold text-gray-900">
-                  Tandai Lunas — Blok {dialogTarget.blokRumah}
-                </h3>
-                <p className="mt-1.5 text-[12px] text-gray-500">
-                  Menandai rumah lunas tanpa membuat transaksi. Total Dibayar
-                  dan saldo kas tidak berubah.
-                </p>
+            <h3 className="text-[15px] font-bold text-gray-900">
+              Adjust — Blok {dialogTarget.blokRumah}
+            </h3>
+            <p className="mt-1.5 text-[12px] text-gray-500">
+              Pilih bulan yang ditanggung. Kosongkan semua pilihan untuk
+              membatalkan penyesuaian. Total Dibayar dan saldo kas tidak
+              berubah.
+            </p>
 
-                <div className="mt-4 space-y-3">
-                  <div>
-                    <label className="block text-[11px] font-medium text-gray-600 mb-1">
-                      Bulan yang ditanggung
-                    </label>
-                    <div className="grid grid-cols-6 gap-1.5">
-                      {IPL_MONTH_LABELS_ID.slice(1).map((label, i) => {
-                        const month = i + 1;
-                        const active = selectedMonths.includes(month);
-                        const byMoney = new Set(
-                          coveredMonthNumbers(
-                            dialogTarget.total2026,
-                            dialogTarget.overrideMonthNumbers,
-                          ),
-                        ).has(month);
-                        return (
-                          <button
-                            key={month}
-                            type="button"
-                            onClick={() => toggleMonth(month)}
-                            title={
-                              byMoney
-                                ? `${label}: sudah tercakup uang nyata`
-                                : `${label}: ${active ? "ditanggung" : "belum"}`
-                            }
-                            className={`rounded-lg px-1 py-1.5 text-[10px] font-bold uppercase transition ${
-                              active
-                                ? "bg-amber-400 text-amber-950 ring-2 ring-amber-500"
-                                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                            } ${byMoney ? "opacity-60" : ""}`}
-                          >
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <p className="mt-1.5 text-[10px] text-gray-400">
-                      Pilih bulan yang ditanggung. Bulan yang sudah tercakup uang
-                      nyata tampil redup dan tidak perlu dipilih.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-medium text-gray-600 mb-1">
-                      Alasan
-                    </label>
-                    <select
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {REASON_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-medium text-gray-600 mb-1">
-                      Catatan (wajib)
-                    </label>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={3}
-                      placeholder="Contoh: dibebaskan berdasarkan rapat RT 12 Jan 2026"
-                      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="block text-[11px] font-medium text-gray-600 mb-1">
+                  Bulan yang ditanggung
+                </label>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {IPL_MONTH_LABELS_ID.slice(1).map((label, i) => {
+                    const month = i + 1;
+                    const active = selectedMonths.includes(month);
+                    const byMoney = new Set(
+                      coveredMonthNumbers(
+                        dialogTarget.total2026,
+                        dialogTarget.overrideMonthNumbers,
+                      ),
+                    ).has(month);
+                    return (
+                      <button
+                        key={month}
+                        type="button"
+                        onClick={() => toggleMonth(month)}
+                        title={
+                          byMoney
+                            ? `${label}: sudah tercakup uang nyata`
+                            : `${label}: ${active ? "ditanggung" : "belum"}`
+                        }
+                        className={`rounded-lg px-1 py-1.5 text-[10px] font-bold uppercase transition ${
+                          active
+                            ? "bg-amber-400 text-amber-950 ring-2 ring-amber-500"
+                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        } ${byMoney ? "opacity-60" : ""}`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
-              </>
-            ) : (
-              <>
-                <h3 className="text-[15px] font-bold text-gray-900">
-                  Batalkan Penyesuaian — Blok {dialogTarget.blokRumah}
-                </h3>
-                <p className="mt-1.5 text-[12px] text-gray-500">
-                  Rumah akan kembali mengikuti pembayaran aslinya. Riwayat
-                  penyesuaian tetap tersimpan untuk audit.
+                <p className="mt-1.5 text-[10px] text-gray-400">
+                  Bulan yang sudah tercakup uang nyata tampil redup. Tidak ada
+                  pilihan = penyesuaian dibatalkan.
                 </p>
-              </>
-            )}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-gray-600 mb-1">
+                  Alasan
+                </label>
+                <select
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {REASON_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-gray-600 mb-1">
+                  Catatan{dialogTarget.overrideId ? "" : " (wajib)"}
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="Contoh: dibebaskan berdasarkan rapat RT 12 Jan 2026"
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
 
             {formError && (
               <div className="mt-3 rounded-xl bg-red-50 border border-red-200 px-3 py-2 text-[12px] text-red-700">
@@ -551,19 +531,19 @@ export default function HouseStatusClient({
               </button>
               <button
                 type="button"
-                onClick={mode === "mark" ? submitMark : submitRevoke}
+                onClick={submitAdjust}
                 disabled={isSubmitting}
                 className={`flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-50 ${
-                  mode === "mark"
-                    ? "bg-amber-600 hover:bg-amber-700"
-                    : "bg-red-600 hover:bg-red-700"
+                  selectedMonths.length === 0 && dialogTarget.overrideId
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-amber-600 hover:bg-amber-700"
                 }`}
               >
                 {isSubmitting
                   ? "Menyimpan..."
-                  : mode === "mark"
-                    ? "Tandai Lunas"
-                    : "Batalkan"}
+                  : selectedMonths.length === 0 && dialogTarget.overrideId
+                    ? "Batalkan penyesuaian"
+                    : "Simpan"}
               </button>
             </div>
           </div>

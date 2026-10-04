@@ -5,16 +5,15 @@ import {
   completeMonthsForAmount,
   remainderForAmount,
   overrideOnlyMonthNumbers,
-  IPL_MONTH_LABELS_ID,
 } from "@/lib/kas-rt-ipl";
 import type { HouseTransactionStatus } from "@/types/kas-rt";
 
 interface HouseTransactionStatusCardVerticalProps {
   data: HouseTransactionStatus;
-  /** Renders the mark/revoke action when the viewer may manage kas RT. */
+  /** Renders the Adjust action when the viewer may manage kas RT. */
   canManage?: boolean;
-  onMarkPaid?: (house: HouseTransactionStatus) => void;
-  onRevoke?: (house: HouseTransactionStatus) => void;
+  /** Opens the adjust dialog — covers both marking and revoking. */
+  onAdjust?: (house: HouseTransactionStatus) => void;
 }
 
 const statusLabel = (status: string) => {
@@ -44,8 +43,7 @@ const getStatusBadgeClass = (status: string) => {
 export function HouseTransactionStatusCardVertical({
   data,
   canManage = false,
-  onMarkPaid,
-  onRevoke,
+  onAdjust,
 }: HouseTransactionStatusCardVerticalProps) {
   const monthLabels = [
     "JAN",
@@ -68,7 +66,7 @@ export function HouseTransactionStatusCardVertical({
   };
 
   // ── Step-by-step fill: real money first, then override credit ────────────
-  const { total2026, overrideMonths, overrideMonthNumbers } = data;
+  const { total2026, overrideMonthNumbers } = data;
   const paidCompleteMonths = completeMonthsForAmount(total2026);
   const paidRemainder = remainderForAmount(total2026);
 
@@ -79,14 +77,9 @@ export function HouseTransactionStatusCardVertical({
     overrideOnlyMonthNumbers(total2026, overrideMonthNumbers),
   );
 
-  const isCredited = overrideMonths > 0 || overrideMonthNumbers.length > 0;
   const creditedLabel = data.overrideReason
     ? data.overrideReason.replace(/_/g, " ").toLowerCase()
     : "penyesuaian";
-  const creditedLabelList = Array.from(creditedMonths)
-    .sort((a, b) => a - b)
-    .map((m) => IPL_MONTH_LABELS_ID[m])
-    .join(", ");
 
   const getMonthButtonClass = (monthIndex: number) => {
     // monthIndex is 0-based; month numbers are 1-based
@@ -140,14 +133,6 @@ export function HouseTransactionStatusCardVertical({
             <span className="font-headline text-2xl font-extrabold text-primary tracking-tight">
               {formatRupiah(total2026)}
             </span>
-            {isCredited && (
-              <span className="mt-1 inline-flex items-center gap-1 self-start rounded-full bg-amber-100 px-2 py-[2px] text-[9px] font-bold uppercase tracking-wide text-amber-800">
-                <span className="material-symbols-outlined text-[11px] leading-none">
-                  info
-                </span>
-                {creditedLabelList || `${overrideMonths} bln`} penyesuaian
-              </span>
-            )}
           </div>
         </div>
       </div>
@@ -171,33 +156,17 @@ export function HouseTransactionStatusCardVertical({
           </div>
         </div>
 
-        {/* Credited-month note: the money figure above is deliberately untouched */}
-        {isCredited && data.overrideNotes && (
-          <p className="mt-3 text-[10px] leading-relaxed text-amber-800/80">
-            {data.overrideNotes}
-          </p>
-        )}
-
-        {/* Management action — only for kas RT managers */}
+        {/* Management action — only for kas RT managers. One entry point:
+            the dialog covers both marking and revoking. */}
         {canManage && (
           <div className="mt-3 flex gap-2">
-            {isCredited ? (
-              <button
-                type="button"
-                onClick={() => onRevoke?.(data)}
-                className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700 transition-colors hover:bg-red-100"
-              >
-                Batalkan penyesuaian
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onMarkPaid?.(data)}
-                className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-800 transition-colors hover:bg-amber-100"
-              >
-                Tandai lunas tanpa transaksi
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => onAdjust?.(data)}
+              className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-800 transition-colors hover:bg-amber-100"
+            >
+              Adjust
+            </button>
           </div>
         )}
       </div>
