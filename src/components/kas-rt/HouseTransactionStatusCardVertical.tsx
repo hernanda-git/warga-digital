@@ -1,10 +1,20 @@
 "use client";
 
 import { formatRupiah } from "@/lib/kas-rt-utils";
+import {
+  IPL_MONTHLY_AMOUNT,
+  completeMonthsForAmount,
+  effectiveCoveredMonths,
+  remainderForAmount,
+} from "@/lib/kas-rt-ipl";
 import type { HouseTransactionStatus } from "@/types/kas-rt";
 
 interface HouseTransactionStatusCardVerticalProps {
   data: HouseTransactionStatus;
+  /** Renders the mark/revoke action when the viewer may manage kas RT. */
+  canManage?: boolean;
+  onMarkPaid?: (house: HouseTransactionStatus) => void;
+  onRevoke?: (house: HouseTransactionStatus) => void;
 }
 
 const statusLabel = (status: string) => {
@@ -24,9 +34,18 @@ const getStatusBadgeClass = (status: string) => {
 /**
  * Vertical card displaying house name, blok, total transactions in 2026,
  * and horizontally scrollable monthly status buttons.
+ *
+ * Month fill has three distinct sources, deliberately rendered differently so
+ * a credited month is never mistaken for money received:
+ *   • paid     — real rupiah covers the month (≥ Rp120.000)
+ *   • partial  — real rupiah covers part of the month
+ *   • credited — covered by an active payment override, no money moved
  */
 export function HouseTransactionStatusCardVertical({
-  data: { blokRumah, name, status, total2026, monthlyStatuses },
+  data,
+  canManage = false,
+  onMarkPaid,
+  onRevoke,
 }: HouseTransactionStatusCardVerticalProps) {
   const monthLabels = [
     "JAN",
@@ -48,34 +67,46 @@ export function HouseTransactionStatusCardVertical({
     return blok.toUpperCase().slice(0, 4);
   };
 
-  // ── Step-by-Step Filling Logic Based on Total ────────────────────────────
-  //
-  // Filling progresses sequentially from January regardless of actual payment timing.
-  // Uses total2026 to determine how many months are "filled" at Rp120,000/month.
-  //
-  // Pre-calculated values for efficient rendering.
-  const monthlyAmount = 120000;
-  const completeMonths = Math.floor(total2026 / monthlyAmount);
-  const remainder = total2026 % monthlyAmount;
-  // Filled months: completeMonths fully paid, plus partial if remainder > 0
+  // ── Step-by-step fill: real money first, then override credit ────────────
+  const { total2026, overrideMonths } = data;
+  const paidCompleteMonths = completeMonthsForAmount(total2026);
+  const paidRemainder = remainderForAmount(total2026);
+  // Covered months include the override credit, capped at a full year.
+  const coveredMonths = effectiveCoveredMonths(total2026, overrideMonths);
 
-  // ── Month Button Styling: Visual Feedback for Step-by-Step Filling ───────
-  //
-  // Color scheme based on total2026 filling:
-  // - App primary: Fully filled month (Rp120,000 complete)
-  // - Primary muted: Partially filled month (remainder payment)
-  // - Gray/white: Unfilled months (inactive/empty)
-  const getMonthButtonClass = (amount: number, monthIndex: number) => {
-    if (monthIndex < completeMonths) {
-      // Fully filled months
+  const isCredited = overrideMonths > 0;
+  const creditedLabel = data.overrideReason
+    ? data.overrideReason.replace(/_/g, " ").toLowerCase()
+    : "penyesuaian";
+
+  const getMonthButtonClass = (monthIndex: number) => {
+    if (monthIndex < paidCompleteMonths) {
+      // Fully paid with real money
       return "bg-app-primary text-white border-2 border-app-primary";
-    } else if (monthIndex === completeMonths && remainder > 0) {
-      // Partially filled current month
-      return "bg-app-primary-muted text-app-title border-2 border-app-primary-muted";
-    } else {
-      // Unfilled months (inactive)
-      return "bg-white border-2 border-gray-200 text-gray-400";
     }
+    if (monthIndex === paidCompleteMonths && paidRemainder > 0) {
+      // Partially paid with real money
+      return "bg-app-primary-muted text-app-title border-2 border-app-primary-muted";
+    }
+    if (monthIndex < coveredMonths) {
+      // Covered by an override — visually distinct from real payment
+      return "bg-amber-100 text-amber-800 border-2 border-dashed border-amber-400";
+    }
+    return "bg-white border-2 border-gray-200 text-gray-400";
+  };
+
+  const monthTitle = (monthIndex: number) => {
+    const real = data.monthlyStatuses[monthIndex] ?? 0;
+    if (monthIndex < paidCompleteMonths) {
+      return `${monthLabels[monthIndex]}: ${formatRupiah(real)} (lunas)`;
+    }
+    if (monthIndex === paidCompleteMonths && paidRemainder > 0) {
+      return `${monthLabels[monthIndex]}: ${formatRupiah(real)} (sebagian)`;
+    }
+    if (monthIndex < coveredMonths) {
+      return `${monthLabels[monthIndex]}: ditanggung penyesuaian (${creditedLabel})`;
+    }
+    return `${monthLabels[monthIndex]}: belum bayar`;
   };
 
   return (
@@ -84,12 +115,12 @@ export function HouseTransactionStatusCardVertical({
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 flex items-center justify-center rounded-xl bg-secondary-container text-on-secondary-container">
             <span className="font-headline text-2xl font-extrabold tracking-tighter leading-none">
-              {getInitials(blokRumah)}
+              {getInitials(data.blokRumah)}
             </span>
           </div>
           <div className="flex flex-col">
             <span className="font-headline text-xs text-on-surface-variant/70 font-semibold mb-0.5">
-              {name || blokRumah}
+              {data.name || data.blokRumah}
             </span>
             <span className="font-headline text-[10px] font-bold tracking-[0.1em] text-on-surface-variant opacity-60 uppercase">
               2026 TOTAL TRANSFER:
@@ -97,35 +128,76 @@ export function HouseTransactionStatusCardVertical({
             <span className="font-headline text-2xl font-extrabold text-primary tracking-tight">
               {formatRupiah(total2026)}
             </span>
+            {isCredited && (
+              <span className="mt-1 inline-flex items-center gap-1 self-start rounded-full bg-amber-100 px-2 py-[2px] text-[9px] font-bold uppercase tracking-wide text-amber-800">
+                <span className="material-symbols-outlined text-[11px] leading-none">
+                  info
+                </span>
+                {overrideMonths} bln penyesuaian
+              </span>
+            )}
           </div>
         </div>
-        <button className="p-1 rounded-full hover:bg-surface-container transition-colors duration-200">
-          <span className="material-symbols-outlined text-on-surface-variant">
-            more_vert
-          </span>
-        </button>
       </div>
+
       <div className="px-6 pb-12">
         {/* Monthly Status Buttons - Horizontally Scrollable */}
         <div className="overflow-x-auto scrollbar-hide -mx-1">
           <div className="flex gap-2 px-1 pb-1">
-            {monthlyStatuses.map((amount, index) => (
+            {Array.from({ length: 12 }).map((_, index) => (
               <button
                 key={index}
                 type="button"
-                className={`shrink-0 w-12 h-8 flex items-center justify-center rounded-lg font-bold text-[9px] font-headline tracking-tighter transition-colors ${getMonthButtonClass(amount, index)}`}
+                title={monthTitle(index)}
+                className={`shrink-0 w-12 h-8 flex items-center justify-center rounded-lg font-bold text-[9px] font-headline tracking-tighter transition-colors ${getMonthButtonClass(
+                  index,
+                )}`}
               >
                 {monthLabels[index]}
               </button>
             ))}
           </div>
         </div>
+
+        {/* Credited-month note: the money figure above is deliberately untouched */}
+        {isCredited && data.overrideNotes && (
+          <p className="mt-3 text-[10px] leading-relaxed text-amber-800/80">
+            {data.overrideNotes}
+          </p>
+        )}
+
+        {/* Management action — only for kas RT managers */}
+        {canManage && (
+          <div className="mt-3 flex gap-2">
+            {isCredited ? (
+              <button
+                type="button"
+                onClick={() => onRevoke?.(data)}
+                className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-semibold text-red-700 transition-colors hover:bg-red-100"
+              >
+                Batalkan penyesuaian
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onMarkPaid?.(data)}
+                className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold text-amber-800 transition-colors hover:bg-amber-100"
+              >
+                Tandai lunas tanpa transaksi
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <span
-        className={`absolute bottom-4 right-4 inline-flex items-center px-3 py-1 text-[10px] font-medium rounded-full ${getStatusBadgeClass(status)}`}
+        className={`absolute bottom-4 right-4 inline-flex items-center px-3 py-1 text-[10px] font-medium rounded-full ${
+          data.isSettled
+            ? "bg-green-100 text-green-800"
+            : getStatusBadgeClass(data.status)
+        }`}
       >
-        {statusLabel(status)}
+        {data.isSettled ? "Lunas" : statusLabel(data.status)}
       </span>
     </article>
   );

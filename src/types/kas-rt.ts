@@ -134,6 +134,11 @@ export interface IplCollection {
   paidHouses: number;
   percentage: number;
   unpaidHouses: string[]; // Block numbers
+  /**
+   * How many of `paidHouses` are settled purely by an active payment override
+   * (no money received). These contribute to the paid count but to no total.
+   */
+  overridePaidHouses?: number;
 }
 
 export interface QuickStats {
@@ -195,6 +200,40 @@ export interface HouseTransactionStatus {
   blokRumah: string;
   name: string;
   status: "PRIBADI" | "KONTRAKAN";
+  /** Rupiah actually received in 2026 — real transactions only, never overrides. */
   total2026: number;
   monthlyStatuses: number[]; // 12 numbers, sums for Jan-Dec 2026
+  /**
+   * Months credited by an active house_payment_override (0..12).
+   * These raise the "Lunas" count and fill months visually, but never add money.
+   */
+  overrideMonths: number;
+  /** True when real money + override credit covers the full year. */
+  isSettled: boolean;
+  /** Short reason label from the active override, e.g. PEMBEBASAN. */
+  overrideReason: string | null;
+  /** Free-text justification from the active override. */
+  overrideNotes: string | null;
+  /** Id of the active override row, so revoke needs no extra lookup. */
+  overrideId: string | null;
+  /** House id, needed to mark/revoke an override. */
+  houseId: string | null;
+}
+
+// ==================== House Payment Override Types ====================
+
+export interface HousePaymentOverride {
+  id: string;
+  house_id: string;
+  blokRumah: string;
+  houseName: string;
+  year: number;
+  credited_months: number;
+  reason: string | null;
+  notes: string | null;
+  is_active: boolean;
+  marked_at: string;
+  marked_by_full_name: string | null;
+  revoked_at: string | null;
+  revoked_by_full_name: string | null;
 }

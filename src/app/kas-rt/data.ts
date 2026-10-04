@@ -354,76 +354,25 @@ export async function fetchKasRtSummary(
 
 // ─── House Statuses ─────────────────────────────────────────────────────────
 
-export async function fetchKasRtHouseStatuses(): Promise<
-  HouseTransactionStatus[]
-> {
+/**
+ * Per-house IPL status, delegated to the shared implementation so the server
+ * component path and the client refetch path can never drift apart again.
+ *
+ * Money fields come from real transactions only; active payment overrides
+ * credit months (never rupiah), which is how a house can read as "Lunas"
+ * without any cash total moving.
+ */
+export async function fetchKasRtHouseStatuses(
+  year?: number,
+): Promise<HouseTransactionStatus[]> {
   try {
     const supabase = createServerClient();
-
-    const { data: houses, error: housesError } = await supabase
-      .from("houses")
-      .select("name, blok_rumah, status")
-      .eq("tenant_id", DEFAULT_TENANT_ID)
-      .eq("community_id", DEFAULT_COMMUNITY_ID)
-      .eq("is_active", true)
-      .order("blok_rumah");
-
-    if (housesError) {
-      console.error(
-        "[kas-rt/data] fetchKasRtHouseStatuses houses error:",
-        housesError,
-      );
-      return [];
-    }
-    if (!houses?.length) {
-      return [];
-    }
-
-    const blokList = houses.map((h) => h.blok_rumah).filter(Boolean);
-    if (blokList.length === 0) return [];
-
-    const currentYear = new Date().getFullYear();
-    const { data: transactions, error: txError } = await supabase
-      .from("kas_rt_transactions")
-      .select("amount, date, reference, is_shadow")
-      .eq("tenant_id", DEFAULT_TENANT_ID)
-      .eq("community_id", DEFAULT_COMMUNITY_ID)
-      .eq("is_shadow", false)
-      .is("deleted_at", null)
-      .gte("date", `${currentYear}-01-01`)
-      .lt("date", `${currentYear + 1}-01-01`)
-      .in("reference", blokList);
-
-    if (txError) {
-      return [];
-    }
-
-    const houseMap = new Map<string, HouseTransactionStatus>();
-    houses.forEach((h) => {
-      if (h.blok_rumah) {
-        houseMap.set(h.blok_rumah, {
-          blokRumah: h.blok_rumah,
-          name: h.name,
-          status: h.status as "PRIBADI" | "KONTRAKAN",
-          total2026: 0,
-          monthlyStatuses: Array(12).fill(0),
-        });
-      }
-    });
-
-    (transactions || []).forEach((tx) => {
-      if (tx.reference && houseMap.has(tx.reference)) {
-        const house = houseMap.get(tx.reference)!;
-        const month = new Date(tx.date).getMonth();
-        house.total2026 += Number(tx.amount);
-        house.monthlyStatuses[month] += Number(tx.amount);
-      }
-    });
-
-    return Array.from(houseMap.values()).sort((a, b) =>
-      a.blokRumah.localeCompare(b.blokRumah),
+    const { fetchHouseStatusesWithOverrides } = await import(
+      "@/lib/kas-rt-house-status"
     );
+    return await fetchHouseStatusesWithOverrides(supabase, { year });
   } catch (err) {
+    console.error("[kas-rt/data] fetchKasRtHouseStatuses failed:", err);
     return [];
   }
 }

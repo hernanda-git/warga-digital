@@ -4,17 +4,28 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeftIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import { HouseTransactionStatusCardVertical } from "@/components/kas-rt";
+import { IPL_ANNUAL_TARGET, IPL_MONTHS_PER_YEAR } from "@/lib/kas-rt-ipl";
 import type { HouseTransactionStatus } from "@/types/kas-rt";
 
 interface HouseStatusClientProps {
   communityName: string;
   canView: boolean;
+  canManage: boolean;
   initialStatuses: HouseTransactionStatus[];
 }
+
+const REASON_OPTIONS = [
+  { value: "PEMBEBASAN", label: "Pembebasan (dibebaskan RT)" },
+  { value: "KOREKSI", label: "Koreksi data" },
+  { value: "TITIP_BAYAR", label: "Titip bayar / dibayar pihak lain" },
+  { value: "KEBIJAKAN_RT", label: "Kebijakan RT" },
+  { value: "LAINNYA", label: "Lainnya" },
+];
 
 export default function HouseStatusClient({
   communityName,
   canView,
+  canManage,
   initialStatuses,
 }: HouseStatusClientProps) {
   const router = useRouter();
@@ -22,6 +33,17 @@ export default function HouseStatusClient({
     useState<HouseTransactionStatus[]>(initialStatuses);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ── Mark/revoke dialog state ─────────────────────────────────────────────
+  const [dialogTarget, setDialogTarget] = useState<HouseTransactionStatus | null>(null);
+  const [mode, setMode] = useState<"mark" | "revoke">("mark");
+  const [reason, setReason] = useState("PEMBEBASAN");
+  const [notes, setNotes] = useState("");
+  const [creditedMonths, setCreditedMonths] = useState(
+    String(IPL_MONTHS_PER_YEAR),
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const refetch = useCallback(async () => {
     setIsLoading(true);
@@ -37,6 +59,94 @@ export default function HouseStatusClient({
       setIsLoading(false);
     }
   }, []);
+
+  const openMark = useCallback((house: HouseTransactionStatus) => {
+    setDialogTarget(house);
+    setMode("mark");
+    setReason("PEMBEBASAN");
+    setNotes("");
+    setCreditedMonths(String(IPL_MONTHS_PER_YEAR));
+    setFormError("");
+  }, []);
+
+  const openRevoke = useCallback((house: HouseTransactionStatus) => {
+    setDialogTarget(house);
+    setMode("revoke");
+    setFormError("");
+  }, []);
+
+  const closeDialog = useCallback(() => {
+    setDialogTarget(null);
+    setFormError("");
+  }, []);
+
+  const submitMark = useCallback(async () => {
+    if (!dialogTarget) return;
+    setFormError("");
+
+    const months = parseInt(creditedMonths, 10);
+    if (!Number.isFinite(months) || months < 1 || months > IPL_MONTHS_PER_YEAR) {
+      setFormError(`Jumlah bulan harus 1-${IPL_MONTHS_PER_YEAR}.`);
+      return;
+    }
+    if (!notes.trim()) {
+      setFormError("Catatan wajib diisi agar penyesuaian dapat diaudit.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/kas-rt/house-payment-overrides", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          house_id: dialogTarget.houseId,
+          blok_rumah: dialogTarget.blokRumah,
+          year: new Date().getFullYear(),
+          credited_months: months,
+          reason,
+          notes: notes.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFormError(data.message ?? "Gagal menyimpan penyesuaian.");
+        return;
+      }
+      closeDialog();
+      await refetch();
+    } catch {
+      setFormError("Gagal menyimpan penyesuaian.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [dialogTarget, creditedMonths, notes, reason, closeDialog, refetch]);
+
+  const submitRevoke = useCallback(async () => {
+    if (!dialogTarget?.overrideId) {
+      setFormError("Penyesuaian aktif tidak ditemukan untuk rumah ini.");
+      return;
+    }
+    setIsSubmitting(true);
+    setFormError("");
+    try {
+      const res = await fetch(
+        `/api/kas-rt/house-payment-overrides/${dialogTarget.overrideId}`,
+        { method: "DELETE" },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFormError(data.message ?? "Gagal membatalkan penyesuaian.");
+        return;
+      }
+      closeDialog();
+      await refetch();
+    } catch {
+      setFormError("Gagal membatalkan penyesuaian.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [dialogTarget, closeDialog, refetch]);
 
   if (!canView) {
     return (
@@ -56,25 +166,7 @@ export default function HouseStatusClient({
     );
   }
 
-  // Pre-compute grouped stats (memoized by data)
-  const groupedByBlok = statuses.reduce<Record<string, boolean>>((acc, s) => {
-    acc[s.blokRumah] = true;
-    return acc;
-  }, {});
-  const totalHouses = Object.keys(groupedByBlok).length;
-
-  const paidByBlok = statuses.reduce<Record<string, number>>((acc, s) => {
-    acc[s.blokRumah] = (acc[s.blokRumah] ?? 0) + s.total2026;
-    return acc;
-  }, {});
-  const paidCount = Object.values(paidByBlok).filter(
-    (t) => t >= 1440000,
-  ).length;
-  const totalPaid = Object.values(paidByBlok).reduce((sum, v) => sum + v, 0);
-  const target = totalHouses * 1440000;
-  const percentage = target > 0 ? Math.min(100, (totalPaid / target) * 100) : 0;
-
-  // Group for list rendering
+  // Group for list rendering — one entry per blok.
   const groupedStatuses = statuses.reduce<
     Record<string, HouseTransactionStatus>
   >((acc, s) => {
@@ -86,10 +178,29 @@ export default function HouseStatusClient({
       acc[key].monthlyStatuses = acc[key].monthlyStatuses.map(
         (val, idx) => val + (s.monthlyStatuses[idx] || 0),
       );
+      acc[key].overrideMonths = Math.max(
+        acc[key].overrideMonths,
+        s.overrideMonths,
+      );
+      acc[key].isSettled = acc[key].isSettled || s.isSettled;
     }
     return acc;
   }, {});
   const uniqueStatuses = Object.values(groupedStatuses);
+
+  const totalHouses = uniqueStatuses.length;
+
+  // "Lunas" counts houses settled by real money OR by an override — that is
+  // precisely the capability this page gained.
+  const paidCount = uniqueStatuses.filter((s) => s.isSettled).length;
+  const overridePaidCount = uniqueStatuses.filter(
+    (s) => s.overrideMonths > 0,
+  ).length;
+
+  // Money stays real: overrides contribute nothing to "Total Dibayar".
+  const totalPaid = uniqueStatuses.reduce((sum, s) => sum + s.total2026, 0);
+  const target = totalHouses * IPL_ANNUAL_TARGET;
+  const percentage = target > 0 ? Math.min(100, (totalPaid / target) * 100) : 0;
 
   const groupedByLetter = uniqueStatuses.reduce<
     Record<string, HouseTransactionStatus[]>
@@ -184,6 +295,12 @@ export default function HouseStatusClient({
             <p className="text-xs text-white/70 mt-1 text-center">
               {Math.round(percentage)}% Progres Menuju Target 2026
             </p>
+            {overridePaidCount > 0 && (
+              <p className="text-[10px] text-white/60 mt-1 text-center">
+                {overridePaidCount} rumah lunas lewat penyesuaian (tanpa
+                transaksi) — tidak dihitung pada Total Dibayar
+              </p>
+            )}
           </div>
         </div>
       </section>
@@ -245,6 +362,9 @@ export default function HouseStatusClient({
                         <HouseTransactionStatusCardVertical
                           key={status.blokRumah}
                           data={status}
+                          canManage={canManage}
+                          onMarkPaid={openMark}
+                          onRevoke={openRevoke}
                         />
                       ))}
                     </div>
@@ -273,6 +393,12 @@ export default function HouseStatusClient({
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <div className="w-12 h-6 rounded-lg bg-amber-100 border-2 border-dashed border-amber-400"></div>
+                    <span className="text-gray-600">
+                      Ditanggung penyesuaian (tanpa transaksi)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <div className="w-12 h-6 rounded-lg bg-white border-2 border-gray-200"></div>
                     <span className="text-gray-600">Belum Bayar (Kosong)</span>
                   </div>
@@ -283,7 +409,8 @@ export default function HouseStatusClient({
                       </span>
                       Pembayaran diisi step-by-step dari Januari. Bulan
                       berikutnya hanya akan berwarna jika bulan sebelumnya sudah
-                      lunas (≥ Rp120.000).
+                      lunas (≥ Rp120.000). Penyesuaian menambah bulan terbayar
+                      tanpa menambah Total Dibayar.
                     </p>
                   </div>
                 </div>
@@ -292,6 +419,118 @@ export default function HouseStatusClient({
           </div>
         </div>
       </div>
+
+      {/* ── Mark / revoke dialog ─────────────────────────────────────────── */}
+      {dialogTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            {mode === "mark" ? (
+              <>
+                <h3 className="text-[15px] font-bold text-gray-900">
+                  Tandai Lunas — Blok {dialogTarget.blokRumah}
+                </h3>
+                <p className="mt-1.5 text-[12px] text-gray-500">
+                  Menandai rumah lunas tanpa membuat transaksi. Total Dibayar
+                  dan saldo kas tidak berubah.
+                </p>
+
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-gray-600 mb-1">
+                      Bulan yang ditanggung
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={IPL_MONTHS_PER_YEAR}
+                      value={creditedMonths}
+                      onChange={(e) => setCreditedMonths(e.target.value)}
+                      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="mt-1 text-[10px] text-gray-400">
+                      1-{IPL_MONTHS_PER_YEAR}. Isi {IPL_MONTHS_PER_YEAR} untuk
+                      lunas setahun penuh.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-gray-600 mb-1">
+                      Alasan
+                    </label>
+                    <select
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {REASON_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-gray-600 mb-1">
+                      Catatan (wajib)
+                    </label>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={3}
+                      placeholder="Contoh: dibebaskan berdasarkan rapat RT 12 Jan 2026"
+                      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-[15px] font-bold text-gray-900">
+                  Batalkan Penyesuaian — Blok {dialogTarget.blokRumah}
+                </h3>
+                <p className="mt-1.5 text-[12px] text-gray-500">
+                  Rumah akan kembali mengikuti pembayaran aslinya. Riwayat
+                  penyesuaian tetap tersimpan untuk audit.
+                </p>
+              </>
+            )}
+
+            {formError && (
+              <div className="mt-3 rounded-xl bg-red-50 border border-red-200 px-3 py-2 text-[12px] text-red-700">
+                {formError}
+              </div>
+            )}
+
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={closeDialog}
+                disabled={isSubmitting}
+                className="flex-1 rounded-xl bg-gray-100 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-200 disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={mode === "mark" ? submitMark : submitRevoke}
+                disabled={isSubmitting}
+                className={`flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-50 ${
+                  mode === "mark"
+                    ? "bg-amber-600 hover:bg-amber-700"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                {isSubmitting
+                  ? "Menyimpan..."
+                  : mode === "mark"
+                    ? "Tandai Lunas"
+                    : "Batalkan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -1140,6 +1140,50 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_users_wa_number_unique_live ON users (wa_n
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username_lower_live ON users (lower(username::text)) WHERE username IS NOT NULL AND status <> 'REJECTED';
 `.trim();
 
+// ── House payment overrides: mark a house paid without creating money ────────
+// Idempotent (IF NOT EXISTS everywhere) so re-running the phase is safe.
+const HOUSE_PAYMENT_OVERRIDES_SQL = `
+CREATE TABLE IF NOT EXISTS house_payment_overrides (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  community_id UUID NOT NULL REFERENCES communities(id) ON DELETE RESTRICT,
+  house_id UUID NOT NULL REFERENCES houses(id) ON DELETE CASCADE,
+  year INT NOT NULL,
+  credited_months INT NOT NULL DEFAULT 12,
+  reason VARCHAR(40),
+  notes TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  marked_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  marked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  revoked_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  revoked_at TIMESTAMPTZ
+);
+
+ALTER TABLE house_payment_overrides DROP CONSTRAINT IF EXISTS house_payment_overrides_credited_months_check;
+ALTER TABLE house_payment_overrides ADD CONSTRAINT house_payment_overrides_credited_months_check CHECK (credited_months BETWEEN 1 AND 12);
+ALTER TABLE house_payment_overrides DROP CONSTRAINT IF EXISTS house_payment_overrides_year_check;
+ALTER TABLE house_payment_overrides ADD CONSTRAINT house_payment_overrides_year_check CHECK (year BETWEEN 2020 AND 2100);
+ALTER TABLE house_payment_overrides DROP CONSTRAINT IF EXISTS house_payment_overrides_revoke_pair_check;
+ALTER TABLE house_payment_overrides ADD CONSTRAINT house_payment_overrides_revoke_pair_check CHECK ((revoked_at IS NULL) = (is_active));
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_house_payment_overrides_active
+  ON house_payment_overrides (tenant_id, community_id, house_id, year)
+  WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_house_payment_overrides_house_id ON house_payment_overrides(house_id);
+CREATE INDEX IF NOT EXISTS idx_house_payment_overrides_year ON house_payment_overrides(tenant_id, community_id, year);
+CREATE INDEX IF NOT EXISTS idx_house_payment_overrides_active_year ON house_payment_overrides(tenant_id, community_id, year) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_house_payment_overrides_marked_by ON house_payment_overrides(marked_by);
+
+ALTER TABLE house_payment_overrides ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "House payment overrides: no anon access" ON house_payment_overrides;
+CREATE POLICY "House payment overrides: no anon access"
+  ON house_payment_overrides FOR ALL TO anon
+  USING (false) WITH CHECK (false);
+
+COMMENT ON TABLE house_payment_overrides IS
+  'Credits monthly IPL installments to a house WITHOUT creating a kas_rt_transaction. Raises the paid/lunas count and fills months visually; never changes any money total. Revoke is soft (is_active=false + revoked_at) to preserve audit history.';
+`.trim();
+
 export const MIGRATION_PHASES: MigrationPhase[] = [
   {
     id: 1,
@@ -1221,5 +1265,12 @@ export const MIGRATION_PHASES: MigrationPhase[] = [
     label: "Rejected Re-register",
     description: "Unik email/username hanya untuk baris non-REJECTED agar identitas ditolak bisa daftar ulang",
     steps: [{ id: "rejected-reregister", sql: REJECTED_REREGISTER_SQL }],
+  },
+  {
+    id: 13,
+    label: "Penyesuaian Pembayaran Rumah",
+    description:
+      "Membuat tabel house_payment_overrides: menandai rumah lunas (kredit bulan) tanpa membuat transaksi kas",
+    steps: [{ id: "house-payment-overrides", sql: HOUSE_PAYMENT_OVERRIDES_SQL }],
   },
 ];

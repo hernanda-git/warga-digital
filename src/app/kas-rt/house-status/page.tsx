@@ -26,6 +26,7 @@ export default async function HouseStatusPage() {
     <HouseStatusClient
       communityName={communityName}
       canView={permissions.canSubmitTransaction}
+      canManage={permissions.canSubmitTransaction}
       initialStatuses={statuses}
     />
   );

@@ -8,6 +8,7 @@ import {
   DEFAULT_TENANT_ID,
   DEFAULT_COMMUNITY_ID,
 } from "@/lib/constants/seed-ids";
+import { IPL_MONTHS_PER_YEAR } from "@/lib/kas-rt-ipl";
 import type { KasRtSummaryResponse } from "@/types/kas-rt";
 
 function toDateInputValue(date: Date): string {
@@ -259,7 +260,32 @@ export async function fetchKasRtSummaryData({
     }
   }
 
-  const paidHouses = paidBlocks.size;
+  // ── Active payment overrides credit months, never rupiah ─────────────────
+  // A block marked "lunas" through an override counts toward the paid
+  // percentage, but adds nothing to any money figure computed above.
+  // `paidHouses` is a union, so a block already paid this month adds nothing —
+  // `overridePaidHouses` is reported separately for that reason.
+  const overridePaidBlocks = new Set<string>();
+  if (!isFutureYear) {
+    const { data: overrideRows } = await supabase
+      .from("house_payment_overrides")
+      .select("credited_months, houses!house_payment_overrides_house_id_fkey(blok_rumah)")
+      .eq("tenant_id", tenantId)
+      .eq("community_id", communityId)
+      .eq("year", targetYear)
+      .eq("is_active", true);
+
+    for (const row of overrideRows ?? []) {
+      if (Number(row.credited_months ?? 0) < IPL_MONTHS_PER_YEAR) continue;
+      const house = Array.isArray(row.houses) ? row.houses[0] : row.houses;
+      const blok = house?.blok_rumah?.trim();
+      if (blok) overridePaidBlocks.add(blok);
+    }
+  }
+
+  const allPaidBlocks = new Set<string>([...paidBlocks, ...overridePaidBlocks]);
+
+  const paidHouses = allPaidBlocks.size;
   const iplPercentage =
     TOTAL_HOUSES > 0 ? Math.round((paidHouses / TOTAL_HOUSES) * 100) : 0;
 
@@ -267,7 +293,8 @@ export async function fetchKasRtSummaryData({
     totalHouses: TOTAL_HOUSES,
     paidHouses,
     percentage: iplPercentage,
-    unpaidHouses: Array.from(paidBlocks),
+    unpaidHouses: Array.from(allPaidBlocks),
+    overridePaidHouses: overridePaidBlocks.size,
   };
 
   const daysWithTx = dailyBreakdown.length;
