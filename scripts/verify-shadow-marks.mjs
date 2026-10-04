@@ -87,12 +87,27 @@ const rows = Array.isArray(hs.body) ? hs.body : (hs.body?.data ?? []);
 const byBlok = new Map(rows.map((r) => [String(r.blokRumah).toUpperCase(), r]));
 
 // ── expectations ──────────────────────────────────────────────────────────
+// The credited months are OUR override, so they are asserted absolutely.
+// Money is NOT hardcoded: real operators record payments while this runs, so
+// the expected amount is read from the DB at run time. The invariant that
+// matters is that the override adds no money — asserted separately below.
 const EXPECT = {
-  O4:  { money: 120000, credited: [11, 12],       lunas: false },
-  O23: { money: 0,      credited: [1,2,3,4,5,6,7,8,9,10], lunas: false },
-  L3:  { money: 480000, credited: [1, 2, 3, 4, 5], lunas: false },
-  K10: { money: 600000, credited: [1,2,3,4,5,6,7,8,9,10,11,12], lunas: true },
+  O4:  { credited: [11, 12] },
+  O23: { credited: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
+  L3:  { credited: [1, 2, 3, 4, 5] },
+  K10: { credited: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] },
 };
+
+const dbMoney = new Map(
+  (await pool.query(
+    `select reference, coalesce(sum(amount),0)::bigint total
+       from kas_rt_transactions
+      where tenant_id=$1 and community_id=$2 and is_shadow=false
+        and deleted_at is null and reference = any($3)
+        and date >= '2026-01-01' and date < '2027-01-01'
+      group by reference`, [T, C, Object.keys(EXPECT)])).rows
+    .map((r) => [r.reference, Number(r.total)]),
+);
 
 console.log("\n=== per-block ===");
 for (const [blok, exp] of Object.entries(EXPECT)) {
@@ -100,12 +115,21 @@ for (const [blok, exp] of Object.entries(EXPECT)) {
   if (!row) { check(`${blok} present`, false, "not in API payload"); continue; }
   const months = (row.overrideMonthNumbers ?? []).slice().sort((a, b) => a - b);
   const monthStr = months.map((m) => LABELS[m]).join("+");
-  console.log(`\n${blok}: money=${Number(row.total2026).toLocaleString("id-ID")} credited=[${monthStr}] lunas=${row.isSettled}`);
-  check(`${blok} money unchanged`, Number(row.total2026) === exp.money,
-        `${Number(row.total2026)} vs ${exp.money}`);
+  const expectedMoney = dbMoney.get(blok) ?? 0;
+  // Lunas = money months (sequential from Jan) + credited months cover 12.
+  const fromMoney =
+    Math.floor(expectedMoney / 120000) + (expectedMoney % 120000 > 0 ? 1 : 0);
+  const covered = new Set([
+    ...Array.from({ length: fromMoney }, (_, i) => i + 1),
+    ...months,
+  ]).size;
+  console.log(`\n${blok}: money=${Number(row.total2026).toLocaleString("id-ID")} (DB ${expectedMoney.toLocaleString("id-ID")}) credited=[${monthStr}] covered=${covered}/12 lunas=${row.isSettled}`);
+  check(`${blok} money matches real transactions`, Number(row.total2026) === expectedMoney,
+        `${Number(row.total2026)} vs ${expectedMoney}`);
   check(`${blok} credited months`, JSON.stringify(months) === JSON.stringify(exp.credited),
         `${monthStr}`);
-  check(`${blok} lunas flag`, Boolean(row.isSettled) === exp.lunas, `${row.isSettled}`);
+  check(`${blok} lunas flag`, Boolean(row.isSettled) === (covered >= 12),
+        `${row.isSettled} (covered ${covered}/12)`);
   check(`${blok} has overrideId`, Boolean(row.overrideId), `${row.overrideId ?? "none"}`);
 }
 
