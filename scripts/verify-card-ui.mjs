@@ -69,10 +69,12 @@ const notesNeedle = "data pembayaran lama belum tercatat";
 const inMarkup = new RegExp(`<p[^>]*>[^<]*${notesNeedle}`).test(html);
 check("no override notes paragraph in DOM", !inMarkup);
 
-// The month grid must still be there (the feature itself is untouched)
-const creditedCells = (html.match(/border-dashed border-amber-400/g) ?? []).length;
-console.log(`\namber dashed (credited) month cells rendered: ${creditedCells}`);
-check("credited month styling still renders", creditedCells > 0);
+// The month grid must still be there (the feature itself is untouched), and the
+// credited months must now share the paid fill with only a dashed border.
+const creditedCells = (html.match(/bg-app-primary text-white border-2 border-dashed border-white/g) ?? []).length;
+console.log(`\ncredited month cells (paid fill + dashed border) rendered: ${creditedCells}`);
+check("credited months use the paid fill with a dashed border", creditedCells > 0);
+check("no amber credited styling remains", !html.includes("border-dashed border-amber-400"));
 
 await pool.query("delete from sessions where id=$1", [sid]);
 await pool.end();

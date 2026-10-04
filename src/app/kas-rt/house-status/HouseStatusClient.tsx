@@ -391,17 +391,17 @@ export default function HouseStatusClient({
                 </h3>
                 <div className="space-y-2 text-xs">
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-6 rounded-lg bg-green-800 border-2 border-green-800"></div>
+                    <div className="w-12 h-6 rounded-lg bg-app-primary border-2 border-app-primary"></div>
                     <span className="text-gray-600">≥ Rp120.000 (Lunas)</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-6 rounded-lg bg-green-300 border-2 border-green-300"></div>
+                    <div className="w-12 h-6 rounded-lg bg-app-primary-muted border-2 border-app-primary-muted"></div>
                     <span className="text-gray-600">
                       &lt; Rp120.000 (Sebagian)
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-6 rounded-lg bg-amber-100 border-2 border-dashed border-amber-400"></div>
+                    <div className="w-12 h-6 rounded-lg bg-app-primary border-2 border-dashed border-white"></div>
                     <span className="text-gray-600">
                       Ditanggung penyesuaian (tanpa transaksi)
                     </span>

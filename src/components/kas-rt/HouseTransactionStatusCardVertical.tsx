@@ -93,8 +93,9 @@ export function HouseTransactionStatusCardVertical({
       return "bg-app-primary-muted text-app-title border-2 border-app-primary-muted";
     }
     if (creditedMonths.has(monthNumber)) {
-      // Covered by an override — visually distinct from real payment
-      return "bg-amber-100 text-amber-800 border-2 border-dashed border-amber-400";
+      // Credited by an override: same fill as a paid month, so the year reads
+      // uniformly — only the border marks it as not backed by money.
+      return "bg-app-primary text-white border-2 border-dashed border-white";
     }
     return "bg-white border-2 border-gray-200 text-gray-400";
   };
