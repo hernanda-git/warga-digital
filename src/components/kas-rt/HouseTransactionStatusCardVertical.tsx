@@ -2,10 +2,10 @@
 
 import { formatRupiah } from "@/lib/kas-rt-utils";
 import {
-  IPL_MONTHLY_AMOUNT,
   completeMonthsForAmount,
-  effectiveCoveredMonths,
   remainderForAmount,
+  overrideOnlyMonthNumbers,
+  IPL_MONTH_LABELS_ID,
 } from "@/lib/kas-rt-ipl";
 import type { HouseTransactionStatus } from "@/types/kas-rt";
 
@@ -68,18 +68,29 @@ export function HouseTransactionStatusCardVertical({
   };
 
   // ── Step-by-step fill: real money first, then override credit ────────────
-  const { total2026, overrideMonths } = data;
+  const { total2026, overrideMonths, overrideMonthNumbers } = data;
   const paidCompleteMonths = completeMonthsForAmount(total2026);
   const paidRemainder = remainderForAmount(total2026);
-  // Covered months include the override credit, capped at a full year.
-  const coveredMonths = effectiveCoveredMonths(total2026, overrideMonths);
 
-  const isCredited = overrideMonths > 0;
+  // Months credited by the override but NOT covered by real money. These are
+  // the exact calendar months (e.g. NOV+DES), rendered distinctly so a waived
+  // month is never mistaken for cash received.
+  const creditedMonths = new Set(
+    overrideOnlyMonthNumbers(total2026, overrideMonthNumbers),
+  );
+
+  const isCredited = overrideMonths > 0 || overrideMonthNumbers.length > 0;
   const creditedLabel = data.overrideReason
     ? data.overrideReason.replace(/_/g, " ").toLowerCase()
     : "penyesuaian";
+  const creditedLabelList = Array.from(creditedMonths)
+    .sort((a, b) => a - b)
+    .map((m) => IPL_MONTH_LABELS_ID[m])
+    .join(", ");
 
   const getMonthButtonClass = (monthIndex: number) => {
+    // monthIndex is 0-based; month numbers are 1-based
+    const monthNumber = monthIndex + 1;
     if (monthIndex < paidCompleteMonths) {
       // Fully paid with real money
       return "bg-app-primary text-white border-2 border-app-primary";
@@ -88,7 +99,7 @@ export function HouseTransactionStatusCardVertical({
       // Partially paid with real money
       return "bg-app-primary-muted text-app-title border-2 border-app-primary-muted";
     }
-    if (monthIndex < coveredMonths) {
+    if (creditedMonths.has(monthNumber)) {
       // Covered by an override — visually distinct from real payment
       return "bg-amber-100 text-amber-800 border-2 border-dashed border-amber-400";
     }
@@ -96,6 +107,7 @@ export function HouseTransactionStatusCardVertical({
   };
 
   const monthTitle = (monthIndex: number) => {
+    const monthNumber = monthIndex + 1;
     const real = data.monthlyStatuses[monthIndex] ?? 0;
     if (monthIndex < paidCompleteMonths) {
       return `${monthLabels[monthIndex]}: ${formatRupiah(real)} (lunas)`;
@@ -103,7 +115,7 @@ export function HouseTransactionStatusCardVertical({
     if (monthIndex === paidCompleteMonths && paidRemainder > 0) {
       return `${monthLabels[monthIndex]}: ${formatRupiah(real)} (sebagian)`;
     }
-    if (monthIndex < coveredMonths) {
+    if (creditedMonths.has(monthNumber)) {
       return `${monthLabels[monthIndex]}: ditanggung penyesuaian (${creditedLabel})`;
     }
     return `${monthLabels[monthIndex]}: belum bayar`;
@@ -133,7 +145,7 @@ export function HouseTransactionStatusCardVertical({
                 <span className="material-symbols-outlined text-[11px] leading-none">
                   info
                 </span>
-                {overrideMonths} bln penyesuaian
+                {creditedLabelList || `${overrideMonths} bln`} penyesuaian
               </span>
             )}
           </div>

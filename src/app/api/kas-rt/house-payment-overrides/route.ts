@@ -8,7 +8,7 @@ import {
   DEFAULT_COMMUNITY_ID,
   ROLE_IDS_CAN_SUBMIT_KAS_RT,
 } from "@/lib/constants/seed-ids";
-import { IPL_MONTHS_PER_YEAR } from "@/lib/kas-rt-ipl";
+import { IPL_MONTHS_PER_YEAR, normalizeMonthNumbers } from "@/lib/kas-rt-ipl";
 
 /**
  * /api/kas-rt/house-payment-overrides
@@ -103,7 +103,7 @@ export async function GET(request: Request) {
     let query = supabase
       .from("house_payment_overrides")
       .select(
-        "id, house_id, year, credited_months, reason, notes, is_active, marked_at, revoked_at, houses!house_payment_overrides_house_id_fkey(name, blok_rumah), marked_by_user:users!house_payment_overrides_marked_by_fkey(full_name), revoked_by_user:users!house_payment_overrides_revoked_by_fkey(full_name)",
+        "id, house_id, year, credited_months, credited_month_numbers, reason, notes, is_active, marked_at, revoked_at, houses!house_payment_overrides_house_id_fkey(name, blok_rumah), marked_by_user:users!house_payment_overrides_marked_by_fkey(full_name), revoked_by_user:users!house_payment_overrides_revoked_by_fkey(full_name)",
       )
       .eq("tenant_id", DEFAULT_TENANT_ID)
       .eq("community_id", DEFAULT_COMMUNITY_ID)
@@ -132,6 +132,7 @@ export async function GET(request: Request) {
         houseName: house?.name ?? "",
         year: row.year,
         credited_months: row.credited_months,
+        credited_month_numbers: row.credited_month_numbers ?? [],
         reason: row.reason,
         notes: row.notes,
         is_active: row.is_active,
@@ -161,6 +162,7 @@ export async function POST(request: Request) {
       blok_rumah?: string;
       year?: number;
       credited_months?: number;
+      credited_month_numbers?: number[];
       reason?: string;
       notes?: string;
     };
@@ -170,17 +172,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Tahun tidak valid." }, { status: 400 });
     }
 
-    const creditedMonths = body.credited_months ?? IPL_MONTHS_PER_YEAR;
-    if (
-      !Number.isInteger(creditedMonths) ||
-      creditedMonths < 1 ||
-      creditedMonths > IPL_MONTHS_PER_YEAR
-    ) {
-      return NextResponse.json(
-        { message: `Jumlah bulan harus 1-${IPL_MONTHS_PER_YEAR}.` },
-        { status: 400 },
+    // ── Months: prefer an explicit calendar-month list ─────────────────────
+    // A count is January-anchored and cannot express "NOV + DES" or "up to
+    // October", so the UI sends the exact months. The count is derived from it
+    // and kept as a convenience/summary field.
+    const explicitMonths = normalizeMonthNumbers(body.credited_month_numbers);
+    const legacyCount = body.credited_months ?? IPL_MONTHS_PER_YEAR;
+
+    let creditedMonthNumbers: number[];
+    if (explicitMonths.length > 0) {
+      creditedMonthNumbers = explicitMonths;
+    } else {
+      if (
+        !Number.isInteger(legacyCount) ||
+        legacyCount < 1 ||
+        legacyCount > IPL_MONTHS_PER_YEAR
+      ) {
+        return NextResponse.json(
+          { message: `Jumlah bulan harus 1-${IPL_MONTHS_PER_YEAR}.` },
+          { status: 400 },
+        );
+      }
+      creditedMonthNumbers = Array.from(
+        { length: legacyCount },
+        (_, i) => i + 1,
       );
     }
+
+    const creditedMonths = creditedMonthNumbers.length;
 
     const reason = body.reason?.trim().toUpperCase() || "LAINNYA";
     if (!(ALLOWED_REASONS as readonly string[]).includes(reason)) {
@@ -287,12 +306,13 @@ export async function POST(request: Request) {
         house_id: houseId,
         year,
         credited_months: creditedMonths,
+        credited_month_numbers: creditedMonthNumbers,
         reason,
         notes,
         is_active: true,
         marked_by: session.userId,
       })
-      .select("id, house_id, year, credited_months, reason, notes, is_active, marked_at")
+      .select("id, house_id, year, credited_months, credited_month_numbers, reason, notes, is_active, marked_at")
       .single();
 
     if (insertError || !created) {
@@ -316,6 +336,7 @@ export async function POST(request: Request) {
           blokRumah,
           year,
           creditedMonths,
+          creditedMonthNumbers,
           reason,
           notes,
         },
@@ -331,6 +352,7 @@ export async function POST(request: Request) {
       blokRumah,
       year: created.year,
       credited_months: created.credited_months,
+      credited_month_numbers: created.credited_month_numbers ?? creditedMonthNumbers,
       reason: created.reason,
       notes: created.notes,
       is_active: created.is_active,

@@ -1184,6 +1184,33 @@ COMMENT ON TABLE house_payment_overrides IS
   'Credits monthly IPL installments to a house WITHOUT creating a kas_rt_transaction. Raises the paid/lunas count and fills months visually; never changes any money total. Revoke is soft (is_active=false + revoked_at) to preserve audit history.';
 `.trim();
 
+export const OVERRIDE_MONTH_NUMBERS_SQL = `
+-- Explicit calendar months for house payment overrides.
+-- credited_months only expresses a COUNT and the card fills months from
+-- January, which cannot express "NOV + DES" or "up to October".
+ALTER TABLE house_payment_overrides
+  ADD COLUMN IF NOT EXISTS credited_month_numbers SMALLINT[];
+
+UPDATE house_payment_overrides
+   SET credited_month_numbers = (
+         SELECT array_agg(m ORDER BY m)
+           FROM generate_series(1, LEAST(GREATEST(credited_months, 1), 12)) AS m
+       )
+ WHERE credited_month_numbers IS NULL;
+
+ALTER TABLE house_payment_overrides
+  DROP CONSTRAINT IF EXISTS house_payment_overrides_credited_month_numbers_check;
+ALTER TABLE house_payment_overrides
+  ADD CONSTRAINT house_payment_overrides_credited_month_numbers_check
+  CHECK (
+    credited_month_numbers IS NULL
+    OR (
+      array_length(credited_month_numbers, 1) BETWEEN 1 AND 12
+      AND credited_month_numbers <@ ARRAY[1,2,3,4,5,6,7,8,9,10,11,12]::smallint[]
+    )
+  );
+`;
+
 export const MIGRATION_PHASES: MigrationPhase[] = [
   {
     id: 1,
@@ -1272,5 +1299,14 @@ export const MIGRATION_PHASES: MigrationPhase[] = [
     description:
       "Membuat tabel house_payment_overrides: menandai rumah lunas (kredit bulan) tanpa membuat transaksi kas",
     steps: [{ id: "house-payment-overrides", sql: HOUSE_PAYMENT_OVERRIDES_SQL }],
+  },
+  {
+    id: 14,
+    label: "Bulan Penyesuaian Eksplisit",
+    description:
+      "Menambah kolom credited_month_numbers: penyesuaian menamai bulan kalender persis (mis. NOV+DES), bukan hanya jumlah bulan",
+    steps: [
+      { id: "override-month-numbers", sql: OVERRIDE_MONTH_NUMBERS_SQL },
+    ],
   },
 ];

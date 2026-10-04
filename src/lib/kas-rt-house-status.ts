@@ -21,7 +21,8 @@ import {
 import {
   IPL_MONTHS_PER_YEAR,
   effectiveCoveredMonths,
-  isHouseSettled,
+  isSettledByMonths,
+  normalizeMonthNumbers,
 } from "@/lib/kas-rt-ipl";
 import type { HouseTransactionStatus } from "@/types/kas-rt";
 
@@ -76,7 +77,7 @@ export async function fetchHouseStatusesWithOverrides(
       .in("reference", blokList),
     supabase
       .from("house_payment_overrides")
-      .select("id, house_id, credited_months, reason, notes")
+      .select("id, house_id, credited_months, credited_month_numbers, reason, notes")
       .eq("tenant_id", tenantId)
       .eq("community_id", communityId)
       .eq("year", year)
@@ -95,15 +96,29 @@ export async function fetchHouseStatusesWithOverrides(
     {
       id: string;
       credited_months: number;
+      credited_month_numbers: number[];
       reason: string | null;
       notes: string | null;
     }
   >();
   if (!overrideResult.error) {
     for (const row of overrideResult.data ?? []) {
+      const months = normalizeMonthNumbers(
+        (row as { credited_month_numbers?: number[] | null })
+          .credited_month_numbers ?? null,
+      );
       overrideByHouse.set(row.house_id, {
         id: row.id,
         credited_months: Number(row.credited_months ?? 0),
+        // Fall back to the January-anchored count for rows written before the
+        // explicit-month column existed.
+        credited_month_numbers:
+          months.length > 0
+            ? months
+            : Array.from(
+                { length: Math.min(Number(row.credited_months ?? 0), IPL_MONTHS_PER_YEAR) },
+                (_, i) => i + 1,
+              ),
         reason: row.reason ?? null,
         notes: row.notes ?? null,
       });
@@ -125,6 +140,7 @@ export async function fetchHouseStatusesWithOverrides(
     if (!h.blok_rumah) continue;
     const override = overrideByHouse.get(h.id);
     const overrideMonths = override?.credited_months ?? 0;
+    const overrideMonthNumbers = override?.credited_month_numbers ?? [];
 
     houseMap.set(h.blok_rumah, {
       blokRumah: h.blok_rumah,
@@ -133,7 +149,8 @@ export async function fetchHouseStatusesWithOverrides(
       total2026: 0,
       monthlyStatuses: Array(IPL_MONTHS_PER_YEAR).fill(0),
       overrideMonths,
-      isSettled: isHouseSettled(0, overrideMonths),
+      overrideMonthNumbers,
+      isSettled: isSettledByMonths(0, overrideMonthNumbers),
       overrideReason: override?.reason ?? null,
       overrideNotes: override?.notes ?? null,
       overrideId: override?.id ?? null,
@@ -162,7 +179,7 @@ export async function fetchHouseStatusesWithOverrides(
     void _houseId;
     statuses.push({
       ...rest,
-      isSettled: isHouseSettled(rest.total2026, rest.overrideMonths),
+      isSettled: isSettledByMonths(rest.total2026, rest.overrideMonthNumbers),
     });
   }
 

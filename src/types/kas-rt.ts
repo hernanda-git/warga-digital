@@ -208,6 +208,11 @@ export interface HouseTransactionStatus {
    * These raise the "Lunas" count and fill months visually, but never add money.
    */
   overrideMonths: number;
+  /**
+   * Exact calendar months (1=Jan..12=Dec) the active override credits.
+   * Supersedes the January-anchored interpretation of `overrideMonths`.
+   */
+  overrideMonthNumbers: number[];
   /** True when real money + override credit covers the full year. */
   isSettled: boolean;
   /** Short reason label from the active override, e.g. PEMBEBASAN. */
@@ -229,6 +234,8 @@ export interface HousePaymentOverride {
   houseName: string;
   year: number;
   credited_months: number;
+  /** Exact calendar months (1..12) this override credits. */
+  credited_month_numbers: number[];
   reason: string | null;
   notes: string | null;
   is_active: boolean;

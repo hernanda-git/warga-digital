@@ -8,7 +8,7 @@ import {
   DEFAULT_TENANT_ID,
   DEFAULT_COMMUNITY_ID,
 } from "@/lib/constants/seed-ids";
-import { IPL_MONTHS_PER_YEAR } from "@/lib/kas-rt-ipl";
+import { IPL_MONTHS_PER_YEAR, normalizeMonthNumbers } from "@/lib/kas-rt-ipl";
 import type { KasRtSummaryResponse } from "@/types/kas-rt";
 
 function toDateInputValue(date: Date): string {
@@ -269,14 +269,22 @@ export async function fetchKasRtSummaryData({
   if (!isFutureYear) {
     const { data: overrideRows } = await supabase
       .from("house_payment_overrides")
-      .select("credited_months, houses!house_payment_overrides_house_id_fkey(blok_rumah)")
+      .select("credited_months, credited_month_numbers, houses!house_payment_overrides_house_id_fkey(blok_rumah)")
       .eq("tenant_id", tenantId)
       .eq("community_id", communityId)
       .eq("year", targetYear)
       .eq("is_active", true);
 
     for (const row of overrideRows ?? []) {
-      if (Number(row.credited_months ?? 0) < IPL_MONTHS_PER_YEAR) continue;
+      const months = normalizeMonthNumbers(
+        (row as { credited_month_numbers?: number[] | null })
+          .credited_month_numbers ?? null,
+      );
+      const covered =
+        months.length > 0
+          ? months.length
+          : Number(row.credited_months ?? 0);
+      if (covered < IPL_MONTHS_PER_YEAR) continue;
       const house = Array.isArray(row.houses) ? row.houses[0] : row.houses;
       const blok = house?.blok_rumah?.trim();
       if (blok) overridePaidBlocks.add(blok);

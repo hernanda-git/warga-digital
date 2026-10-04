@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeftIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import { HouseTransactionStatusCardVertical } from "@/components/kas-rt";
-import { IPL_ANNUAL_TARGET, IPL_MONTHS_PER_YEAR } from "@/lib/kas-rt-ipl";
+import { IPL_ANNUAL_TARGET, IPL_MONTHS_PER_YEAR, coveredMonthNumbers, IPL_MONTH_LABELS_ID } from "@/lib/kas-rt-ipl";
 import type { HouseTransactionStatus } from "@/types/kas-rt";
 
 interface HouseStatusClientProps {
@@ -39,9 +39,7 @@ export default function HouseStatusClient({
   const [mode, setMode] = useState<"mark" | "revoke">("mark");
   const [reason, setReason] = useState("PEMBEBASAN");
   const [notes, setNotes] = useState("");
-  const [creditedMonths, setCreditedMonths] = useState(
-    String(IPL_MONTHS_PER_YEAR),
-  );
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -65,7 +63,16 @@ export default function HouseStatusClient({
     setMode("mark");
     setReason("PEMBEBASAN");
     setNotes("");
-    setCreditedMonths(String(IPL_MONTHS_PER_YEAR));
+    // Default to the months that are still uncovered, so the common case
+    // (settle the rest of the year) is one click.
+    const covered = new Set(
+      coveredMonthNumbers(house.total2026, house.overrideMonthNumbers),
+    );
+    setSelectedMonths(
+      Array.from({ length: IPL_MONTHS_PER_YEAR }, (_, i) => i + 1).filter(
+        (m) => !covered.has(m),
+      ),
+    );
     setFormError("");
   }, []);
 
@@ -73,6 +80,14 @@ export default function HouseStatusClient({
     setDialogTarget(house);
     setMode("revoke");
     setFormError("");
+  }, []);
+
+  const toggleMonth = useCallback((month: number) => {
+    setSelectedMonths((prev) =>
+      prev.includes(month)
+        ? prev.filter((m) => m !== month)
+        : [...prev, month].sort((a, b) => a - b),
+    );
   }, []);
 
   const closeDialog = useCallback(() => {
@@ -84,9 +99,8 @@ export default function HouseStatusClient({
     if (!dialogTarget) return;
     setFormError("");
 
-    const months = parseInt(creditedMonths, 10);
-    if (!Number.isFinite(months) || months < 1 || months > IPL_MONTHS_PER_YEAR) {
-      setFormError(`Jumlah bulan harus 1-${IPL_MONTHS_PER_YEAR}.`);
+    if (selectedMonths.length === 0) {
+      setFormError("Pilih minimal satu bulan yang ditanggung.");
       return;
     }
     if (!notes.trim()) {
@@ -103,7 +117,7 @@ export default function HouseStatusClient({
           house_id: dialogTarget.houseId,
           blok_rumah: dialogTarget.blokRumah,
           year: new Date().getFullYear(),
-          credited_months: months,
+          credited_month_numbers: selectedMonths,
           reason,
           notes: notes.trim(),
         }),
@@ -120,7 +134,7 @@ export default function HouseStatusClient({
     } finally {
       setIsSubmitting(false);
     }
-  }, [dialogTarget, creditedMonths, notes, reason, closeDialog, refetch]);
+  }, [dialogTarget, selectedMonths, notes, reason, closeDialog, refetch]);
 
   const submitRevoke = useCallback(async () => {
     if (!dialogTarget?.overrideId) {
@@ -199,8 +213,9 @@ export default function HouseStatusClient({
 
   // Money stays real: overrides contribute nothing to "Total Dibayar".
   const totalPaid = uniqueStatuses.reduce((sum, s) => sum + s.total2026, 0);
-  const target = totalHouses * IPL_ANNUAL_TARGET;
-  const percentage = target > 0 ? Math.min(100, (totalPaid / target) * 100) : 0;
+  const annualTarget = totalHouses * IPL_ANNUAL_TARGET;
+  const percentage =
+    annualTarget > 0 ? Math.min(100, (totalPaid / annualTarget) * 100) : 0;
 
   const groupedByLetter = uniqueStatuses.reduce<
     Record<string, HouseTransactionStatus[]>
@@ -439,17 +454,40 @@ export default function HouseStatusClient({
                     <label className="block text-[11px] font-medium text-gray-600 mb-1">
                       Bulan yang ditanggung
                     </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={IPL_MONTHS_PER_YEAR}
-                      value={creditedMonths}
-                      onChange={(e) => setCreditedMonths(e.target.value)}
-                      className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <p className="mt-1 text-[10px] text-gray-400">
-                      1-{IPL_MONTHS_PER_YEAR}. Isi {IPL_MONTHS_PER_YEAR} untuk
-                      lunas setahun penuh.
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {IPL_MONTH_LABELS_ID.slice(1).map((label, i) => {
+                        const month = i + 1;
+                        const active = selectedMonths.includes(month);
+                        const byMoney = new Set(
+                          coveredMonthNumbers(
+                            dialogTarget.total2026,
+                            dialogTarget.overrideMonthNumbers,
+                          ),
+                        ).has(month);
+                        return (
+                          <button
+                            key={month}
+                            type="button"
+                            onClick={() => toggleMonth(month)}
+                            title={
+                              byMoney
+                                ? `${label}: sudah tercakup uang nyata`
+                                : `${label}: ${active ? "ditanggung" : "belum"}`
+                            }
+                            className={`rounded-lg px-1 py-1.5 text-[10px] font-bold uppercase transition ${
+                              active
+                                ? "bg-amber-400 text-amber-950 ring-2 ring-amber-500"
+                                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                            } ${byMoney ? "opacity-60" : ""}`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-1.5 text-[10px] text-gray-400">
+                      Pilih bulan yang ditanggung. Bulan yang sudah tercakup uang
+                      nyata tampil redup dan tidak perlu dipilih.
                     </p>
                   </div>
 

@@ -56,3 +56,90 @@ export function isHouseSettled(
 ): boolean {
   return effectiveCoveredMonths(realAmount, overrideMonths) >= IPL_MONTHS_PER_YEAR;
 }
+
+// ── Explicit calendar months ────────────────────────────────────────────────
+//
+// A count of months is January-anchored and cannot express "NOV + DES" or
+// "up to October". An override may therefore name the exact months it covers.
+
+/** Normalise a month list to sorted, unique, valid 1..12 values. */
+export function normalizeMonthNumbers(
+  months: readonly number[] | null | undefined,
+): number[] {
+  if (!months?.length) return [];
+  const clean = months
+    .map((m) => Number(m))
+    .filter((m) => Number.isInteger(m) && m >= 1 && m <= IPL_MONTHS_PER_YEAR);
+  return Array.from(new Set(clean)).sort((a, b) => a - b);
+}
+
+/**
+ * Months a house has covered, as explicit 1..12 numbers.
+ *
+ * Real money fills months sequentially from January (the card's existing
+ * rule), then the override's named months are added on top — so a house can be
+ * credited for NOV+DES while its money only covers part of the year.
+ */
+export function coveredMonthNumbers(
+  realAmount: number,
+  overrideMonthNumbers: readonly number[] | null | undefined,
+): number[] {
+  const fromMoney =
+    completeMonthsForAmount(realAmount) +
+    (remainderForAmount(realAmount) > 0 ? 1 : 0);
+  const moneyMonths = Array.from(
+    { length: Math.min(fromMoney, IPL_MONTHS_PER_YEAR) },
+    (_, i) => i + 1,
+  );
+  return normalizeMonthNumbers([
+    ...moneyMonths,
+    ...normalizeMonthNumbers(overrideMonthNumbers),
+  ]);
+}
+
+/**
+ * Months covered by an override but NOT by real money — the ones the UI must
+ * render as "ditanggung penyesuaian" rather than as a payment.
+ */
+export function overrideOnlyMonthNumbers(
+  realAmount: number,
+  overrideMonthNumbers: readonly number[] | null | undefined,
+): number[] {
+  const fromMoney =
+    completeMonthsForAmount(realAmount) +
+    (remainderForAmount(realAmount) > 0 ? 1 : 0);
+  const moneySet = new Set(
+    Array.from({ length: Math.min(fromMoney, IPL_MONTHS_PER_YEAR) }, (_, i) => i + 1),
+  );
+  return normalizeMonthNumbers(overrideMonthNumbers).filter(
+    (m) => !moneySet.has(m),
+  );
+}
+
+/** True when the override (money + named months) covers the whole year. */
+export function isSettledByMonths(
+  realAmount: number,
+  overrideMonthNumbers: readonly number[] | null | undefined,
+): boolean {
+  return (
+    coveredMonthNumbers(realAmount, overrideMonthNumbers).length >=
+    IPL_MONTHS_PER_YEAR
+  );
+}
+
+/** Indonesian short month labels, indexed 1..12 (index 0 unused). */
+export const IPL_MONTH_LABELS_ID = [
+  "",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mei",
+  "Jun",
+  "Jul",
+  "Agu",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Des",
+] as const;
