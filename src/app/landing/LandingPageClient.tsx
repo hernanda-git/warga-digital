@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
@@ -9,8 +9,14 @@ import { FeatureGrid } from "@/components/landing/FeatureGrid";
 import { ResidentPostsSection } from "@/components/landing/ResidentPostsSection";
 import { LandingSection } from "@/components/landing/LandingSection";
 import { EmptyState } from "@/components/landing/empty-states/EmptyState";
+import {
+  LandingArticleSkeleton,
+  LandingProductCardSkeleton,
+  LandingServiceCardSkeleton,
+} from "@/components/landing/skeletons";
 import { JasaCard } from "@/components/jasa/JasaCard";
 import { JualanCard } from "@/components/jualan/JualanCard";
+import { LandingDataProvider, useLandingData } from "./landing-data-context";
 
 // Detail modals are only useful after a card is tapped.
 const JasaDetailModal = dynamic(
@@ -39,21 +45,31 @@ import type {
 import type { JualanGoodsDetail } from "@/types/jualan";
 
 interface LandingPageClientProps {
-  headerProfile: HeaderProfile;
-  articles: ResidentPostItem[];
-  articlesError: string | null;
-  jualanGoods: JualanGoodsWithMedia[];
-  jasaServices: JasaServiceWithMedia[];
+  /**
+   * Streamed server content. The shell is rendered immediately; the data
+   * slot inside this slot arrives as soon as the server has it.
+   */
+  children?: ReactNode;
 }
 
-export default function LandingPageClient({
-  headerProfile,
-  articles,
-  articlesError,
-  jualanGoods,
-  jasaServices,
-}: LandingPageClientProps) {
+export default function LandingPageClient({ children }: LandingPageClientProps) {
+  return (
+    <LandingDataProvider>
+      <LandingPageClientInner>{children}</LandingPageClientInner>
+    </LandingDataProvider>
+  );
+}
+
+function LandingPageClientInner({ children }: LandingPageClientProps) {
   const router = useRouter();
+  const { data } = useLandingData();
+  const isDataReady = !!data;
+
+  const headerProfile = data?.headerProfile;
+  const articles = data?.articles ?? [];
+  const articlesError = data?.articlesError ?? null;
+  const jualanGoods = data?.jualanGoods ?? [];
+  const jasaServices = data?.jasaServices ?? [];
 
   // ── Modals ────────────────────────────────────────────────────────────────
   const [viewingService, setViewingService] =
@@ -126,9 +142,10 @@ export default function LandingPageClient({
     <div className="flex h-100 min-h-0 flex-col bg-app-surface-alt">
       {/* Header */}
       <LandingHeader
-        name={headerProfile.name}
-        profilePictureUrl={headerProfile.profilePictureUrl}
-        blokRumah={headerProfile.blokRumah}
+        name={headerProfile?.name}
+        profilePictureUrl={headerProfile?.profilePictureUrl}
+        blokRumah={headerProfile?.blokRumah}
+        isLoading={!isDataReady}
         notificationCount={notificationCount}
         onNotificationPress={() => router.push(ROUTES.NOTIFICATIONS)}
       />
@@ -145,7 +162,9 @@ export default function LandingPageClient({
           viewAllHref="/artikel"
           className="lg:border-t lg:border-[var(--color-input-border)]"
         >
-          {hasArticlesContent ? (
+          {!isDataReady ? (
+            <LandingArticleSkeleton count={3} />
+          ) : hasArticlesContent ? (
             <ResidentPostsSection
               title=""
               items={articles}
@@ -174,7 +193,9 @@ export default function LandingPageClient({
           viewAllHref={ROUTES.JUALAN}
           className="lg:border-t lg:border-[var(--color-input-border)]"
         >
-          {hasJualanContent ? (
+          {!isDataReady ? (
+            <LandingProductCardSkeleton count={5} />
+          ) : hasJualanContent ? (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {jualanGoods.map((goods) => (
                 <JualanCard
@@ -200,7 +221,9 @@ export default function LandingPageClient({
           viewAllHref="/jasa"
           className="lg:border-t lg:border-[var(--color-input-border)]"
         >
-          {hasDirectJasaContent ? (
+          {!isDataReady ? (
+            <LandingServiceCardSkeleton count={4} />
+          ) : hasDirectJasaContent ? (
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:gap-4 xl:grid-cols-3 2xl:grid-cols-4">
               {jasaServices.map((service) => (
                 <JasaCard
@@ -249,6 +272,10 @@ export default function LandingPageClient({
         }}
         goods={viewingGoods}
       />
+
+      {/* Streamed server data. Renders nothing; it only publishes the
+          payload into the page once the server has it. */}
+      {children}
     </div>
   );
 }

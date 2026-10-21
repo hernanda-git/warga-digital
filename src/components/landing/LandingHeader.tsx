@@ -12,14 +12,20 @@ interface LandingHeaderProps {
   blokRumah?: string;
   /** Number of unread notifications; if > 0, shows badge */
   notificationCount?: number;
+  /**
+   * True while the profile is still streaming in. The name and the blok
+   * label are replaced by placeholders; the bell stays usable.
+   */
+  isLoading?: boolean;
   onNotificationPress?: () => void;
 }
 
 export function LandingHeader({
   name = "Warga",
   profilePictureUrl,
-  blokRumah = "Blok —",
+  blokRumah = "Blok ?",
   notificationCount = 0,
+  isLoading = false,
   onNotificationPress,
 }: LandingHeaderProps) {
   const showBadge = notificationCount > 0;
@@ -28,19 +34,32 @@ export function LandingHeader({
       {/* Mobile header (unchanged) */}
       <header className="flex shrink-0 items-center justify-between gap-3 bg-app-surface px-4 py-3 shadow-sm lg:hidden">
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <Avatar
-            name={name}
-            src={profilePictureUrl}
-            size={40}
-            className="shrink-0"
-          />
+          {isLoading ? (
+            <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-app-surface-alt" />
+          ) : (
+            <Avatar
+              name={name}
+              src={profilePictureUrl}
+              size={40}
+              className="shrink-0"
+            />
+          )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-bold text-app-title">
-              {name}
-            </p>
-            <p className="truncate text-xs text-app-body-muted">
-              {blokRumah}
-            </p>
+            {isLoading ? (
+              <div className="space-y-2">
+                <div className="h-4 w-28 animate-pulse rounded bg-app-surface-alt" />
+                <div className="h-3 w-20 animate-pulse rounded bg-app-surface-alt" />
+              </div>
+            ) : (
+              <>
+                <p className="truncate text-base font-bold text-app-title">
+                  {name}
+                </p>
+                <p className="truncate text-xs text-app-body-muted">
+                  {blokRumah}
+                </p>
+              </>
+            )}
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
@@ -78,17 +97,30 @@ export function LandingHeader({
         />
         <div className="relative z-10 flex w-full items-center justify-between">
           <div className="flex items-center gap-4">
-            <Avatar
-              name={name}
-              src={profilePictureUrl}
-              size={56}
-              className="shrink-0 ring-4 ring-white/25"
-            />
+            {isLoading ? (
+              <div className="h-14 w-14 shrink-0 animate-pulse rounded-full bg-white/20" />
+            ) : (
+              <Avatar
+                name={name}
+                src={profilePictureUrl}
+                size={56}
+                className="shrink-0 ring-4 ring-white/25"
+              />
+            )}
             <div>
-              <p className="text-xl font-extrabold text-white">
-                Selamat datang, {name}
-              </p>
-              <p className="text-sm text-white/70">{blokRumah}</p>
+              {isLoading ? (
+                <div className="space-y-2">
+                  <div className="h-5 w-48 animate-pulse rounded bg-white/25" />
+                  <div className="h-3.5 w-28 animate-pulse rounded bg-white/20" />
+                </div>
+              ) : (
+                <>
+                  <p className="text-xl font-extrabold text-white">
+                    Selamat datang, {name}
+                  </p>
+                  <p className="text-sm text-white/70">{blokRumah}</p>
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">

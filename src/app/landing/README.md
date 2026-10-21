@@ -4,6 +4,33 @@
 
 The landing page has been completely refactored following **SOLID principles** and **KISS philosophy**. The monolithic 380-line component has been transformed into a clean, modular architecture with clear separation of concerns.
 
+## ⚡ Current data flow (streamed)
+
+The page is painted before its data arrives:
+
+```
+page.tsx (Server)
+    │  await requireAuth()          → session only
+    ▼
+LandingPageClient (Client shell)    → header, feature grid, section frames
+    │  <Suspense>
+    ▼
+LandingDataSlot (Server)            → profile + articles + jualan + jasa, in parallel
+    │
+    ▼
+LandingDataBridge (Client)          → publishes the payload into the shell
+```
+
+- `data.ts` is the server data layer (Supabase queries, no HTTP hop).
+- `landing-data-context.tsx` holds the streamed payload; the shell renders
+  placeholders (`components/landing/skeletons.tsx`) until it arrives.
+- The data is never fetched twice: the server loads it once and streams it
+  into the shell.
+
+> The hook/service layer described further down (`hooks/landing`,
+> `services/landing`) is the historical client-fetch implementation. It is
+> kept for reference but is no longer used by the page.
+
 ## 📁 File Structure
 
 ```

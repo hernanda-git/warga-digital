@@ -1,18 +1,17 @@
 /**
  * Landing Page (Server Component)
  *
- * Fetches all landing page data server-side and delegates
- * interactivity to the client component.
+ * The page shell is sent to the browser as soon as the session is known.
+ * The content (profile, articles, jualan, jasa) is loaded by a streamed
+ * server component and fills the page in when it arrives, so the header,
+ * the feature grid and the section frames are usable immediately.
  */
 
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import {
-  requireAuth,
-  fetchLandingProfile,
-  fetchLandingArticles,
-  fetchLandingJualan,
-  fetchLandingJasa,
-} from "./data";
+
+import { requireAuth } from "./data";
+import { LandingDataSlot } from "./LandingDataSlot";
 import LandingPageClient from "./LandingPageClient";
 
 export const metadata: Metadata = {
@@ -44,21 +43,11 @@ export const metadata: Metadata = {
 export default async function LandingPage() {
   const session = await requireAuth();
 
-  const [{ headerProfile }, { articles, error: articlesError }, jualanGoods, jasaServices] =
-    await Promise.all([
-      fetchLandingProfile(session.userId),
-      fetchLandingArticles(),
-      fetchLandingJualan(session.userId),
-      fetchLandingJasa(session.userId),
-    ]);
-
   return (
-    <LandingPageClient
-      headerProfile={headerProfile}
-      articles={articles}
-      articlesError={articlesError}
-      jualanGoods={jualanGoods}
-      jasaServices={jasaServices}
-    />
+    <LandingPageClient>
+      <Suspense fallback={null}>
+        <LandingDataSlot userId={session.userId} />
+      </Suspense>
+    </LandingPageClient>
   );
 }
