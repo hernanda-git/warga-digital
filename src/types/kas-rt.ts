@@ -20,15 +20,6 @@ export interface KasRtCategory {
   sort_order: number;
 }
 
-export interface CategoryDetail {
-  id: string;
-  category_id: string;
-  name: string;
-  rate_per_warga: number;
-  sort_order: number;
-  is_active: boolean;
-}
-
 export interface TransactionDetail {
   id: string;
   name: string;
@@ -65,19 +56,6 @@ export interface KasRtFormState {
   reference: string;
   title: string;
   details: string;
-}
-
-export interface ExpenseBreakdownItem {
-  id: string;
-  name: string;
-  rate: number;
-  amount: number;
-}
-
-export interface ExpenseBreakdown {
-  items: ExpenseBreakdownItem[];
-  total: number;
-  jumlahWarga: number;
 }
 
 export interface KasRtTotals {

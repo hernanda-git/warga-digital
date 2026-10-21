@@ -4,7 +4,7 @@
 **Warga Digital** — Next.js 15 App Router + React 18 + TypeScript 5 + Tailwind CSS 3 + Supabase (cloud: `gwmxxfqoxjvrfwxhhpin.supabase.co`). Deployed on Vercel. Path alias `@/*` → `./src/*`.
 
 ## Module overview
-Kas RT (Kas Rukun Tetangga) = neighborhood finance tracking. Tracks income (IPL, etc.) and expense (pengeluaran) transactions per house block, with auto-calculation from per-warga rates, attachment uploads (R2/Supabase), asset linking, soft-delete, notifications, summary charts, and CSV/Excel/PDF export.
+Kas RT (Kas Rukun Tetangga) = neighborhood finance tracking. Tracks income (IPL, etc.) and expense (pengeluaran) transactions per house block, with attachment uploads (R2/Supabase), asset linking, soft-delete, notifications, summary charts, and CSV/Excel/PDF export.
 
 ## Architecture & data flow
 
@@ -18,10 +18,10 @@ Kas RT (Kas Rukun Tetangga) = neighborhood finance tracking. Tracks income (IPL,
   - `useKasRtNewTransaction` hook (form state + submission)
   - Renders: `KasRtHero`, `KasRtFilterBar`, `KasRtTransactionList`, `KasRtNewTransactionSheet`, plus filter/download/delete/duplicate dialogs
 - `src/lib/hooks/use-kas-rt-transactions.ts` — Transaction data hook: infinite scroll (10/page), server-side filtering (type/category/block/date), pull-to-refresh, permissions check.
-- `src/lib/hooks/use-kas-rt-new-transaction.ts` — Form hook: open/close, type/category selection, auto-calculate expenses, duplicate detection, submission via `apiFetch`.
+- `src/lib/hooks/use-kas-rt-new-transaction.ts` — Form hook: open/close, type/category selection, duplicate detection, submission via `apiFetch`. The amount is always typed manually (the per-warga auto-calculate was removed).
 
 ### Components
-- `src/components/kas-rt/KasRtNewTransactionSheet.tsx` — Bottom-sheet form. Steps: [type → category] → [amount, date, block/auto-calc] → [title, details, asset, attachments]. Expense requires attachment; auto-calculate uses category details.
+- `src/components/kas-rt/KasRtNewTransactionSheet.tsx` — Bottom-sheet form. Steps: [type → category] → [amount, date, block] → [title, details, asset, attachments]. Expense requires attachment; the amount is always entered manually.
 - `src/components/kas-rt/KasRtHero.tsx` — Hero with balance, monthly stats, "Catat" button, refresh/download/house-status/summary buttons. Props: `communityName, now, totals, canSubmitTransaction, isRefreshing, onRefresh, onOpenDownload, onOpenForm, onOpenSummary, onOpenHouseStatus`.
 - `src/components/kas-rt/KasRtTransactionCard.tsx` — Individual transaction card with attach​ment images/docs, expense breakdown details, edit/delete buttons.
 - `src/components/kas-rt/KasRtTransactionList.tsx` — Virtualized list with pull-to-refresh, skeleton, infinite scroll.
@@ -29,8 +29,8 @@ Kas RT (Kas Rukun Tetangga) = neighborhood finance tracking. Tracks income (IPL,
 - `src/components/kas-rt/summary/` — Summary page components (chart, category breakdown, IPL progress, quick stats).
 
 ## Key hooks & utilities
-- `src/lib/hooks/use-kas-rt-new-transaction.ts` — Returns: `isOpen, isEditMode, editingTxId, form, formError, isSubmitting, isIncomeForm, isExpenseForm, visibleCategories, isFormValid, placeholderTemplate, categoryDetails, defaultJumlahWarga, jumlahWarga, useAutoCalculate, expenseBreakdown, fileInputRef, attachmentLabel, hasAttachment, assetId, assetsList, duplicateWarning, openForm, openEditForm, closeForm, setType, setCategoryId, setAmount, setDate, setReference, setTitle, setDetails, handleSubmit, handleDeleteTx, reApplyTemplatesWithBlok, resetFormState`.
-- `src/lib/kas-rt-utils.ts` — `formatRupiah, formatRupiahCompact, formatAmountDisplay, parseAmountInput, formatDateIndonesian, getMonthNameIndonesian, applyTemplate, getDefaultKasRtForm, calculateExpenseBreakdown, findDuplicateTransactions, toDateInputValue`.
+- `src/lib/hooks/use-kas-rt-new-transaction.ts` — Returns: `isOpen, isEditMode, editingTxId, form, formError, isSubmitting, isIncomeForm, isExpenseForm, visibleCategories, isFormValid, placeholderTemplate, fileInputRef, attachmentLabel, hasAttachment, assetId, assetsList, duplicateWarning, openForm, openEditForm, closeForm, setType, setCategoryId, setAmount, setDate, setReference, setTitle, setDetails, handleSubmit, handleDeleteTx, reApplyTemplatesWithBlok, resetFormState`.
+- `src/lib/kas-rt-utils.ts` — `formatRupiah, formatRupiahCompact, formatAmountDisplay, parseAmountInput, formatDateIndonesian, getMonthNameIndonesian, applyTemplate, getDefaultKasRtForm, findDuplicateTransactions, toDateInputValue`.
 - `src/lib/kas-rt-constants.ts` — `DEFAULT_INCOME_AMOUNT=120000`, `TRANSACTION_TYPE_OPTIONS = [{value:"income",label:"➕ Pemasukan"},{value:"expense",label:"➖ Pengeluaran"}]`, `FILTER_TYPE_OPTIONS`, `NO_FILE_SELECTED_LABEL`.
 - `src/lib/api-client.ts` — `apiFetch` wrapper (dispatches `auth:unauthorized` on 401; returns original Response for error reading).
 - `src/lib/supabase/server.ts` — `createServerClient()` using `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (service role JWT, bypasses RLS).
@@ -56,8 +56,8 @@ Kas RT (Kas Rukun Tetangga) = neighborhood finance tracking. Tracks income (IPL,
 | GET | `/api/asset-rt?limit=200` | Assets list (for expense asset linking) |
 
 ## POST body fields (`/api/kas-rt/transactions`)
-Multipart form-data: `title, amount, type, date, reference, details, category, asset_id, transaction_details (JSON), attachments (File[])`.
-- Expense: attachment required; `reference` not used; `transaction_details` enables auto-calculate (rate_per_warga × jumlah_warga).
+Multipart form-data: `title, amount, type, date, reference, details, category, asset_id, transaction_details (JSON, optional), attachments (File[])`.
+- Expense: attachment required; `reference` not used; the amount is entered manually and no `transaction_details` rows are written anymore. Rows stored by older transactions are kept and still shown as "Rincian" in the transaction card.
 - Income: `reference` = house block (e.g., "N2"); no `transaction_details`.
 - Both: creates notification via `notifyAllActiveUsers` with `entity_table: "kas_rt_transactions"`.
 

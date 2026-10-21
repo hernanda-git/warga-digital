@@ -156,28 +156,6 @@ export function clearFocusRing(el: HTMLElement): void {
 }
 
 /**
- * Calculate expense breakdown from category details
- */
-export function calculateExpenseBreakdown(
-  categoryDetails: { id: string; name: string; rate_per_warga: number }[],
-  jumlahWarga: number,
-): {
-  items: { id: string; name: string; rate: number; amount: number }[];
-  total: number;
-} {
-  const items = categoryDetails.map((detail) => ({
-    id: detail.id,
-    name: detail.name,
-    rate: detail.rate_per_warga,
-    amount: detail.rate_per_warga * jumlahWarga,
-  }));
-
-  const total = items.reduce((sum, item) => sum + item.amount, 0);
-
-  return { items, total };
-}
-
-/**
  * Check if a transaction might be a duplicate
  * For expense transactions (no reference required), skip reference matching
  */

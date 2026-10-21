@@ -281,12 +281,7 @@ RT fund management page with transaction list, filters, and forms for income/exp
 **Amount Input**
 - Large number input
 - Currency format
-- Auto-calculate toggle for collective expenses
-
-**Auto-Calculate Mode**
-- Shows "Jumlah Warga" field
-- Calculates: amount = categoryPrice × jumlahWarga
-- Shows breakdown
+- Always entered manually (the auto-calculate mode was removed)
 
 **Note (optional)**
 - Textarea

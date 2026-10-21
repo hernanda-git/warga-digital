@@ -8,7 +8,6 @@ export { KasRtFilterSheet } from "./KasRtFilterSheet";
 export { KasRtDownloadSheet } from "./KasRtDownloadSheet";
 export { KasRtTransactionCard } from "./KasRtTransactionCard";
 export { KasRtTransactionList } from "./KasRtTransactionList";
-export { KasRtTransactionForm } from "./KasRtTransactionForm";
 export { KasRtNewTransactionSheet } from "./KasRtNewTransactionSheet";
 export { KasRtDeleteConfirmDialog } from "./KasRtDeleteConfirmDialog";
 export { KasRtDuplicateWarningDialog } from "./KasRtDuplicateWarningDialog";
