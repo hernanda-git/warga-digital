@@ -34,18 +34,29 @@ export async function fetchLandingProfile(userId: string): Promise<LandingProfil
 
   const { data: user } = await supabase
     .from("users")
-    .select("full_name, avatar_path")
+    .select(
+      `
+      full_name,
+      avatar_path,
+      user_houses!user_houses_user_id_fkey (
+        is_primary,
+        houses!user_houses_house_id_fkey (blok_rumah)
+      )
+    `,
+    )
     .eq("id", userId)
     .single();
 
-  const { data: houseLink } = await supabase
-    .from("user_houses")
-    .select("houses(blok_rumah)")
-    .eq("user_id", userId)
-    .eq("is_primary", true)
-    .maybeSingle();
-
-  const blokRumah = (houseLink?.houses as any)?.blok_rumah ?? null;
+  const userHouses = (user?.user_houses ?? []) as unknown as Array<{
+    is_primary: boolean | null;
+    houses: { blok_rumah: string | null } | Array<{ blok_rumah: string | null }> | null;
+  }>;
+  const primaryHouse =
+    userHouses.find((uh) => uh.is_primary) ?? userHouses[0] ?? null;
+  const house = Array.isArray(primaryHouse?.houses)
+    ? primaryHouse.houses[0]
+    : primaryHouse?.houses;
+  const blokRumah = house?.blok_rumah ?? null;
 
   return {
     headerProfile: {
@@ -144,7 +155,23 @@ export async function fetchLandingJualan(userId: string): Promise<JualanGoodsWit
       .from("jualan_goods")
       .select(
         `
-        *,
+        id,
+        name,
+        summary,
+        base_price,
+        discount_percent,
+        discount_amount,
+        final_price,
+        currency_code,
+        unit_label,
+        stock_qty,
+        sold_count,
+        is_active,
+        is_featured,
+        wa_number,
+        owner_display_name,
+        owner_blok_rumah,
+        created_at,
         category:jualan_categories!inner (id, name, icon),
         media:jualan_item_media (id, url, alt_text, sort_order, is_primary),
         owner:users!jualan_goods_owner_user_id_fkey!inner (id, full_name, avatar_path)
@@ -193,7 +220,6 @@ export async function fetchLandingJualan(userId: string): Promise<JualanGoodsWit
 // ─── Jasa Services ──────────────────────────────────────────────────────────
 
 export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithMedia[]> {
-  console.log("[DEBUG jasa SSR] fetchLandingJasa — userId:", userId);
   try {
     const supabase = createServerClient();
 
@@ -203,10 +229,7 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
       .eq("user_id", userId)
       .single();
 
-    if (!tenantUser) {
-      console.log("[DEBUG jasa SSR] No tenant user found");
-      return [];
-    }
+    if (!tenantUser) return [];
 
     const { data: services, error } = await supabase
       .from("jasa_services")
@@ -221,7 +244,22 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
         wa_number,
         owner_user_id,
         category_id,
-        created_at
+        created_at,
+        owner:users!jasa_services_owner_user_id_fkey (
+          id,
+          full_name,
+          wa_number,
+          user_houses!user_houses_user_id_fkey (
+            is_primary,
+            houses!user_houses_house_id_fkey (blok_rumah)
+          )
+        ),
+        category:marketplace_categories!jasa_services_category_id_fkey (
+          id,
+          name,
+          icon
+        ),
+        media:jasa_service_media (service_id, url, is_primary)
       `,
       )
       .or(`is_available.eq.true,owner_user_id.eq.${userId}`)
@@ -229,73 +267,31 @@ export async function fetchLandingJasa(userId: string): Promise<JasaServiceWithM
       .order("created_at", { ascending: false })
       .range(0, 9);
 
-    console.log("[DEBUG jasa SSR] Services query — count:", services?.length ?? 0, "error:", error);
-    if (error || !services?.length) {
-      if (error)
-      console.log("[DEBUG jasa SSR] Services query error:", error);
-      return [];
-    }
+    if (error || !services?.length) return [];
 
-    const ownerIds = [...new Set(services.map((s) => s.owner_user_id))];
-    const { data: owners } = await supabase
-      .from("users")
-      .select(
-        `
-        id,
-        full_name,
-        wa_number,
-        user_houses!user_houses_user_id_fkey(
-          houses!inner(blok_rumah)
-        )
-      `,
-      )
-      .in("id", ownerIds)
-      .eq("user_houses.is_primary", true);
+    return (services as any[]).map((service) => {
+      const ownerHouses = (service.owner?.user_houses ?? []) as Array<{
+        is_primary: boolean | null;
+        houses: { blok_rumah: string | null } | null;
+      }>;
+      const primaryHouse =
+        ownerHouses.find((uh) => uh.is_primary) ?? ownerHouses[0] ?? null;
+      const media = (service.media ?? []) as Array<{
+        url: string | null;
+        is_primary: boolean | null;
+      }>;
+      const primaryMedia = media.find((m) => m.is_primary) ?? media[0] ?? null;
 
-    const ownerMap = new Map(
-      (owners || []).map((u: any) => {
-        const arr = u.user_houses as any[] || [];
-        const house = arr[0]?.houses;
-        return [u.id, { name: u.full_name?.trim() || "Unknown", blok: house?.blok_rumah ?? null, wa_number: u.wa_number || null }];
-      }),
-    );
-
-    const categoryIds = [...new Set(services.map((s) => s.category_id))];
-    const { data: categories } = await supabase
-      .from("marketplace_categories")
-      .select("id, name, icon")
-      .in("id", categoryIds);
-
-    const categoryMap = new Map(
-      (categories || []).map((c) => [c.id, { name: c.name, icon: c.icon }]),
-    );
-
-    const serviceIds = services.map((s) => s.id);
-    const { data: media } = await supabase
-      .from("jasa_service_media")
-      .select("service_id, url")
-      .in("service_id", serviceIds)
-      .eq("is_primary", true);
-
-    const mediaMap = new Map((media || []).map((m) => [m.service_id, m.url]));
-
-    const result = services.map((service) => {
-      const owner = ownerMap.get(service.owner_user_id);
-      const mapped = {
+      return {
         ...service,
-        owner_display_name: owner?.name?.trim() || "Unknown",
-        owner_blok_rumah: owner?.blok ?? null,
-        owner_wa_number: owner?.wa_number ?? null,
-        category_icon: categoryMap.get(service.category_id)?.icon || null,
-        primary_image_url: mediaMap.get(service.id) || null,
+        owner_display_name: service.owner?.full_name?.trim() || "Unknown",
+        owner_blok_rumah: primaryHouse?.houses?.blok_rumah ?? null,
+        owner_wa_number: service.owner?.wa_number ?? null,
+        category_icon: service.category?.icon ?? null,
+        primary_image_url: primaryMedia?.url ?? null,
       };
-      return mapped;
     });
-
-    console.log("[DEBUG jasa SSR] Final result count:", result.length);
-    return result;
-  } catch (err) {
-    console.log("[DEBUG jasa SSR] Catch error:", err);
+  } catch {
     return [];
   }
 }
