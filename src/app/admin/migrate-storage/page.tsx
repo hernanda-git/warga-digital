@@ -90,7 +90,7 @@ export default function AdminMigrateStoragePage() {
   async function checkAccess() {
     console.log("[MigrateStorage] Checking access...");
     try {
-      const res = await apiFetch("/api/profile");
+      const res = await apiFetch("/api/admin/me");
       if (!res.ok) throw new Error("Unauthorized");
       const body = await res.json();
       const data: ProfileData | undefined = body?.data ?? body;

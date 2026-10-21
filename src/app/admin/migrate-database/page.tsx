@@ -180,7 +180,7 @@ export default function AdminMigrateDatabasePage() {
 
   async function checkAccess() {
     try {
-      const res = await apiFetch("/api/profile");
+      const res = await apiFetch("/api/admin/me");
       if (!res.ok) throw new Error("Unauthorized");
       const body = await res.json();
       const data: ProfileData | undefined = body?.data ?? body;

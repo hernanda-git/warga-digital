@@ -63,7 +63,7 @@ export default function BrandingPage() {
 
     async function check() {
       try {
-        const res = await fetch("/api/profile");
+        const res = await apiFetch("/api/admin/me");
         if (!res.ok) {
           if (res.status === 401) {
             clearUser();

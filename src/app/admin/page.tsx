@@ -217,7 +217,7 @@ export default function AdminPage() {
     (async () => {
       setCheckingAccess(true);
       try {
-        const res = await apiFetch("/api/profile");
+        const res = await apiFetch("/api/admin/me");
         if (!res.ok) {
           if (res.status === 401) {
             clearUser();
@@ -252,7 +252,11 @@ export default function AdminPage() {
     setStatsError(null);
 
     try {
-      const res = await apiFetch("/api/admin/stats");
+      // A manual refresh must always hit the server, never the short-lived
+      // client cache used for regular visits.
+      const res = await apiFetch("/api/admin/stats", {
+        cache: isRefresh ? "no-store" : "default",
+      });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { error?: string };
         setStatsError(body.error ?? "Gagal memuat statistik");

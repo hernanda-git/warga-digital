@@ -955,7 +955,7 @@ export default function AdminArticlesPage() {
     (async () => {
       setCheckingAccess(true);
       try {
-        const res = await apiFetch("/api/profile");
+        const res = await apiFetch("/api/admin/me");
         if (!res.ok) {
           if (res.status === 401) {
             clearUser();
