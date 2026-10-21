@@ -69,26 +69,16 @@ export async function fetchKasRtPermissions(userId: string): Promise<{
     const supabase = createServerClient();
     const { data: tenantUser } = await supabase
       .from("tenant_users")
-      .select("id")
+      .select("id, tenant_user_roles!inner(role_id)")
       .eq("user_id", userId)
       .eq("tenant_id", DEFAULT_TENANT_ID)
       .eq("status", "ACTIVE")
-      .single();
+      .in("tenant_user_roles.role_id", ROLE_IDS_CAN_SUBMIT_KAS_RT)
+      .is("tenant_user_roles.revoked_at", null)
+      .limit(1)
+      .maybeSingle();
 
-    if (!tenantUser) return { canSubmitTransaction: false };
-
-    const { data: roles } = await supabase
-      .from("tenant_user_roles")
-      .select("role_id")
-      .eq("tenant_user_id", tenantUser.id)
-      .is("revoked_at", null);
-
-    const roleIds = (roles ?? []).map((r) => r.role_id);
-    const canSubmitTransaction = ROLE_IDS_CAN_SUBMIT_KAS_RT.some((id) =>
-      roleIds.includes(id),
-    );
-
-    return { canSubmitTransaction };
+    return { canSubmitTransaction: !!tenantUser };
   } catch {
     return { canSubmitTransaction: false };
   }
@@ -258,14 +248,6 @@ export async function fetchKasRtTransactions(
       countQuery = countQuery.lte("date", filters.endDate);
     }
 
-    const { count: totalCount, error: countError } = await countQuery;
-    if (countError) {
-      console.error(
-        "[kas-rt/data] fetchKasRtTransactions count error:",
-        countError,
-      );
-    }
-
     let query = supabase
       .from("kas_rt_transactions")
       .select(
@@ -295,7 +277,18 @@ export async function fetchKasRtTransactions(
       query = query.lte("date", filters.endDate);
     }
 
-    const { data: transactions, error } = await query;
+    const [
+      { count: totalCount, error: countError },
+      { data: transactions, error },
+    ] = await Promise.all([countQuery, query]);
+
+    if (countError) {
+      console.error(
+        "[kas-rt/data] fetchKasRtTransactions count error:",
+        countError,
+      );
+    }
+
     if (error) {
       console.error("[kas-rt/data] fetchKasRtTransactions query error:", error);
       return { transactions: [], total: 0 };
