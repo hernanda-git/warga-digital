@@ -24,6 +24,10 @@ import type {
 
 interface UseKasRtTransactionsOptions {
   now: Date;
+  /**
+   * Data produced on the server. It may arrive after the first render when
+   * the page streams it in (see `waitForInitialData`).
+   */
   initialData?: {
     transactions?: TransactionItem[];
     total?: number;
@@ -32,7 +36,18 @@ interface UseKasRtTransactionsOptions {
     summary?: KasRtTotals | null;
     filterState?: KasRtFilterState;
     blockNames?: string[];
-  };
+  } | null;
+  /**
+   * When true the hook never fetches on mount: the data is streamed in by
+   * the server and applied as soon as it arrives. Without this the hook
+   * would duplicate the server request.
+   */
+  waitForInitialData?: boolean;
+  /**
+   * Filter state to start with (usually the filters carried by the URL).
+   * It is applied immediately, independently of when the data arrives.
+   */
+  initialFilterState?: KasRtFilterState;
 }
 
 interface PaginationState {
@@ -99,6 +114,8 @@ function buildFilterKey(filters: KasRtFilterState): string {
 export function useKasRtTransactions({
   now,
   initialData,
+  waitForInitialData = false,
+  initialFilterState,
 }: UseKasRtTransactionsOptions): UseKasRtTransactionsReturn {
   const hasInitialData = !!initialData;
 
@@ -144,13 +161,14 @@ export function useKasRtTransactions({
 
   // Filter state — initialize from SSR if provided, otherwise use no filters
   const [filterState, setFilterState] = useState<KasRtFilterState>(
-    initialData?.filterState ?? {
-      typeFilter: "all",
-      categoryFilter: "",
-      blockFilter: "",
-      startDate: "",
-      endDate: "",
-    },
+    initialFilterState ??
+      initialData?.filterState ?? {
+        typeFilter: "all",
+        categoryFilter: "",
+        blockFilter: "",
+        startDate: "",
+        endDate: "",
+      },
   );
 
   // Refs for request cancellation and change tracking
@@ -166,6 +184,34 @@ export function useKasRtTransactions({
       isMountedRef.current = false;
     };
   }, []);
+
+  // ── Apply server data that arrives after the first render ───────────────
+  // With streamed rendering the page shell is painted first and the server
+  // data lands a moment later. The first payload wins; later refreshes are
+  // handled by loadTransactions/refreshData.
+  const appliedInitialDataRef = useRef(false);
+  useEffect(() => {
+    if (appliedInitialDataRef.current) return;
+    if (!initialData) return;
+    appliedInitialDataRef.current = true;
+
+    const incomingTransactions = initialData.transactions ?? [];
+    const incomingTotal = initialData.total ?? incomingTransactions.length;
+
+    setTransactions(incomingTransactions);
+    setCategories(initialData.categories ?? []);
+    setCanSubmitTransaction(initialData.canSubmitTransaction ?? false);
+    setSummary(initialData.summary ?? null);
+    setBlockNames(initialData.blockNames ?? []);
+    setPagination({
+      currentPage: 1,
+      pageSize: PAGE_SIZE,
+      hasMore: incomingTotal > incomingTransactions.length,
+      total: incomingTotal,
+    });
+    setIsPageLoading(false);
+    setIsTransactionsLoading(false);
+  }, [initialData]);
 
   // ── Cancel pending requests ────────────────────────────────────────────
   const cancelPendingRequests = useCallback(() => {
@@ -375,6 +421,11 @@ export function useKasRtTransactions({
 
   // ── Initial data loading ───────────────────────────────────────────────
   useEffect(() => {
+    if (waitForInitialData) {
+      // The server streams the data in; the apply effect above picks it up.
+      return;
+    }
+
     if (hasInitialData) {
       // SSR provided initial data; skip client-side initial fetch
       setIsPageLoading(false);
@@ -415,7 +466,7 @@ export function useKasRtTransactions({
     // Only depends on hasInitialData; uses hasInitializedRef to prevent re-runs
     // when no SSR data is provided.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasInitialData]);
+  }, [hasInitialData, waitForInitialData]);
 
   // ── Type filter change triggers immediate reload ───────────────────────
   // Type filter is in the top bar (tabs), not in the filter sheet

@@ -125,6 +125,18 @@ export function useKasRtNewTransaction({
     [categories, form.type],
   );
 
+  // The form can be opened before the categories have arrived (the page
+  // streams them in). Pick the first matching category as soon as they are
+  // available so the user does not have to choose one.
+  useEffect(() => {
+    if (!isOpen || form.categoryId || categories.length === 0) return;
+    const firstCategory = categories.find(
+      (c) => c.applies_to === form.type || c.applies_to === "both",
+    );
+    if (!firstCategory) return;
+    setForm((prev) => ({ ...prev, categoryId: firstCategory.id }));
+  }, [isOpen, form.categoryId, form.type, categories, setForm]);
+
   const isFormValid = useMemo(() => {
     const amountNumber = Number(form.amount);
     const referenceValid = isIncomeForm ? form.reference.trim().length > 0 : true;

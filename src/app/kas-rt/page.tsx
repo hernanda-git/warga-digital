@@ -1,18 +1,16 @@
 /**
  * Kas RT Page (Server Component)
  *
- * Fetches initial transaction data server-side and delegates
- * all interactivity to the client component.
+ * The page shell is sent to the browser as soon as the session is known.
+ * The data (transactions, totals, categories, permissions) is loaded by a
+ * streamed server component and fills the page in when it arrives, so the
+ * header and its buttons are usable immediately.
  */
 
-import {
-  requireAuth,
-  fetchKasRtPermissions,
-  fetchKasRtCategories,
-  fetchKasRtTransactions,
-  fetchKasRtHero,
-  fetchKasRtBlockNames,
-} from "./data";
+import { Suspense } from "react";
+
+import { requireAuth } from "./data";
+import { KasRtDataSlot } from "./KasRtDataSlot";
 import KasRtPageClient from "./KasRtPageClient";
 import type { KasRtFilterState } from "@/types/kas-rt";
 
@@ -38,30 +36,11 @@ export default async function KasRTPage({ searchParams }: KasRTPageProps) {
     endDate: params.endDate ?? "",
   };
 
-  const [permissions, categories, { transactions, total }, hero, blockNames] =
-    await Promise.all([
-      fetchKasRtPermissions(session.userId),
-      fetchKasRtCategories(),
-      fetchKasRtTransactions({
-        typeFilter: filters.typeFilter !== "all" ? filters.typeFilter : undefined,
-        categoryFilter: filters.categoryFilter || undefined,
-        blockFilter: filters.blockFilter || undefined,
-        startDate: filters.startDate || undefined,
-        endDate: filters.endDate || undefined,
-      }),
-      fetchKasRtHero(),
-      fetchKasRtBlockNames(),
-    ]);
-
   return (
-    <KasRtPageClient
-      initialTransactions={transactions}
-      initialTotal={total}
-      initialCategories={categories}
-      initialCanSubmitTransaction={permissions.canSubmitTransaction}
-      initialSummary={hero}
-      initialFilterState={filters}
-      initialBlockNames={blockNames}
-    />
+    <KasRtPageClient initialFilterState={filters}>
+      <Suspense fallback={null}>
+        <KasRtDataSlot filters={filters} userId={session.userId} />
+      </Suspense>
+    </KasRtPageClient>
   );
 }

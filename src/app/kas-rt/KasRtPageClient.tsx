@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
@@ -13,6 +13,7 @@ import { KasRtFilterBar } from "@/components/kas-rt/KasRtFilterBar";
 import { KasRtTransactionList } from "@/components/kas-rt/KasRtTransactionList";
 import { KasRtDeleteConfirmDialog } from "@/components/kas-rt/KasRtDeleteConfirmDialog";
 import { KasRtDuplicateWarningDialog } from "@/components/kas-rt/KasRtDuplicateWarningDialog";
+import { KasRtDataProvider, useKasRtData } from "./kas-rt-data-context";
 
 // Bottom sheets are closed by default. Loading them on first open keeps the
 // create form, autocomplete and upload code out of the initial route bundle.
@@ -40,48 +41,54 @@ const KasRtDownloadSheet = dynamic(
   { ssr: false },
 );
 import {
-  KasRtPageSkeleton,
   KasRtTransactionListSkeleton,
 } from "@/components/kas-rt/skeletons";
 import { KasRtBackToTop } from "@/components/kas-rt/KasRtBackToTop";
 import type {
   KasRtDownloadState,
   TransactionItem,
-  KasRtCategory,
   KasRtTotals,
   KasRtFilterState,
 } from "@/types/kas-rt";
 import { toast } from "sonner";
 
 interface KasRtPageClientProps {
-  initialTransactions: TransactionItem[];
-  initialTotal: number;
-  initialCategories: KasRtCategory[];
-  initialCanSubmitTransaction: boolean;
-  initialSummary: KasRtTotals | null;
   initialFilterState: KasRtFilterState;
-  initialBlockNames: string[];
+  /**
+   * Streamed server content. The shell is rendered immediately; the data
+   * slot inside this slot arrives as soon as the server has it.
+   */
+  children?: ReactNode;
 }
 
 export default function KasRtPageClient({
-  initialTransactions,
-  initialTotal,
-  initialCategories,
-  initialCanSubmitTransaction,
-  initialSummary,
   initialFilterState,
-  initialBlockNames,
+  children,
+}: KasRtPageClientProps) {
+  return (
+    <KasRtDataProvider>
+      <KasRtPageClientInner initialFilterState={initialFilterState}>
+        {children}
+      </KasRtPageClientInner>
+    </KasRtDataProvider>
+  );
+}
+
+function KasRtPageClientInner({
+  initialFilterState,
+  children,
 }: KasRtPageClientProps) {
   const now = new Date();
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { data } = useKasRtData();
+  const isDataReady = !!data;
 
   const {
     transactions,
     categories,
     communityName,
     canSubmitTransaction,
-    isPageLoading,
     isTransactionsLoading,
     isRefreshing,
     isLoadingMore,
@@ -102,15 +109,19 @@ export default function KasRtPageClient({
     resetFilters,
   } = useKasRtTransactions({
     now,
-    initialData: {
-      transactions: initialTransactions,
-      total: initialTotal,
-      categories: initialCategories,
-      canSubmitTransaction: initialCanSubmitTransaction,
-      summary: initialSummary,
-      filterState: initialFilterState,
-      blockNames: initialBlockNames,
-    },
+    initialData: data
+      ? {
+          transactions: data.transactions,
+          total: data.total,
+          categories: data.categories,
+          canSubmitTransaction: data.canSubmitTransaction,
+          summary: data.summary,
+          filterState: initialFilterState,
+          blockNames: data.blockNames,
+        }
+      : null,
+    waitForInitialData: true,
+    initialFilterState,
   });
 
   // ── Delete state ──────────────────────────────────────────────────────────
@@ -284,14 +295,9 @@ export default function KasRtPageClient({
     : null;
 
   // ── Loading state ─────────────────────────────────────────────────────────
-  if (isPageLoading) {
-    return (
-      <main className="flex h-full min-h-0 flex-col bg-app-surface-alt lg:py-6">
-        <KasRtPageSkeleton />
-      </main>
-    );
-  }
-
+  // The shell is never replaced by a full page skeleton: the header, its
+  // action buttons and the filter bar are usable while the data streams in.
+  // Only the parts that need data show a placeholder.
   return (
     <main className="flex h-full min-h-0 flex-col bg-app-surface-alt lg:py-6">
       <div
@@ -304,6 +310,7 @@ export default function KasRtPageClient({
           now={now}
           totals={totals}
           canSubmitTransaction={canSubmitTransaction}
+          isLoading={!isDataReady}
           isRefreshing={isRefreshing}
           onRefresh={() => void refreshData()}
           onOpenDownload={() => {
@@ -400,6 +407,10 @@ export default function KasRtPageClient({
         containerRef={scrollContainerRef}
         visibleItemsCount={transactions.length}
       />
+
+      {/* Streamed server data. Renders nothing; it only publishes the
+          payload into the page once the server has it. */}
+      {children}
     </main>
   );
 }
