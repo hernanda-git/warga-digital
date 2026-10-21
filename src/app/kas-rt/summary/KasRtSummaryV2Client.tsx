@@ -1,18 +1,49 @@
 "use client";
 
-import { useCallback, useTransition, useMemo } from "react";
+import { useCallback, useTransition } from "react";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePullToRefresh } from "@/lib/hooks/use-pull-to-refresh";
-import {
-  KasRtMonthNavigator,
-  KasRtSummaryHero,
-  KasRtIplProgress,
-  KasRtCategoryBreakdown,
-  KasRtQuickStats,
-  KasRtExportButton,
-} from "@/components/kas-rt/summary";
-import { KasRtMonthlyChartV2 } from "@/components/kas-rt/summary/KasRtMonthlyChartV2";
+import { KasRtMonthNavigator } from "@/components/kas-rt/summary/KasRtMonthNavigator";
+import { KasRtSummaryHero } from "@/components/kas-rt/summary/KasRtSummaryHero";
+import { KasRtIplProgress } from "@/components/kas-rt/summary/KasRtIplProgress";
+import { KasRtCategoryBreakdown } from "@/components/kas-rt/summary/KasRtCategoryBreakdown";
+import { KasRtQuickStats } from "@/components/kas-rt/summary/KasRtQuickStats";
+import { KasRtMonthlyChartSkeleton } from "@/components/kas-rt/summary/skeletons/KasRtMonthlyChartSkeleton";
 import type { KasRtSummaryResponse } from "@/types/kas-rt";
+
+// chart.js and html2canvas are only needed once the user reaches the chart or
+// opens the export menu, so keep them out of the initial route bundle.
+const KasRtMonthlyChartV2 = dynamic(
+  () =>
+    import("@/components/kas-rt/summary/KasRtMonthlyChartV2").then(
+      (mod) => mod.KasRtMonthlyChartV2,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="mx-4">
+        <KasRtMonthlyChartSkeleton />
+      </div>
+    ),
+  },
+);
+
+const KasRtExportButton = dynamic(
+  () =>
+    import("@/components/kas-rt/summary/KasRtExportButton").then(
+      (mod) => mod.KasRtExportButton,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="h-9 w-[104px] animate-pulse rounded-xl bg-gray-100"
+        aria-hidden
+      />
+    ),
+  },
+);
 
 interface KasRtSummaryV2ClientProps {
   summary: KasRtSummaryResponse;
