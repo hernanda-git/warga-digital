@@ -8,7 +8,6 @@ import {
   getMonthNameIndonesian,
   applyTemplate,
   getDefaultKasRtForm,
-  calculateExpenseBreakdown,
   findDuplicateTransactions,
 } from "@/lib/kas-rt-utils";
 import { NO_FILE_SELECTED_LABEL } from "@/lib/kas-rt-constants";
@@ -22,8 +21,6 @@ import type {
   TransactionItem,
   KasRtCategory,
   KasRtFormState,
-  CategoryDetail,
-  ExpenseBreakdown,
   DuplicateWarningState,
 } from "@/types/kas-rt";
 
@@ -46,15 +43,6 @@ export interface UseKasRtNewTransactionReturn {
   visibleCategories: KasRtCategory[];
   isFormValid: boolean;
   placeholderTemplate: { titlePlaceholder: string; detailsPlaceholder: string };
-
-  categoryDetails: CategoryDetail[];
-  defaultJumlahWarga: number;
-  jumlahWarga: string;
-  setJumlahWarga: (v: string) => void;
-  useAutoCalculate: boolean;
-  setUseAutoCalculate: (v: boolean) => void;
-  isLoadingCategoryDetails: boolean;
-  expenseBreakdown: ExpenseBreakdown | null;
 
   fileInputRef: React.RefObject<HTMLInputElement>;
   attachmentLabel: string;
@@ -100,12 +88,6 @@ export function useKasRtNewTransaction({
   const [attachmentLabel, setAttachmentLabel] = useState(NO_FILE_SELECTED_LABEL);
   const [hasAttachment, setHasAttachment] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [categoryDetails, setCategoryDetails] = useState<CategoryDetail[]>([]);
-  const [defaultJumlahWarga, setDefaultJumlahWarga] = useState(0);
-  const [jumlahWarga, setJumlahWarga] = useState("");
-  const [useAutoCalculate, setUseAutoCalculate] = useState(true);
-  const [isLoadingCategoryDetails, setIsLoadingCategoryDetails] = useState(false);
 
   const [duplicateWarning, setDuplicateWarning] = useState<DuplicateWarningState | null>(null);
 
@@ -169,53 +151,6 @@ export function useKasRtNewTransaction({
     };
   }, [categories, form.categoryId, form.type, form.reference, form.date]);
 
-  const expenseBreakdown = useMemo<ExpenseBreakdown | null>(() => {
-    if (form.type !== "expense" || categoryDetails.length === 0) return null;
-    const jumlah = Number(jumlahWarga) || 0;
-    const { items, total } = calculateExpenseBreakdown(categoryDetails, jumlah);
-    return { items, total, jumlahWarga: jumlah };
-  }, [form.type, categoryDetails, jumlahWarga]);
-
-  useEffect(() => {
-    if (form.type === "expense" && useAutoCalculate && expenseBreakdown && expenseBreakdown.total > 0) {
-      setForm((prev) => ({ ...prev, amount: String(expenseBreakdown.total) }));
-    }
-  }, [form.type, useAutoCalculate, expenseBreakdown]);
-
-  useEffect(() => {
-    if (form.type !== "expense" || !form.categoryId) {
-      setCategoryDetails([]);
-      setDefaultJumlahWarga(0);
-      setJumlahWarga("");
-      return;
-    }
-    let isMounted = true;
-    setIsLoadingCategoryDetails(true);
-    async function fetchCategoryDetails() {
-      try {
-        const response = await apiFetch(`/api/kas-rt/category-details?category_id=${form.categoryId}`);
-        if (!response.ok) {
-          if (isMounted) { setCategoryDetails([]); setDefaultJumlahWarga(0); setJumlahWarga(""); }
-          return;
-        }
-        const data = (await response.json()) as { details: CategoryDetail[]; defaultJumlahWarga?: number };
-        if (isMounted) {
-          const activeDetails = (data.details || []).filter((d) => d.is_active);
-          setCategoryDetails(activeDetails);
-          const defaultCount = data.defaultJumlahWarga || 0;
-          setDefaultJumlahWarga(defaultCount);
-          setJumlahWarga(String(defaultCount));
-        }
-      } catch {
-        if (isMounted) { setCategoryDetails([]); setDefaultJumlahWarga(0); setJumlahWarga(""); }
-      } finally {
-        if (isMounted) setIsLoadingCategoryDetails(false);
-      }
-    }
-    void fetchCategoryDetails();
-    return () => { isMounted = false; };
-  }, [form.type, form.categoryId]);
-
   // ── Fetch assets list for expense dropdown ──────────────────────────────
   useEffect(() => {
     if (!isExpenseForm) {
@@ -264,10 +199,6 @@ export function useKasRtNewTransaction({
     defaultForm.reference = "";
     setForm(defaultForm);
     setEditingTxId(null);
-    setCategoryDetails([]);
-    setDefaultJumlahWarga(0);
-    setJumlahWarga("");
-    setUseAutoCalculate(true);
     setAttachmentLabel(NO_FILE_SELECTED_LABEL);
     setHasAttachment(false);
     setAssetId("");
@@ -292,10 +223,6 @@ export function useKasRtNewTransaction({
     setAttachmentLabel(NO_FILE_SELECTED_LABEL);
     setHasAttachment(false);
     setAssetId(tx.asset_id ?? "");
-    setCategoryDetails([]);
-    setDefaultJumlahWarga(0);
-    setJumlahWarga("");
-    setUseAutoCalculate(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
     setIsOpen(true);
   }, [categories]);
@@ -306,10 +233,6 @@ export function useKasRtNewTransaction({
     setEditingTxId(null);
     setFormError(null);
     setDuplicateWarning(null);
-    setCategoryDetails([]);
-    setDefaultJumlahWarga(0);
-    setJumlahWarga("");
-    setUseAutoCalculate(true);
   }, [isSubmitting]);
 
   const setType = useCallback((type: "income" | "expense") => {
@@ -328,21 +251,11 @@ export function useKasRtNewTransaction({
         details: "",
       };
     });
-    setCategoryDetails([]);
-    setDefaultJumlahWarga(0);
-    setJumlahWarga("");
-    setUseAutoCalculate(true);
   }, [categories]);
 
   const setCategoryId = useCallback((id: string) => {
     setForm((prev) => ({ ...prev, categoryId: id }));
-    setCategoryDetails([]);
-    setDefaultJumlahWarga(0);
-    setJumlahWarga("");
-    if (!isEditMode) {
-      setUseAutoCalculate(true);
-    }
-  }, [isEditMode]);
+  }, []);
 
   const setAmount = useCallback((amount: string) => {
     setForm((prev) => ({ ...prev, amount }));
@@ -432,16 +345,6 @@ export function useKasRtNewTransaction({
       if (categoryName) formData.append("category", categoryName);
       if (assetId) formData.append("asset_id", assetId);
 
-      if (form.type === "expense" && useAutoCalculate && expenseBreakdown && expenseBreakdown.items.length > 0) {
-        const transactionDetails = expenseBreakdown.items.map((item) => ({
-          name: item.name,
-          rate_per_warga: item.rate,
-          jumlah_warga: expenseBreakdown.jumlahWarga,
-          subtotal: item.amount,
-        }));
-        formData.append("transaction_details", JSON.stringify(transactionDetails));
-      }
-
       if (filesToUpload.length > 0) {
         filesToUpload.forEach((file) => formData.append("attachments", file));
       }
@@ -483,9 +386,6 @@ export function useKasRtNewTransaction({
       setEditingTxId(null);
       setFormError(null);
       setDuplicateWarning(null);
-      setCategoryDetails([]);
-      setDefaultJumlahWarga(0);
-      setJumlahWarga("");
       if (fileInputRef.current) fileInputRef.current.value = "";
       setAttachmentLabel(NO_FILE_SELECTED_LABEL);
       void refreshData();
@@ -496,7 +396,7 @@ export function useKasRtNewTransaction({
     }
   }, [
     form, editingTxId, categories, assetId,
-    useAutoCalculate, expenseBreakdown, setTransactions, refreshData,
+    setTransactions, refreshData,
   ]);
 
   const handleSubmit = useCallback(async () => {
@@ -549,15 +449,6 @@ export function useKasRtNewTransaction({
     visibleCategories,
     isFormValid,
     placeholderTemplate,
-
-    categoryDetails,
-    defaultJumlahWarga,
-    jumlahWarga,
-    setJumlahWarga,
-    useAutoCalculate,
-    setUseAutoCalculate,
-    isLoadingCategoryDetails,
-    expenseBreakdown,
 
     fileInputRef,
     attachmentLabel,

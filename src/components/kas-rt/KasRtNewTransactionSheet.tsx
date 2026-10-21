@@ -4,7 +4,6 @@ import { XMarkIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import {
   formatAmountDisplay,
   parseAmountInput,
-  formatRupiah,
   applyFocusRing,
   clearFocusRing,
 } from "@/lib/kas-rt-utils";
@@ -28,14 +27,6 @@ export function KasRtNewTransactionSheet({
   visibleCategories,
   isFormValid,
   placeholderTemplate,
-  categoryDetails,
-  defaultJumlahWarga,
-  jumlahWarga,
-  setJumlahWarga,
-  useAutoCalculate,
-  setUseAutoCalculate,
-  isLoadingCategoryDetails,
-  expenseBreakdown,
   fileInputRef,
   attachmentLabel,
   setAttachmentLabel,
@@ -172,100 +163,12 @@ export function KasRtNewTransactionSheet({
             </div>
           )}
 
-          {isExpenseForm && categoryDetails.length > 0 && (
-            <div
-              className="mb-5 rounded-2xl border p-4"
-              style={{ borderColor: accentBorder, background: accentBg }}
-            >
-              {isLoadingCategoryDetails ? (
-                <div className="animate-pulse space-y-3">
-                  <div className="h-4 w-24 rounded bg-red-200/50" />
-                  <div className="h-10 w-full rounded bg-red-200/50" />
-                  <div className="h-20 w-full rounded bg-red-200/50" />
-                </div>
-              ) : (
-                <>
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-widest" style={{ color: accentColor }}>
-                      Hitung Otomatis
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setUseAutoCalculate(!useAutoCalculate)}
-                      className={`flex h-6 w-11 items-center rounded-full transition-colors ${useAutoCalculate ? "bg-red-500" : "bg-gray-300"}`}
-                    >
-                      <span
-                        className={`h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                          useAutoCalculate ? "translate-x-5" : "translate-x-0.5"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                  {useAutoCalculate && expenseBreakdown && (
-                    <>
-                      <div className="mb-3">
-                        <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-app-body-muted">
-                          Jumlah Warga
-                        </label>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          value={jumlahWarga}
-                          onChange={(e) => setJumlahWarga(e.target.value)}
-                          min={0}
-                          className="w-full rounded-xl border bg-white px-3 py-2 text-sm font-semibold text-app-title focus:outline-none focus:ring-2"
-                          style={{ borderColor: accentBorder }}
-                          placeholder="0"
-                        />
-                        {defaultJumlahWarga > 0 && (
-                          <p className="mt-1 text-[10px] text-app-body-muted">
-                            Default: {defaultJumlahWarga} warga aktif
-                          </p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        {expenseBreakdown.items.map((item) => (
-                          <div key={item.id} className="flex items-center justify-between rounded-xl bg-white px-3 py-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-medium text-app-body">{item.name}</p>
-                              <p className="text-[10px] text-app-body-muted">
-                                {formatRupiah(item.rate)} × {expenseBreakdown.jumlahWarga} warga
-                              </p>
-                            </div>
-                            <p className="ml-2 shrink-0 text-xs font-bold" style={{ color: accentColor }}>
-                              {formatRupiah(item.amount)}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-3 flex items-center justify-between border-t pt-3" style={{ borderColor: accentBorder }}>
-                        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: accentColor }}>
-                          Total
-                        </p>
-                        <p className="text-sm font-extrabold" style={{ color: accentColor }}>
-                          {formatRupiah(expenseBreakdown.total)}
-                        </p>
-                      </div>
-                    </>
-                  )}
-                  {!useAutoCalculate && (
-                    <p className="text-xs text-app-body-muted">
-                      Mode manual aktif. Isi jumlah secara manual di bawah.
-                    </p>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
           <div className="mb-5">
             <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-app-body-muted">
               Jumlah <span className="font-normal normal-case text-red-500">*</span>
             </label>
             <div
-              className={`flex items-center gap-2 rounded-2xl border bg-white px-4 py-3 transition-all ${
-                isExpenseForm && useAutoCalculate && categoryDetails.length > 0 ? "opacity-60" : ""
-              }`}
+              className="flex items-center gap-2 rounded-2xl border bg-white px-4 py-3 transition-all"
               style={{ borderColor: "var(--color-input-border)" }}
             >
               <span className="text-sm font-bold text-app-body-muted">Rp</span>
@@ -276,7 +179,6 @@ export function KasRtNewTransactionSheet({
                 onChange={(e) => setAmount(parseAmountInput(e.target.value))}
                 className="flex-1 bg-transparent text-sm font-semibold text-app-title placeholder:text-app-body-muted/50 outline-none"
                 placeholder="0"
-                disabled={isExpenseForm && useAutoCalculate && categoryDetails.length > 0}
                 onFocus={(e) => {
                   const parent = e.currentTarget.parentElement;
                   if (parent) applyFocusRing(parent as HTMLElement);
@@ -287,11 +189,6 @@ export function KasRtNewTransactionSheet({
                 }}
               />
             </div>
-            {isExpenseForm && useAutoCalculate && categoryDetails.length > 0 && (
-              <p className="mt-1 text-[10px] text-app-body-muted">
-                Jumlah diisi otomatis dari perhitungan di atas
-              </p>
-            )}
           </div>
 
           <div className="mb-5">
