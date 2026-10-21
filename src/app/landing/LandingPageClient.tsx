@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
 import { LandingHeader } from "@/components/landing/LandingHeader";
@@ -9,9 +10,24 @@ import { ResidentPostsSection } from "@/components/landing/ResidentPostsSection"
 import { LandingSection } from "@/components/landing/LandingSection";
 import { EmptyState } from "@/components/landing/empty-states/EmptyState";
 import { JasaCard } from "@/components/jasa/JasaCard";
-import { JasaDetailModal } from "@/components/jasa/JasaDetailModal";
 import { JualanCard } from "@/components/jualan/JualanCard";
-import { JualanDetailModal } from "@/components/jualan/JualanDetailModal";
+
+// Detail modals are only useful after a card is tapped.
+const JasaDetailModal = dynamic(
+  () =>
+    import("@/components/jasa/JasaDetailModal").then(
+      (mod) => mod.JasaDetailModal,
+    ),
+  { ssr: false },
+);
+
+const JualanDetailModal = dynamic(
+  () =>
+    import("@/components/jualan/JualanDetailModal").then(
+      (mod) => mod.JualanDetailModal,
+    ),
+  { ssr: false },
+);
 import { ROUTES, EMPTY_STATE_CONFIGS } from "@/config/landing";
 import type { HeaderProfile } from "@/types/landing";
 import type { ResidentPostItem } from "@/components/landing/ResidentPostsSection";

@@ -1,14 +1,35 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { PageLoader } from "@/components/ui";
 import { JualanCard, JualanCardSkeleton } from "@/components/jualan/JualanCard";
 import { JualanFilters } from "@/components/jualan/JualanFilters";
-import { JualanCreateModal } from "@/components/jualan/JualanCreateModal";
-import { JualanEditModal } from "@/components/jualan/JualanEditModal";
-import { JualanDetailModal } from "@/components/jualan/JualanDetailModal";
+
+// Create/edit/detail dialogs are loaded after the marketplace grid paints.
+const JualanCreateModal = dynamic(
+  () =>
+    import("@/components/jualan/JualanCreateModal").then(
+      (mod) => mod.JualanCreateModal,
+    ),
+  { ssr: false },
+);
+const JualanEditModal = dynamic(
+  () =>
+    import("@/components/jualan/JualanEditModal").then(
+      (mod) => mod.JualanEditModal,
+    ),
+  { ssr: false },
+);
+const JualanDetailModal = dynamic(
+  () =>
+    import("@/components/jualan/JualanDetailModal").then(
+      (mod) => mod.JualanDetailModal,
+    ),
+  { ssr: false },
+);
 import { apiFetch } from "@/lib/api-client";
 import {
   PlusIcon,

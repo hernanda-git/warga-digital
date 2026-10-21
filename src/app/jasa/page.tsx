@@ -1,14 +1,35 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
 import { PageLoader } from "@/components/ui";
 import { JasaCard, JasaCardSkeleton } from "@/components/jasa/JasaCard";
 import { JasaFilters } from "@/components/jasa/JasaFilters";
-import { JasaCreateModal } from "@/components/jasa/JasaCreateModal";
-import { JasaEditModal } from "@/components/jasa/JasaEditModal";
-import { JasaDetailModal } from "@/components/jasa/JasaDetailModal";
+
+// Create/edit/detail dialogs are loaded after the services grid paints.
+const JasaCreateModal = dynamic(
+  () =>
+    import("@/components/jasa/JasaCreateModal").then(
+      (mod) => mod.JasaCreateModal,
+    ),
+  { ssr: false },
+);
+const JasaEditModal = dynamic(
+  () =>
+    import("@/components/jasa/JasaEditModal").then(
+      (mod) => mod.JasaEditModal,
+    ),
+  { ssr: false },
+);
+const JasaDetailModal = dynamic(
+  () =>
+    import("@/components/jasa/JasaDetailModal").then(
+      (mod) => mod.JasaDetailModal,
+    ),
+  { ssr: false },
+);
 import { apiFetch } from "@/lib/api-client";
 import {
   PlusIcon,
