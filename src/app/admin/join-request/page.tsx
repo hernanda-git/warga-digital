@@ -131,11 +131,12 @@ export default function AdminJoinRequestPage() {
     }
   }, []);
 
+  // Load in parallel with the profile guard; the API enforces admin access.
   useEffect(() => {
-    if (!checkingAccess && isAuthenticated) {
+    if (hasMounted && isAuthenticated) {
       void loadRequests();
     }
-  }, [checkingAccess, isAuthenticated, loadRequests]);
+  }, [hasMounted, isAuthenticated, loadRequests]);
 
   const handleRespond = useCallback(
     async (requestId: string, action: "approve" | "reject") => {

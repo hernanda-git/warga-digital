@@ -191,6 +191,9 @@ export default function AdminManageUsersPage() {
 
   useEffect(() => {
     setHasMounted(true);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -270,33 +273,40 @@ export default function AdminManageUsersPage() {
     }
   }, [page, query, activeBlok, sortBy]);
 
+  // Start loading in parallel with the profile guard; /api/admin/warga
+  // enforces admin access independently, and rendering still waits for both.
   useEffect(() => {
-    if (!checkingAccess && isAuthenticated) {
+    if (hasMounted && isAuthenticated) {
       void loadUsers();
     }
-  }, [checkingAccess, isAuthenticated, loadUsers]);
+  }, [hasMounted, isAuthenticated, loadUsers]);
 
-  // Reset page to 1 when filters change (but not on page change itself)
-  const prevFiltersRef = useRef({ query, activeBlok, sortBy });
-  useEffect(() => {
-    const prev = prevFiltersRef.current;
-    if (prev.query !== query || prev.activeBlok !== activeBlok || prev.sortBy !== sortBy) {
-      setPage(1);
-    }
-    prevFiltersRef.current = { query, activeBlok, sortBy };
-  }, [query, activeBlok, sortBy]);
-
+  // Filter changes set the page at the same time as the filter, so React
+  // batches them into a single request.
   const handleSearchInput = useCallback((value: string) => {
     setQueryInput(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setQuery(value);
+      setPage(1);
     }, 300);
   }, []);
 
   const clearSearch = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setQueryInput("");
     setQuery("");
+    setPage(1);
+  }, []);
+
+  const selectBlok = useCallback((blok: string) => {
+    setActiveBlok(blok);
+    setPage(1);
+  }, []);
+
+  const selectSort = useCallback((sort: string) => {
+    setSortBy(sort);
+    setPage(1);
   }, []);
 
   const openModal = useCallback((user: UserItem) => {
@@ -764,7 +774,7 @@ export default function AdminManageUsersPage() {
           <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
             <button
               type="button"
-              onClick={() => setActiveBlok("")}
+              onClick={() => selectBlok("")}
               className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-95 ${
                 !activeBlok
                   ? "text-white shadow-sm"
@@ -783,7 +793,7 @@ export default function AdminManageUsersPage() {
                 <button
                   key={blok}
                   type="button"
-                  onClick={() => setActiveBlok(isActiveBlok ? "" : blok)}
+                  onClick={() => selectBlok(isActiveBlok ? "" : blok)}
                   className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-95 ${
                     isActiveBlok
                       ? "text-white shadow-sm"
@@ -814,7 +824,7 @@ export default function AdminManageUsersPage() {
             <button
               key={opt.value}
               type="button"
-              onClick={() => setSortBy(opt.value)}
+              onClick={() => selectSort(opt.value)}
               className={`shrink-0 rounded-xl px-3 py-2 text-xs font-semibold transition active:scale-95 ${
                 sortBy === opt.value
                   ? "bg-app-primary text-white shadow-sm"
@@ -855,8 +865,8 @@ export default function AdminManageUsersPage() {
           <input
             type="text"
             placeholder="Cari nama, username, WA, atau blok rumah..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={queryInput}
+            onChange={(e) => handleSearchInput(e.target.value)}
             className="w-full rounded-xl border border-[var(--color-input-border)] bg-app-surface-alt py-2 pl-9 pr-3 text-[12px] text-app-body placeholder:text-app-body-muted/60 focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
           />
         </div>

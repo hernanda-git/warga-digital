@@ -268,9 +268,11 @@ export default function AdminPage() {
     }
   }, []);
 
+  // Stats load in parallel with the profile guard; rendering still waits for
+  // both, and /api/admin/stats enforces admin access on its own.
   useEffect(() => {
-    if (!checkingAccess && profile) void loadStats();
-  }, [checkingAccess, profile, loadStats]);
+    if (hasMounted && isAuthenticated) void loadStats();
+  }, [hasMounted, isAuthenticated, loadStats]);
 
   // ── Derived values ─────────────────────────────────────────────────────────
   const isReady = !statsLoading && stats !== null;

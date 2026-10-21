@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowPathIcon,
   CalendarDaysIcon,
   ChevronLeftIcon,
+  ChevronRightIcon,
   ClockIcon,
   MagnifyingGlassIcon,
   PhoneIcon,
@@ -108,10 +109,19 @@ export default function AdminWargaPage() {
   const [wargaList, setWargaList] = useState<WargaItem[]>([]);
   const [blokList, setBlokList] = useState<string[]>([]);
   const [totalAll, setTotalAll] = useState(0);
+  const [total, setTotal] = useState(0);
   const [joinedThisMonth, setJoinedThisMonth] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [page, setPage] = useState(1);
 
+  const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
   const [activeBlok, setActiveBlok] = useState("");
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadedOnceRef = useRef(false);
+  const PAGE_SIZE = 30;
 
   // ── Mount ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -157,18 +167,37 @@ export default function AdminWargaPage() {
     };
   }, [hasMounted, isAuthenticated, router, clearUser]);
 
-  // ── Load warga ─────────────────────────────────────────────────────────────
+  // ── Load warga (server-side search, blok filter and pagination) ────────────
   const loadWarga = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true);
-    else setLoading(true);
+    if (isRefresh) {
+      setRefreshing(true);
+    } else if (!loadedOnceRef.current) {
+      setLoading(true);
+    } else {
+      setFetching(true);
+    }
     setError(null);
 
     try {
-      const res = await apiFetch("/api/admin/warga?limit=100");
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(PAGE_SIZE),
+      });
+      if (query.trim()) params.set("q", query.trim());
+      if (activeBlok) params.set("blok", activeBlok);
+
+      const res = await apiFetch(`/api/admin/warga?${params.toString()}`);
       const body = (await res.json().catch(() => ({}))) as {
         warga?: WargaItem[];
         blokList?: string[];
-        meta?: { total: number; totalAll: number };
+        meta?: {
+          total: number;
+          totalAll: number;
+          joinedThisMonth: number;
+          page: number;
+          limit: number;
+          hasMore: boolean;
+        };
         error?: string;
       };
 
@@ -181,45 +210,61 @@ export default function AdminWargaPage() {
       setWargaList(list);
       setBlokList(body.blokList ?? []);
       setTotalAll(body.meta?.totalAll ?? list.length);
-
-      // Compute "joined this month" client-side
-      const som = new Date();
-      som.setDate(1);
-      som.setHours(0, 0, 0, 0);
-      setJoinedThisMonth(
-        list.filter((w) => w.joined_at && new Date(w.joined_at) >= som).length,
-      );
+      setTotal(body.meta?.total ?? list.length);
+      setJoinedThisMonth(body.meta?.joinedThisMonth ?? 0);
+      setHasMore(body.meta?.hasMore ?? false);
     } catch {
       setError("Gagal memuat daftar warga. Periksa koneksi Anda.");
     } finally {
+      loadedOnceRef.current = true;
       setLoading(false);
       setRefreshing(false);
+      setFetching(false);
     }
-  }, []);
+  }, [page, query, activeBlok]);
 
+  // Start the data request immediately; the profile guard runs in parallel
+  // above and only decides whether the result may be rendered.
   useEffect(() => {
-    if (!checkingAccess && isAuthenticated) {
+    if (hasMounted && isAuthenticated) {
       void loadWarga();
     }
-  }, [checkingAccess, isAuthenticated, loadWarga]);
+  }, [hasMounted, isAuthenticated, loadWarga]);
 
-  // ── Filtered list ──────────────────────────────────────────────────────────
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return wargaList.filter((w) => {
-      const matchSearch =
-        !q ||
-        w.full_name.toLowerCase().includes(q) ||
-        (w.wa_number ?? "").toLowerCase().includes(q) ||
-        (w.blok_rumah ?? "").toLowerCase().includes(q);
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
-      const matchBlok =
-        !activeBlok ||
-        (w.blok_rumah ?? "").toLowerCase() === activeBlok.toLowerCase();
+  const handleSearchInput = useCallback((value: string) => {
+    setQueryInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setQuery(value);
+      setPage(1);
+    }, 300);
+  }, []);
 
-      return matchSearch && matchBlok;
-    });
-  }, [wargaList, query, activeBlok]);
+  const clearSearch = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setQueryInput("");
+    setQuery("");
+    setPage(1);
+  }, []);
+
+  const selectBlok = useCallback((blok: string) => {
+    setActiveBlok(blok);
+    setPage(1);
+  }, []);
+
+  const resetFilters = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setQueryInput("");
+    setQuery("");
+    setActiveBlok("");
+    setPage(1);
+  }, []);
 
   // ── Guard ──────────────────────────────────────────────────────────────────
   if (!hasMounted || !isAuthenticated || checkingAccess) {
@@ -227,6 +272,9 @@ export default function AdminWargaPage() {
   }
 
   const hasActiveFilter = !!query || !!activeBlok;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const rangeStart = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(page * PAGE_SIZE, total);
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -312,7 +360,7 @@ export default function AdminWargaPage() {
                 <div className="mx-auto mt-1 h-[18px] w-10 animate-pulse rounded-md bg-white/20" />
               ) : (
                 <p className="text-base font-extrabold leading-tight text-white">
-                  {filtered.length}
+                  {wargaList.length}
                 </p>
               )}
             </div>
@@ -362,15 +410,15 @@ export default function AdminWargaPage() {
           <MagnifyingGlassIcon className="h-4 w-4 shrink-0 text-app-body-muted/60" />
           <input
             type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={queryInput}
+            onChange={(e) => handleSearchInput(e.target.value)}
             placeholder="Cari nama, nomor WA, atau blok..."
             className="flex-1 bg-transparent text-sm text-app-body placeholder:text-app-body-muted/50 outline-none"
           />
-          {query && (
+          {queryInput && (
             <button
               type="button"
-              onClick={() => setQuery("")}
+              onClick={clearSearch}
               className="text-app-body-muted/60 hover:text-app-body-muted"
               aria-label="Hapus pencarian"
             >
@@ -384,7 +432,7 @@ export default function AdminWargaPage() {
           <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
             <button
               type="button"
-              onClick={() => setActiveBlok("")}
+              onClick={() => selectBlok("")}
               className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-95 ${
                 !activeBlok
                   ? "text-white shadow-sm"
@@ -403,7 +451,7 @@ export default function AdminWargaPage() {
                 <button
                   key={blok}
                   type="button"
-                  onClick={() => setActiveBlok(isActive ? "" : blok)}
+                  onClick={() => selectBlok(isActive ? "" : blok)}
                   className={`shrink-0 flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition active:scale-95 ${
                     isActive
                       ? "text-white shadow-sm"
@@ -425,6 +473,18 @@ export default function AdminWargaPage() {
 
       {/* ── Scrollable Warga List ─────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 py-3 lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
+        {fetching && (
+          <div
+            className="mb-2 h-0.5 w-full overflow-hidden rounded-full bg-app-surface-alt"
+            role="progressbar"
+            aria-label="Memuat data warga"
+          >
+            <div
+              className="h-full w-1/2 animate-pulse rounded-full"
+              style={{ background: "var(--color-primary)" }}
+            />
+          </div>
+        )}
         {loading && !refreshing ? (
           /* Skeletons */
           <div className="space-y-2.5">
@@ -449,7 +509,7 @@ export default function AdminWargaPage() {
               </div>
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : wargaList.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-[var(--color-input-border)] bg-app-surface py-12 text-center">
             <UsersIcon
@@ -471,10 +531,7 @@ export default function AdminWargaPage() {
             {hasActiveFilter && (
               <button
                 type="button"
-                onClick={() => {
-                  setQuery("");
-                  setActiveBlok("");
-                }}
+                onClick={resetFilters}
                 className="text-xs font-bold"
                 style={{ color: "var(--color-primary)" }}
               >
@@ -485,7 +542,7 @@ export default function AdminWargaPage() {
         ) : (
           /* Warga card list */
           <div className="space-y-2.5">
-            {filtered.map((warga) => {
+            {wargaList.map((warga) => {
               const initials = getInitials(warga.full_name);
               const primaryRole = warga.roles[0] ?? null;
 
@@ -578,10 +635,37 @@ export default function AdminWargaPage() {
               );
             })}
 
-            {/* Footer count */}
-            <p className="pb-2 pt-1 text-center text-[10px] text-app-body-muted/50">
-              Menampilkan {filtered.length} dari {totalAll} warga
-            </p>
+            {/* Footer count + pagination */}
+            <div className="flex flex-col items-center gap-2 pb-2 pt-1">
+              <p className="text-[10px] text-app-body-muted/50">
+                Menampilkan {rangeStart}–{rangeEnd} dari {total} warga
+              </p>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1 || fetching}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-app-surface-alt text-app-body transition active:scale-95 disabled:opacity-40"
+                    aria-label="Halaman sebelumnya"
+                  >
+                    <ChevronLeftIcon className="h-4 w-4" />
+                  </button>
+                  <span className="min-w-16 text-center text-[11px] font-semibold text-app-body-muted">
+                    {page} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={!hasMore || fetching}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-app-surface-alt text-app-body transition active:scale-95 disabled:opacity-40"
+                    aria-label="Halaman berikutnya"
+                  >
+                    <ChevronRightIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
