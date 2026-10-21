@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftIcon,
@@ -56,6 +56,9 @@ interface NotificationGroup {
   items: NotificationItem[];
   muted?: boolean;
 }
+
+/** How many notifications are requested per page. */
+const PAGE_SIZE = 50;
 
 function ArrowBackIcon() {
   return <ArrowLeftIcon className="h-6 w-6" aria-hidden />;
@@ -289,28 +292,32 @@ export default function NotifikasiPage() {
 
   const [hasMounted, setHasMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [groups, setGroups] = useState<NotificationGroup[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [notifications, setNotifications] = useState<ApiNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const groups = useMemo(
+    () => buildGroupsFromApi(notifications),
+    [notifications],
+  );
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!hasMounted) return;
-    if (!isAuthenticated) {
-      router.replace("/auth/login");
-      return;
-    }
-
-    async function loadNotifications() {
+  const fetchPage = useCallback(
+    async (offset: number, append: boolean): Promise<void> => {
       try {
         setErrorMessage(null);
-        setIsLoading(true);
+        if (append) setIsLoadingMore(true);
+        else setIsLoading(true);
 
-        const response = await apiFetch("/api/notifications", {
-          credentials: "include",
-        });
+        const response = await apiFetch(
+          `/api/notifications?limit=${PAGE_SIZE}&offset=${offset}`,
+          { credentials: "include" },
+        );
 
         if (response.status === 401) {
           router.replace("/auth/login");
@@ -326,39 +333,58 @@ export default function NotifikasiPage() {
 
         const payload = (await response.json()) as {
           notifications: ApiNotification[];
+          unreadCount?: number;
+          pagination?: { hasMore?: boolean };
         };
 
-        setGroups(buildGroupsFromApi(payload.notifications ?? []));
+        const incoming = payload.notifications ?? [];
+        setNotifications((prev) =>
+          append ? [...prev, ...incoming] : incoming,
+        );
+        if (typeof payload.unreadCount === "number") {
+          setUnreadCount(payload.unreadCount);
+        }
+        setHasMore(payload.pagination?.hasMore ?? false);
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : "Gagal memuat notifikasi",
         );
       } finally {
         setIsLoading(false);
+        setIsLoadingMore(false);
       }
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    if (!hasMounted) return;
+    if (!isAuthenticated) {
+      router.replace("/auth/login");
+      return;
     }
 
-    void loadNotifications();
-  }, [hasMounted, isAuthenticated, router]);
+    void fetchPage(0, false);
+  }, [hasMounted, isAuthenticated, router, fetchPage]);
+
+  function loadMore() {
+    if (isLoadingMore || !hasMore) return;
+    void fetchPage(notifications.length, true);
+  }
 
   if (!hasMounted || !isAuthenticated || isLoading) {
     return <PageLoader message="Memuat notifikasi..." />;
   }
 
-  const unreadCount = groups
-    .flatMap((g) => g.items)
-    .filter((item) => item.isUnread).length;
-
   async function markAllRead() {
     // Snapshot pre-update state so we can roll back on failure.
-    const snapshot = groups;
+    const snapshot = notifications;
+    const nowIso = new Date().toISOString();
 
-    setGroups((prev) =>
-      prev.map((group) => ({
-        ...group,
-        items: group.items.map((item) => ({ ...item, isUnread: false })),
-      })),
+    setNotifications((prev) =>
+      prev.map((n) => (n.readAt ? n : { ...n, readAt: nowIso })),
     );
+    setUnreadCount(0);
 
     try {
       const res = await apiFetch("/api/notifications", {
@@ -369,28 +395,25 @@ export default function NotifikasiPage() {
       });
       if (!res.ok) {
         // Roll back the optimistic update.
-        setGroups(snapshot);
+        setNotifications(snapshot);
         setErrorMessage("Gagal menandai semua notifikasi sebagai dibaca");
       }
     } catch {
       // Roll back the optimistic update.
-      setGroups(snapshot);
+      setNotifications(snapshot);
       setErrorMessage("Gagal menandai semua notifikasi sebagai dibaca");
     }
   }
 
   async function markOneRead(id: string, actionUrl: string | null) {
     // Snapshot pre-update state so we can roll back on failure.
-    const snapshot = groups;
+    const snapshot = notifications;
+    const nowIso = new Date().toISOString();
 
-    setGroups((prev) =>
-      prev.map((group) => ({
-        ...group,
-        items: group.items.map((item) =>
-          item.id === id ? { ...item, isUnread: false } : item,
-        ),
-      })),
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id && !n.readAt ? { ...n, readAt: nowIso } : n)),
     );
+    setUnreadCount((count) => Math.max(0, count - 1));
 
     try {
       const res = await apiFetch("/api/notifications", {
@@ -401,13 +424,13 @@ export default function NotifikasiPage() {
       });
       if (!res.ok) {
         // Roll back the optimistic update.
-        setGroups(snapshot);
+        setNotifications(snapshot);
         setErrorMessage("Gagal menandai notifikasi");
         return;
       }
     } catch {
       // Roll back the optimistic update.
-      setGroups(snapshot);
+      setNotifications(snapshot);
       setErrorMessage("Gagal menandai notifikasi");
       return;
     }
@@ -502,6 +525,19 @@ export default function NotifikasiPage() {
             <p className="text-sm text-app-body-muted font-medium">
               Belum ada notifikasi
             </p>
+          </div>
+        )}
+
+        {hasMore && (
+          <div className="flex justify-center pt-2">
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={isLoadingMore}
+              className="rounded-full border border-[var(--color-input-border)] bg-app-surface px-5 py-2 text-sm font-semibold text-app-primary transition hover:bg-app-primary-muted active:scale-95 disabled:opacity-60"
+            >
+              {isLoadingMore ? "Memuat..." : "Muat lebih banyak"}
+            </button>
           </div>
         )}
       </div>
