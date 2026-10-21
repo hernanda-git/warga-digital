@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { clearHeaderProfileCookie } from "@/lib/header-profile-cookie";
+import { invalidateApiCache } from "@/lib/api-client";
 
 interface UserInfo {
   id: string;
@@ -34,6 +35,7 @@ export const useAuthStore = create<AuthState>()(
       setLogoUrl: (logoUrl) => set({ logoUrl }),
       clearUser: () => {
         clearHeaderProfileCookie();
+        invalidateApiCache();
         set({
           user: null,
           isAuthenticated: false,

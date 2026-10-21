@@ -56,7 +56,7 @@ function dispatchUnauthorized(url: string): void {
 }
 
 /**
- * Normalise a `RequestInfo | URL` value into a plain string for inspection
+ * Normalise a RequestInfo | URL value into a plain string for inspection
  * (e.g. to check whether the URL is a login/auth endpoint).
  */
 function resolveUrl(input: RequestInfo | URL): string {
@@ -65,6 +65,78 @@ function resolveUrl(input: RequestInfo | URL): string {
   // Request object
   return input.url;
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Response cache
+ *
+ * A handful of GET endpoints are requested by nearly every page and change
+ * rarely: the admin identity probe and the profile. Without a cache every
+ * navigation to a new page re-asks the server for data it already had, which
+ * on a mobile connection is a visible spinner.
+ *
+ * The cache is intentionally tiny and explicit:
+ *   • only the URLs listed in CACHEABLE_GETS are cached,
+ *   • entries are short-lived (seconds, not minutes),
+ *   • any write (POST/PATCH/PUT/DELETE) to the same path drops the entry,
+ *   • a 401 drops everything, because the session is gone.
+ * ────────────────────────────────────────────────────────────────────────── */
+
+interface CacheRule {
+  /** Matches the request URL (without the query string). */
+  path: string;
+  /** How long a cached response may be reused, in milliseconds. */
+  ttlMs: number;
+}
+
+const CACHEABLE_GETS: CacheRule[] = [
+  { path: "/api/admin/me", ttlMs: 30_000 },
+  { path: "/api/admin/stats", ttlMs: 15_000 },
+  { path: "/api/profile", ttlMs: 20_000 },
+];
+
+interface CacheEntry {
+  status: number;
+  body: string;
+  storedAt: number;
+}
+
+const responseCache = new Map<string, CacheEntry>();
+const inflightGets = new Map<string, Promise<CacheEntry>>();
+
+function toCacheKey(url: string): string {
+  const path = url.split("?")[0];
+  // Absolute URLs (rare in this app) are keyed by their pathname too.
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    try {
+      return new URL(path).pathname;
+    } catch {
+      return path;
+    }
+  }
+  return path;
+}
+
+function findCacheRule(url: string): CacheRule | undefined {
+  const key = toCacheKey(url);
+  return CACHEABLE_GETS.find((rule) => rule.path === key);
+}
+
+function buildJsonResponse(status: number, body: string): Response {
+  return new Response(body, {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+/** Drop a cached response (used after writes and on sign-out). */
+export function invalidateApiCache(path?: string): void {
+  if (path) {
+    responseCache.delete(toCacheKey(path));
+    return;
+  }
+  responseCache.clear();
+}
+
 
 /**
  * Drop-in replacement for `fetch` that:
@@ -78,10 +150,61 @@ export async function apiFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
 ): Promise<Response> {
+  const url = resolveUrl(input);
+  const method = (init?.method ?? "GET").toUpperCase();
+  const rule = findCacheRule(url);
+  // An explicit "no-store" request (manual refresh) must always hit the
+  // server, and must not overwrite a fresher cached entry either.
+  const bypassCache =
+    init?.cache === "no-store" || init?.cache === "reload" || method !== "GET";
+
+  // Writes invalidate the cached reads: a mutation can change the profile,
+  // the role set, or both, so the next read must hit the server again.
+  if (method !== "GET") {
+    invalidateApiCache();
+  }
+
+  if (rule && !bypassCache) {
+    const key = toCacheKey(url);
+    const cached = responseCache.get(key);
+    if (cached && Date.now() - cached.storedAt < rule.ttlMs) {
+      return buildJsonResponse(cached.status, cached.body);
+    }
+
+    let pending = inflightGets.get(key);
+    if (!pending) {
+      pending = fetch(input, init)
+        .then(async (response) => {
+          const body = await response.text();
+          const entry: CacheEntry = {
+            status: response.status,
+            body,
+            storedAt: Date.now(),
+          };
+          if (response.ok) {
+            responseCache.set(key, entry);
+          } else if (response.status === 401) {
+            responseCache.clear();
+          }
+          return entry;
+        })
+        .finally(() => {
+          inflightGets.delete(key);
+        });
+      inflightGets.set(key, pending);
+    }
+
+    const entry = await pending;
+    if (entry.status === 401) {
+      dispatchUnauthorized(url);
+    }
+    return buildJsonResponse(entry.status, entry.body);
+  }
+
   const response = await fetch(input, init);
 
   if (response.status === 401) {
-    dispatchUnauthorized(resolveUrl(input));
+    dispatchUnauthorized(url);
   }
 
   return response;
