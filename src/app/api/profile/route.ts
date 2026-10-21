@@ -31,28 +31,38 @@ export async function GET() {
     }
 
     const supabase = createServerClient();
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .select(
-        "id, full_name, username, wa_number, email, date_of_birth, status, created_at, avatar_path, theme_id",
-      )
-      .eq("id", session.userId)
-      .single();
 
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: "Profil tidak ditemukan" },
-        { status: 404 },
-      );
-    }
-
-    // All active house links (multiple residences: different tenants/communities)
-    const { data: allLinks } = await supabase
-      .from("user_houses")
-      .select("house_id, tenant_id, is_primary")
-      .eq("user_id", session.userId)
-      .eq("status", "ACTIVE")
-      .order("is_primary", { ascending: false });
+    type HouseLinkRow = {
+      house_id: string;
+      tenant_id: string;
+      is_primary: boolean | null;
+      houses:
+        | {
+            blok_rumah: string | null;
+            address: string | null;
+            name: string;
+            community_id?: string | null;
+            communities:
+              | { id: string; code: string; name: string | null }
+              | { id: string; code: string; name: string | null }[]
+              | null;
+          }
+        | {
+            blok_rumah: string | null;
+            address: string | null;
+            name: string;
+            community_id?: string | null;
+            communities:
+              | { id: string; code: string; name: string | null }
+              | { id: string; code: string; name: string | null }[]
+              | null;
+          }[]
+        | null;
+      tenants:
+        | { id: string; name: string }
+        | { id: string; name: string }[]
+        | null;
+    };
 
     type HouseMember = {
       userId: string;
@@ -75,145 +85,175 @@ export async function GET() {
       roles: Array<{ id: number; name: string; description: string | null }>;
     };
 
+    const [userRes, linksRes, ownedLinksRes] = await Promise.all([
+      supabase
+        .from("users")
+        .select(
+          "id, full_name, username, wa_number, email, date_of_birth, status, created_at, avatar_path, theme_id",
+        )
+        .eq("id", session.userId)
+        .single(),
+
+      // All active house links (multiple residences: different tenants/communities)
+      supabase
+        .from("user_houses")
+        .select(
+          `
+          house_id,
+          tenant_id,
+          is_primary,
+          houses (
+            blok_rumah,
+            address,
+            name,
+            community_id,
+            communities (id, code, name)
+          ),
+          tenants (id, name)
+        `,
+        )
+        .eq("user_id", session.userId)
+        .eq("status", "ACTIVE")
+        .order("is_primary", { ascending: false }),
+
+      supabase
+        .from("user_houses")
+        .select("house_id")
+        .eq("user_id", session.userId)
+        .eq("relationship", "OWNER")
+        .eq("status", "ACTIVE"),
+    ]);
+
+    const user = userRes.data;
+    const userError = userRes.error;
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Profil tidak ditemukan" },
+        { status: 404 },
+      );
+    }
+
+    const allLinks = (linksRes.data ?? []) as HouseLinkRow[];
+    const ownedHouseLinks = ownedLinksRes.data ?? [];
+
     const residences: Residence[] = [];
 
-    if (allLinks && allLinks.length > 0) {
-      for (const link of allLinks as {
+    if (allLinks.length > 0) {
+      const houseIds = [...new Set(allLinks.map((l) => l.house_id))];
+      const tenantIds = [...new Set(allLinks.map((l) => l.tenant_id))];
+
+      type MemberRow = {
         house_id: string;
-        tenant_id: string;
+        user_id: string;
+        relationship: string;
         is_primary?: boolean;
-      }[]) {
-        const houseId = link.house_id;
-        const tenantId = link.tenant_id;
-        const isPrimary = link.is_primary ?? false;
+        users:
+          | { full_name: string; username: string | null }
+          | { full_name: string; username: string | null }[]
+          | null;
+      };
+      type RoleRow = {
+        tenant_id: string;
+        tenant_user_roles: Array<{
+          roles:
+            | { id: number; name: string; description: string | null }
+            | { id: number; name: string; description: string | null }[]
+            | null;
+        }> | null;
+      };
+      type RoleInfo = {
+        id: number;
+        name: string;
+        description: string | null;
+      };
 
-        const [houseRes, membersRes, tenantRes] = await Promise.all([
-          supabase
-            .from("houses")
-            .select("blok_rumah, address, name, community_id")
-            .eq("id", houseId)
-            .single(),
-          supabase
-            .from("user_houses")
-            .select(
-              "user_id, relationship, is_primary, users!user_houses_user_id_fkey(full_name, username)",
-            )
-            .eq("house_id", houseId)
-            .eq("status", "ACTIVE")
-            .order("is_primary", { ascending: false }),
-          supabase
-            .from("tenants")
-            .select("id, name")
-            .eq("id", tenantId)
-            .single(),
-        ]);
+      // Members of every residence and every role the user holds, fetched
+      // together instead of one round trip per residence.
+      const [membersRes, rolesRes] = await Promise.all([
+        supabase
+          .from("user_houses")
+          .select(
+            "house_id, user_id, relationship, is_primary, users!user_houses_user_id_fkey(full_name, username)",
+          )
+          .in("house_id", houseIds)
+          .eq("status", "ACTIVE")
+          .order("is_primary", { ascending: false }),
 
-        const houseRow = houseRes.data as {
-          blok_rumah: string | null;
-          address: string | null;
-          name: string;
-          community_id?: string;
-        } | null;
-        const memberRows = membersRes.data ?? [];
-        const communityId = houseRow?.community_id;
-        const tenantRow = tenantRes.data as { id: string; name: string } | null;
+        supabase
+          .from("tenant_users")
+          .select(
+            "tenant_id, tenant_user_roles!inner(roles!inner(id, name, description))",
+          )
+          .eq("user_id", session.userId)
+          .eq("status", "ACTIVE")
+          .in("tenant_id", tenantIds)
+          .is("tenant_user_roles.revoked_at", null),
+      ]);
+
+      const membersByHouse = new Map<string, HouseMember[]>();
+      for (const row of (membersRes.data ?? []) as MemberRow[]) {
+        const u = Array.isArray(row.users) ? row.users[0] : row.users;
+        const list = membersByHouse.get(row.house_id) ?? [];
+        list.push({
+          userId: row.user_id,
+          fullName: u?.full_name ?? "—",
+          username: u?.username ?? null,
+          relationship: row.relationship,
+          isPrimary: row.is_primary ?? false,
+        });
+        membersByHouse.set(row.house_id, list);
+      }
+
+      const rolesByTenant = new Map<string, RoleInfo[]>();
+      for (const tu of (rolesRes.data ?? []) as RoleRow[]) {
+        const list: RoleInfo[] = [];
+        for (const tur of tu.tenant_user_roles ?? []) {
+          const r = Array.isArray(tur.roles) ? tur.roles[0] : tur.roles;
+          if (r) {
+            list.push({
+              id: r.id,
+              name: r.name,
+              description: r.description ?? null,
+            });
+          }
+        }
+        rolesByTenant.set(tu.tenant_id, list);
+      }
+
+      for (const link of allLinks) {
+        const houseRow = Array.isArray(link.houses)
+          ? (link.houses[0] ?? null)
+          : link.houses;
+        const tenantRow = Array.isArray(link.tenants)
+          ? (link.tenants[0] ?? null)
+          : link.tenants;
 
         if (!houseRow || !tenantRow) continue;
 
-        let community: {
-          id: string;
-          code: string;
-          name: string | null;
-        } | null = null;
-        if (communityId) {
-          const { data: communityRow } = await supabase
-            .from("communities")
-            .select("id, code, name")
-            .eq("id", communityId)
-            .single();
-          if (communityRow) {
-            community = {
+        const communityRow = Array.isArray(houseRow.communities)
+          ? (houseRow.communities[0] ?? null)
+          : houseRow.communities;
+        const community = communityRow
+          ? {
               id: communityRow.id,
               code: communityRow.code,
               name: communityRow.name ?? null,
-            };
-          }
-        }
-        if (!community) {
-          community = { id: "", code: "", name: null };
-        }
-
-        type MemberRow = {
-          user_id: string;
-          relationship: string;
-          is_primary?: boolean;
-          users:
-            | { full_name: string; username: string | null }
-            | { full_name: string; username: string | null }[]
-            | null;
-        };
-        const members: HouseMember[] = (memberRows as MemberRow[]).map(
-          (row) => {
-            const u = Array.isArray(row.users) ? row.users[0] : row.users;
-            return {
-              userId: row.user_id,
-              fullName: u?.full_name ?? "—",
-              username: u?.username ?? null,
-              relationship: row.relationship,
-              isPrimary: row.is_primary ?? false,
-            };
-          },
-        );
-
-        const { data: tenantUserRow } = await supabase
-          .from("tenant_users")
-          .select("id")
-          .eq("user_id", session.userId)
-          .eq("tenant_id", tenantId)
-          .eq("status", "ACTIVE")
-          .maybeSingle();
-        let roles: Array<{
-          id: number;
-          name: string;
-          description: string | null;
-        }> = [];
-        if (tenantUserRow?.id) {
-          const { data: turRows } = await supabase
-            .from("tenant_user_roles")
-            .select("role_id")
-            .eq("tenant_user_id", tenantUserRow.id)
-            .is("revoked_at", null);
-          if (turRows && turRows.length > 0) {
-            const roleIds = [
-              ...new Set(
-                (turRows as { role_id: number }[]).map((r) => r.role_id),
-              ),
-            ];
-            const { data: roleRows } = await supabase
-              .from("roles")
-              .select("id, name, description")
-              .in("id", roleIds);
-            if (roleRows)
-              roles = roleRows.map((r) => ({
-                id: r.id,
-                name: r.name,
-                description: r.description ?? null,
-              }));
-          }
-        }
+            }
+          : { id: "", code: "", name: null };
 
         residences.push({
           tenant: { id: tenantRow.id, name: tenantRow.name },
           community,
           house: {
-            houseId,
+            houseId: link.house_id,
             blok_rumah: houseRow.blok_rumah ?? null,
             address: houseRow.address ?? null,
             name: houseRow.name ?? "",
-            members,
+            members: membersByHouse.get(link.house_id) ?? [],
           },
-          isPrimary,
-          roles,
+          isPrimary: link.is_primary ?? false,
+          roles: rolesByTenant.get(link.tenant_id) ?? [],
         });
       }
     }
@@ -221,14 +261,8 @@ export async function GET() {
     const firstResidence = residences[0] ?? null;
     const house = firstResidence?.house ?? null;
 
-    // Pending join requests for houses where current user is OWNER
-    const { data: ownedHouseLinks } = await supabase
-      .from("user_houses")
-      .select("house_id")
-      .eq("user_id", session.userId)
-      .eq("relationship", "OWNER")
-      .eq("status", "ACTIVE");
-
+    // Pending join requests for houses where current user is OWNER.
+    // One round trip: request + house + requester name are joined server-side.
     let pendingJoinRequests: Array<{
       id: string;
       houseId: string;
@@ -236,41 +270,34 @@ export async function GET() {
       blokRumah: string;
       createdAt: string;
     }> = [];
-    if (ownedHouseLinks && ownedHouseLinks.length > 0) {
+    if (ownedHouseLinks.length > 0) {
       const ownedHouseIds = ownedHouseLinks.map((r) => r.house_id);
       const { data: requests } = await supabase
         .from("house_join_requests")
-        .select("id, requester_user_id, house_id, created_at")
+        .select(
+          `
+          id,
+          requester_user_id,
+          house_id,
+          created_at,
+          houses (blok_rumah),
+          users!house_join_requests_requester_user_id_fkey (full_name)
+        `,
+        )
         .in("house_id", ownedHouseIds)
         .eq("status", "PENDING");
 
-      if (requests && requests.length > 0) {
-        const houseIds = [...new Set(requests.map((r) => r.house_id))];
-        const { data: houses } = await supabase
-          .from("houses")
-          .select("id, blok_rumah")
-          .in("id", houseIds);
-        const houseMap = new Map(
-          (houses ?? []).map((h) => [h.id, h.blok_rumah ?? "—"]),
-        );
-        const requesterIds = [
-          ...new Set(requests.map((r) => r.requester_user_id)),
-        ];
-        const { data: users } = await supabase
-          .from("users")
-          .select("id, full_name")
-          .in("id", requesterIds);
-        const userMap = new Map(
-          (users ?? []).map((u) => [u.id, u.full_name ?? "—"]),
-        );
-        pendingJoinRequests = requests.map((r) => ({
+      pendingJoinRequests = (requests ?? []).map((r) => {
+        const houseRow = Array.isArray(r.houses) ? r.houses[0] : r.houses;
+        const userRow = Array.isArray(r.users) ? r.users[0] : r.users;
+        return {
           id: r.id,
           houseId: r.house_id,
-          requesterFullName: userMap.get(r.requester_user_id) ?? "—",
-          blokRumah: houseMap.get(r.house_id) ?? "—",
+          requesterFullName: userRow?.full_name ?? "—",
+          blokRumah: houseRow?.blok_rumah ?? "—",
           createdAt: r.created_at,
-        }));
-      }
+        };
+      });
     }
 
     // If user has no house, check for pending join request (requester side)
@@ -282,35 +309,43 @@ export async function GET() {
     if (!firstResidence) {
       const { data: myRequest } = await supabase
         .from("house_join_requests")
-        .select("id, house_id")
+        .select(
+          `
+          id,
+          house_id,
+          houses!inner (
+            blok_rumah,
+            user_houses!inner (
+              user_id,
+              relationship,
+              status,
+              users!user_houses_user_id_fkey (full_name)
+            )
+          )
+        `,
+        )
         .eq("requester_user_id", session.userId)
         .eq("status", "PENDING")
+        .eq("houses.user_houses.relationship", "OWNER")
+        .eq("houses.user_houses.status", "ACTIVE")
+        .limit(1)
         .maybeSingle();
 
       if (myRequest?.house_id) {
-        const { data: houseRow } = await supabase
-          .from("houses")
-          .select("blok_rumah")
-          .eq("id", myRequest.house_id)
-          .single();
+        const houseRow = Array.isArray(myRequest.houses)
+          ? myRequest.houses[0]
+          : myRequest.houses;
         const blokRumah = houseRow?.blok_rumah ?? "—";
-        const { data: ownerLink } = await supabase
-          .from("user_houses")
-          .select("user_id")
-          .eq("house_id", myRequest.house_id)
-          .eq("relationship", "OWNER")
-          .eq("status", "ACTIVE")
-          .limit(1)
-          .maybeSingle();
-        let ownerFullName = "—";
-        if (ownerLink?.user_id) {
-          const { data: ownerUser } = await supabase
-            .from("users")
-            .select("full_name")
-            .eq("id", ownerLink.user_id)
-            .single();
-          ownerFullName = ownerUser?.full_name ?? "—";
-        }
+        const ownerLinks = houseRow?.user_houses ?? [];
+        const ownerLink = Array.isArray(ownerLinks)
+          ? ownerLinks[0]
+          : ownerLinks;
+        const ownerUser = ownerLink?.users
+          ? Array.isArray(ownerLink.users)
+            ? ownerLink.users[0]
+            : ownerLink.users
+          : null;
+        const ownerFullName = ownerUser?.full_name ?? "—";
         pendingJoinRequest = { blokRumah, ownerFullName, status: "PENDING" };
       }
     }
@@ -330,10 +365,12 @@ export async function GET() {
         return true;
       });
 
-    // Badges (user's earned badges)
+    // Badges (user's earned badges) — one round trip with the badge joined.
     const { data: userBadgeRows } = await supabase
       .from("user_badges")
-      .select("badge_id, earned_at")
+      .select(
+        "badge_id, earned_at, badges (id, code, name, description, icon, sort_order)",
+      )
       .eq("user_id", session.userId)
       .order("earned_at", { ascending: false });
     const badges: Array<{
@@ -345,34 +382,40 @@ export async function GET() {
       earnedAt: string;
     }> = [];
     if (userBadgeRows && userBadgeRows.length > 0) {
-      const badgeIds = [
-        ...new Set(
-          (userBadgeRows as { badge_id: number; earned_at: string }[]).map(
-            (r) => r.badge_id,
-          ),
-        ),
-      ];
-      const { data: badgeRows } = await supabase
-        .from("badges")
-        .select("id, code, name, description, icon, sort_order")
-        .in("id", badgeIds);
-      const earnedAtMap = new Map(
-        (userBadgeRows as { badge_id: number; earned_at: string }[]).map(
-          (r) => [r.badge_id, r.earned_at],
-        ),
-      );
-      if (badgeRows) {
-        badgeRows.sort((a, b) => a.sort_order - b.sort_order);
-        for (const b of badgeRows) {
-          badges.push({
-            id: b.id,
-            code: b.code,
-            name: b.name,
-            description: b.description ?? null,
-            icon: b.icon,
-            earnedAt: earnedAtMap.get(b.id) ?? b.id.toString(),
-          });
-        }
+      type BadgeInfo = {
+        id: number;
+        code: string;
+        name: string;
+        description: string | null;
+        icon: string;
+        sort_order: number;
+      };
+      type BadgeRow = {
+        badge_id: number;
+        earned_at: string;
+        badges: BadgeInfo | BadgeInfo[] | null;
+      };
+
+      const joined = (userBadgeRows as BadgeRow[])
+        .map((r) => {
+          const b = Array.isArray(r.badges) ? r.badges[0] : r.badges;
+          return b ? { badge: b, earnedAt: r.earned_at } : null;
+        })
+        .filter(
+          (entry): entry is { badge: BadgeInfo; earnedAt: string } =>
+            entry !== null,
+        )
+        .sort((a, b) => a.badge.sort_order - b.badge.sort_order);
+
+      for (const { badge: b, earnedAt } of joined) {
+        badges.push({
+          id: b.id,
+          code: b.code,
+          name: b.name,
+          description: b.description ?? null,
+          icon: b.icon,
+          earnedAt: earnedAt ?? b.id.toString(),
+        });
       }
     }
 
