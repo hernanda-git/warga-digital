@@ -1,22 +1,44 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api-client";
 import { getDefaultFilterDates } from "@/lib/kas-rt-constants";
 import { usePullToRefresh } from "@/lib/hooks/use-pull-to-refresh";
 import { useKasRtTransactions } from "@/lib/hooks/use-kas-rt-transactions";
 import { useKasRtNewTransaction } from "@/lib/hooks/use-kas-rt-new-transaction";
-import {
-  KasRtHero,
-  KasRtFilterBar,
-  KasRtFilterSheet,
-  KasRtDownloadSheet,
-  KasRtTransactionList,
-  KasRtDeleteConfirmDialog,
-  KasRtDuplicateWarningDialog,
-} from "@/components/kas-rt";
-import { KasRtNewTransactionSheet } from "@/components/kas-rt/KasRtNewTransactionSheet";
+import { KasRtHero } from "@/components/kas-rt/KasRtHero";
+import { KasRtFilterBar } from "@/components/kas-rt/KasRtFilterBar";
+import { KasRtTransactionList } from "@/components/kas-rt/KasRtTransactionList";
+import { KasRtDeleteConfirmDialog } from "@/components/kas-rt/KasRtDeleteConfirmDialog";
+import { KasRtDuplicateWarningDialog } from "@/components/kas-rt/KasRtDuplicateWarningDialog";
+
+// Bottom sheets are closed by default. Loading them on first open keeps the
+// create form, autocomplete and upload code out of the initial route bundle.
+const KasRtNewTransactionSheet = dynamic(
+  () =>
+    import("@/components/kas-rt/KasRtNewTransactionSheet").then(
+      (mod) => mod.KasRtNewTransactionSheet,
+    ),
+  { ssr: false },
+);
+
+const KasRtFilterSheet = dynamic(
+  () =>
+    import("@/components/kas-rt/KasRtFilterSheet").then(
+      (mod) => mod.KasRtFilterSheet,
+    ),
+  { ssr: false },
+);
+
+const KasRtDownloadSheet = dynamic(
+  () =>
+    import("@/components/kas-rt/KasRtDownloadSheet").then(
+      (mod) => mod.KasRtDownloadSheet,
+    ),
+  { ssr: false },
+);
 import {
   KasRtPageSkeleton,
   KasRtTransactionListSkeleton,
@@ -326,34 +348,40 @@ export default function KasRtPageClient({
         )}
       </div>
 
-      <KasRtFilterSheet
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        filterState={filterState}
-        setFilterState={setFilterState}
-        allCategoryNames={allCategoryNames}
-        allBlockNames={allBlockNames}
-        now={now}
-        onApply={applyFilters}
-      />
+      {isFilterOpen && (
+        <KasRtFilterSheet
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          filterState={filterState}
+          setFilterState={setFilterState}
+          allCategoryNames={allCategoryNames}
+          allBlockNames={allBlockNames}
+          now={now}
+          onApply={applyFilters}
+        />
+      )}
 
-      <KasRtDownloadSheet
-        isOpen={isDownloadModalOpen}
-        onClose={() => setIsDownloadModalOpen(false)}
-        downloadState={downloadState}
-        setDownloadState={setDownloadState}
-        allCategoryNames={allCategoryNames}
-        allBlockNames={allBlockNames}
-        isDownloading={isDownloading}
-        downloadError={downloadError}
-        onDownload={handleDownloadReport}
-      />
+      {isDownloadModalOpen && (
+        <KasRtDownloadSheet
+          isOpen={isDownloadModalOpen}
+          onClose={() => setIsDownloadModalOpen(false)}
+          downloadState={downloadState}
+          setDownloadState={setDownloadState}
+          allCategoryNames={allCategoryNames}
+          allBlockNames={allBlockNames}
+          isDownloading={isDownloading}
+          downloadError={downloadError}
+          onDownload={handleDownloadReport}
+        />
+      )}
 
-      <KasRtNewTransactionSheet
-        {...formHook}
-        editingTxAttachments={editingTxAttachments}
-        onRemoveAttachment={handleRemoveAttachment}
-      />
+      {formHook.isOpen && (
+        <KasRtNewTransactionSheet
+          {...formHook}
+          editingTxAttachments={editingTxAttachments}
+          onRemoveAttachment={handleRemoveAttachment}
+        />
+      )}
 
       <KasRtDuplicateWarningDialog
         duplicateWarning={formHook.duplicateWarning}

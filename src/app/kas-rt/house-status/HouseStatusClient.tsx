@@ -1,11 +1,42 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeftIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
-import { HouseTransactionStatusCardVertical } from "@/components/kas-rt";
-import { IPL_ANNUAL_TARGET, IPL_MONTHS_PER_YEAR, coveredMonthNumbers, IPL_MONTH_LABELS_ID } from "@/lib/kas-rt-ipl";
+import { HouseTransactionStatusCardVertical } from "@/components/kas-rt/HouseTransactionStatusCardVertical";
+import {
+  IPL_ANNUAL_TARGET,
+  IPL_MONTHS_PER_YEAR,
+  coveredMonthNumbers,
+  IPL_MONTH_LABELS_ID,
+  isSettledByMonths,
+} from "@/lib/kas-rt-ipl";
 import type { HouseTransactionStatus } from "@/types/kas-rt";
+
+type ActiveOverride = {
+  id: string;
+  credited_months: number;
+  credited_month_numbers: number[];
+  reason: string | null;
+  notes: string | null;
+};
+
+/** Apply a mutation response to one house without refetching the whole page. */
+function applyOverride(
+  house: HouseTransactionStatus,
+  override: ActiveOverride | null,
+): HouseTransactionStatus {
+  const monthNumbers = override?.credited_month_numbers ?? [];
+  return {
+    ...house,
+    overrideId: override?.id ?? null,
+    overrideMonths: override?.credited_months ?? 0,
+    overrideMonthNumbers: monthNumbers,
+    overrideReason: override?.reason ?? null,
+    overrideNotes: override?.notes ?? null,
+    isSettled: isSettledByMonths(house.total2026, monthNumbers),
+  };
+}
 
 interface HouseStatusClientProps {
   communityName: string;
@@ -94,6 +125,7 @@ export default function HouseStatusClient({
       }
       setIsSubmitting(true);
       try {
+        const houseId = dialogTarget.houseId;
         const res = await fetch(
           `/api/kas-rt/house-payment-overrides/${dialogTarget.overrideId}`,
           { method: "DELETE" },
@@ -104,7 +136,15 @@ export default function HouseStatusClient({
           return;
         }
         closeDialog();
-        await refetch();
+        if (houseId) {
+          setStatuses((prev) =>
+            prev.map((s) =>
+              s.houseId === houseId ? applyOverride(s, null) : s,
+            ),
+          );
+        } else {
+          await refetch();
+        }
       } catch {
         setFormError("Gagal membatalkan penyesuaian.");
       } finally {
@@ -140,8 +180,25 @@ export default function HouseStatusClient({
         setFormError(data.message ?? "Gagal menyimpan penyesuaian.");
         return;
       }
+      const houseId = dialogTarget.houseId;
       closeDialog();
-      await refetch();
+      if (houseId) {
+        const override: ActiveOverride = {
+          id: data.id,
+          credited_months: Number(data.credited_months ?? selectedMonths.length),
+          credited_month_numbers:
+            data.credited_month_numbers ?? selectedMonths,
+          reason: data.reason ?? reason,
+          notes: data.notes ?? (notes.trim() || null),
+        };
+        setStatuses((prev) =>
+          prev.map((s) =>
+            s.houseId === houseId ? applyOverride(s, override) : s,
+          ),
+        );
+      } else {
+        await refetch();
+      }
     } catch {
       setFormError("Gagal menyimpan penyesuaian.");
     } finally {
@@ -155,6 +212,77 @@ export default function HouseStatusClient({
     closeDialog,
     refetch,
   ]);
+
+  // Grouping and totals only change when a mutation patches a house.
+  const {
+    uniqueStatuses,
+    totalHouses,
+    paidCount,
+    overridePaidCount,
+    totalPaid,
+    annualTarget,
+    percentage,
+    groupedByLetter,
+    sortedLetters,
+  } = useMemo(() => {
+    // Group for list rendering — one entry per blok.
+    const groupedStatuses = statuses.reduce<
+      Record<string, HouseTransactionStatus>
+    >((acc, s) => {
+      const key = s.blokRumah;
+      if (!acc[key]) {
+        acc[key] = { ...s };
+      } else {
+        acc[key].total2026 += s.total2026;
+        acc[key].monthlyStatuses = acc[key].monthlyStatuses.map(
+          (val, idx) => val + (s.monthlyStatuses[idx] || 0),
+        );
+        acc[key].overrideMonths = Math.max(
+          acc[key].overrideMonths,
+          s.overrideMonths,
+        );
+        acc[key].isSettled = acc[key].isSettled || s.isSettled;
+      }
+      return acc;
+    }, {});
+    const unique = Object.values(groupedStatuses);
+
+    // "Lunas" counts houses settled by real money OR by an override — that is
+    // precisely the capability this page gained.
+    const paid = unique.filter((s) => s.isSettled).length;
+    const overridePaid = unique.filter((s) => s.overrideMonths > 0).length;
+
+    // Money stays real: overrides contribute nothing to "Total Dibayar".
+    const paidTotal = unique.reduce((sum, s) => sum + s.total2026, 0);
+    const target = unique.length * IPL_ANNUAL_TARGET;
+    const pct = target > 0 ? Math.min(100, (paidTotal / target) * 100) : 0;
+
+    const byLetter = unique.reduce<Record<string, HouseTransactionStatus[]>>(
+      (acc, s) => {
+        const letter = s.blokRumah.charAt(0).toUpperCase();
+        if (!acc[letter]) acc[letter] = [];
+        acc[letter].push(s);
+        return acc;
+      },
+      {},
+    );
+    const letters = Object.keys(byLetter).sort();
+    letters.forEach((l) => {
+      byLetter[l].sort((a, b) => a.blokRumah.localeCompare(b.blokRumah));
+    });
+
+    return {
+      uniqueStatuses: unique,
+      totalHouses: unique.length,
+      paidCount: paid,
+      overridePaidCount: overridePaid,
+      totalPaid: paidTotal,
+      annualTarget: target,
+      percentage: pct,
+      groupedByLetter: byLetter,
+      sortedLetters: letters,
+    };
+  }, [statuses]);
 
   if (!canView) {
     return (
@@ -173,56 +301,6 @@ export default function HouseStatusClient({
       </main>
     );
   }
-
-  // Group for list rendering — one entry per blok.
-  const groupedStatuses = statuses.reduce<
-    Record<string, HouseTransactionStatus>
-  >((acc, s) => {
-    const key = s.blokRumah;
-    if (!acc[key]) {
-      acc[key] = { ...s };
-    } else {
-      acc[key].total2026 += s.total2026;
-      acc[key].monthlyStatuses = acc[key].monthlyStatuses.map(
-        (val, idx) => val + (s.monthlyStatuses[idx] || 0),
-      );
-      acc[key].overrideMonths = Math.max(
-        acc[key].overrideMonths,
-        s.overrideMonths,
-      );
-      acc[key].isSettled = acc[key].isSettled || s.isSettled;
-    }
-    return acc;
-  }, {});
-  const uniqueStatuses = Object.values(groupedStatuses);
-
-  const totalHouses = uniqueStatuses.length;
-
-  // "Lunas" counts houses settled by real money OR by an override — that is
-  // precisely the capability this page gained.
-  const paidCount = uniqueStatuses.filter((s) => s.isSettled).length;
-  const overridePaidCount = uniqueStatuses.filter(
-    (s) => s.overrideMonths > 0,
-  ).length;
-
-  // Money stays real: overrides contribute nothing to "Total Dibayar".
-  const totalPaid = uniqueStatuses.reduce((sum, s) => sum + s.total2026, 0);
-  const annualTarget = totalHouses * IPL_ANNUAL_TARGET;
-  const percentage =
-    annualTarget > 0 ? Math.min(100, (totalPaid / annualTarget) * 100) : 0;
-
-  const groupedByLetter = uniqueStatuses.reduce<
-    Record<string, HouseTransactionStatus[]>
-  >((acc, s) => {
-    const letter = s.blokRumah.charAt(0).toUpperCase();
-    if (!acc[letter]) acc[letter] = [];
-    acc[letter].push(s);
-    return acc;
-  }, {});
-  const sortedLetters = Object.keys(groupedByLetter).sort();
-  sortedLetters.forEach((l) => {
-    groupedByLetter[l].sort((a, b) => a.blokRumah.localeCompare(b.blokRumah));
-  });
 
   return (
     <main className="h-full overflow-y-auto bg-app-surface-alt lg:max-w-4xl lg:mx-auto lg:w-full lg:px-6 lg:py-6">
