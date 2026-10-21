@@ -118,7 +118,9 @@ export async function getSessionFromCookie(opts?: {
   const supabase = createServerClient();
   const { data: session, error: fetchError } = await supabase
     .from("sessions")
-    .select("id, user_id, expires_at, last_active_at")
+    .select(
+      "id, user_id, expires_at, last_active_at, users!sessions_user_id_fkey(status)",
+    )
     .eq("id", payload.sessionId)
     .maybeSingle();
 
@@ -139,12 +141,16 @@ export async function getSessionFromCookie(opts?: {
   // PENDING/REJECTED nulled out). Rejected users normally have no session row
   // at all (deleted at reject time); this covers stragglers.
   if (!opts?.allowPending) {
-    const { data: account } = await supabase
-      .from("users")
-      .select("status")
-      .eq("id", session.user_id)
-      .maybeSingle();
-    if (account && (account.status === "PENDING" || account.status === "REJECTED")) {
+    const account = (
+      session as {
+        users?:
+          | { status?: string | null }
+          | { status?: string | null }[]
+          | null;
+      }
+    ).users;
+    const status = Array.isArray(account) ? account[0]?.status : account?.status;
+    if (status === "PENDING" || status === "REJECTED") {
       return null;
     }
   }

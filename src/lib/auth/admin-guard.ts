@@ -23,26 +23,18 @@ export async function requireAdmin(
   userId: string,
 ): Promise<{ id: string } | null> {
   // ── 1. Confirm the user is an active member of the default tenant ──────────
+  // One round trip: active tenant membership + at least one non-revoked
+  // admin role. The inner join drops members without an admin role.
   const { data: tenantUser } = await supabase
     .from("tenant_users")
-    .select("id")
+    .select("id, tenant_user_roles!inner(role_id)")
     .eq("tenant_id", DEFAULT_TENANT_ID)
     .eq("user_id", userId)
     .eq("status", "ACTIVE")
+    .in("tenant_user_roles.role_id", ROLE_IDS_ADMIN)
+    .is("tenant_user_roles.revoked_at", null)
+    .limit(1)
     .maybeSingle();
 
-  if (!tenantUser) return null;
-
-  // ── 2. Confirm they hold at least one admin role (non-revoked) ────────────
-  const { data: roleRows } = await supabase
-    .from("tenant_user_roles")
-    .select("role_id")
-    .eq("tenant_user_id", tenantUser.id)
-    .in("role_id", ROLE_IDS_ADMIN)
-    .is("revoked_at", null)
-    .limit(1);
-
-  if (!roleRows || roleRows.length === 0) return null;
-
-  return tenantUser;
+  return tenantUser ? { id: tenantUser.id } : null;
 }
