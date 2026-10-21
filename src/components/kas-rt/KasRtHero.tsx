@@ -20,6 +20,12 @@ interface KasRtHeroProps {
 
   canSubmitTransaction: boolean;
 
+  /**
+   * True while the server data is still streaming in. The action buttons
+   * stay usable; only the numbers are replaced by placeholders.
+   */
+  isLoading?: boolean;
+
   isRefreshing: boolean;
 
   onRefresh: () => void;
@@ -41,6 +47,7 @@ export function KasRtHero({
   now,
   totals,
   canSubmitTransaction,
+  isLoading = false,
   onOpenSummary,
   isRefreshing,
   onRefresh,
@@ -129,9 +136,16 @@ export function KasRtHero({
             <p className="text-[9px] font-semibold uppercase tracking-widest text-white/60">
               Saldo Total
             </p>
-            <p className="mt-1 truncate text-[22px] font-extrabold leading-tight text-white">
-              {formatRupiah(totals.balance)}
-            </p>
+            {isLoading ? (
+              <div
+                className="mt-1.5 h-6 w-32 animate-pulse rounded-lg bg-white/25"
+                aria-hidden
+              />
+            ) : (
+              <p className="mt-1 truncate text-[22px] font-extrabold leading-tight text-white">
+                {formatRupiah(totals.balance)}
+              </p>
+            )}
             <p className="mt-1 text-[10px] text-white/50">
               Periode{" "}
               {now.toLocaleString("id-ID", {
@@ -140,11 +154,12 @@ export function KasRtHero({
               })}
             </p>
           </div>
-          {canSubmitTransaction && (
+          {(isLoading || canSubmitTransaction) && (
             <button
               type="button"
               onClick={onOpenForm}
-              className="flex shrink-0 items-center gap-1.5 rounded-xl bg-white/20 px-3.5 py-2.5 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-white/30 active:scale-95"
+              disabled={isLoading || !canSubmitTransaction}
+              className="flex shrink-0 items-center gap-1.5 rounded-xl bg-white/20 px-3.5 py-2.5 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-white/30 active:scale-95 disabled:opacity-50"
               aria-label="Catat transaksi baru"
             >
               <PlusIcon className="h-3.5 w-3.5" />
@@ -160,9 +175,16 @@ export function KasRtHero({
             <p className="text-[9px] font-semibold uppercase tracking-wider leading-tight text-white/60">
               Saldo Bln Lalu
             </p>
-            <p className="mt-1 text-sm font-extrabold leading-tight text-white">
-              {formatRupiahCompact(totals.balanceEndOfPrevMonth)}
-            </p>
+            {isLoading ? (
+              <div
+                className="mx-auto mt-1.5 h-4 w-16 animate-pulse rounded bg-white/30"
+                aria-hidden
+              />
+            ) : (
+              <p className="mt-1 text-sm font-extrabold leading-tight text-white">
+                {formatRupiahCompact(totals.balanceEndOfPrevMonth)}
+              </p>
+            )}
             <p className="mt-0.5 text-[8px] leading-tight text-white/50">
               {totals.prevMonthEndLabel}
             </p>
@@ -173,9 +195,16 @@ export function KasRtHero({
             <p className="text-[9px] font-semibold uppercase tracking-wider leading-tight text-white/60">
               Masuk Bln Ini
             </p>
-            <p className="mt-1 text-sm font-extrabold leading-tight text-white">
-              {formatRupiahCompact(totals.thisMonthIncome)}
-            </p>
+            {isLoading ? (
+              <div
+                className="mx-auto mt-1.5 h-4 w-16 animate-pulse rounded bg-white/30"
+                aria-hidden
+              />
+            ) : (
+              <p className="mt-1 text-sm font-extrabold leading-tight text-white">
+                {formatRupiahCompact(totals.thisMonthIncome)}
+              </p>
+            )}
             <p className="mt-0.5 text-[8px] leading-tight text-white/50">
               {now.toLocaleString("id-ID", { month: "short" })}
             </p>
@@ -186,9 +215,16 @@ export function KasRtHero({
             <p className="text-[9px] font-semibold uppercase tracking-wider leading-tight text-white/60">
               Keluar Bln Ini
             </p>
-            <p className="mt-1 text-sm font-extrabold leading-tight text-white">
-              {formatRupiahCompact(totals.thisMonthExpense)}
-            </p>
+            {isLoading ? (
+              <div
+                className="mx-auto mt-1.5 h-4 w-16 animate-pulse rounded bg-white/30"
+                aria-hidden
+              />
+            ) : (
+              <p className="mt-1 text-sm font-extrabold leading-tight text-white">
+                {formatRupiahCompact(totals.thisMonthExpense)}
+              </p>
+            )}
             <p className="mt-0.5 text-[8px] leading-tight text-white/50">
               {now.toLocaleString("id-ID", { month: "short" })}
             </p>
